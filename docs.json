@@ -39,6 +39,7 @@
           {
             "group": "Platform",
             "pages": [
+              "documentation/platform/interoperability",
               "documentation/platform/company-overview",
               "documentation/platform/stablecoin-issuance",
               "documentation/platform/tokenization",
@@ -46,7 +47,6 @@
             ]
           },
           "documentation/platform/stablecoin-orchestration"
-        
         ]
       },
       {
