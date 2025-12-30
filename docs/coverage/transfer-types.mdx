@@ -3,46 +3,53 @@ title: "Transfer Types"
 description: "Transfer Types are how money is moved in the Brale API. "
 ---
 
-Onchain Transfer Types - These are blockchain based transfer types.
+### Onchain Transfer Types - Ecosystem (blockchain) based transfer types.
 
-| Onchain Transfer Type    | API Identifier   | Brale Issuance | USDC | USDP | RLUSD |
-| :----------------------- | :--------------- | :------------- | :--- | :--- | :---- |
-| **Arbitrum**             | `arbitrum`       | ✅              | ✅    |      |       |
-| **Avalanche**            | `avalanche`      | ✅              | ✅    |      |       |
-| **Base**                 | `base`           | ✅              | ✅    |      |       |
-| **Canton**               | `canton`         | ✅              |      |      |       |
-| **Celo**                 | `celo`           | ✅              | ✅    |      |       |
-| **Cosmos (via IBC)**     | `coreum`         | ✅              |      |      |       |
-| **Coreum**               | `coreum`         | ✅              |      |      |       |
-| **Ethereum**             | `ethereum`       | ✅              | ✅    |      | ✅     |
-| **Ethereum Classic**     | `classic`        | ✅              |      |      |       |
-| **Hedera**               | `hedera`         | ✅              | ✅    |      |       |
-| **Optimism**             | `optimism`       | ✅              | ✅    |      |       |
-| **Polkadot / Kusama**    | `kusama`         | ✅              |      |      |       |
-| **Polygon**              | `polygon`        | ✅              | ✅    |      |       |
-| **Solana**               | `solana`         | ✅              | ✅    | ✅    |       |
-| **Spark**                | `spark`          | ✅              |      |      |       |
-| **Stellar**              | `stellar`        | ✅              |      |      |       |
-| **Vechain**              | `vechain`        | ✅              |      |      |       |
-| **XRP Ledger**           | `xrp_ledger`     | ✅              |      |      | ✅     |
-| **Xion**                 | `xion`           | ✅              |      |      |       |
-| **Base Sepolia Testnet** | `base_sepolia`   | ✅              |      |      |       |
-| **Canton Testnet**       | `canton_testnet` | ✅              |      |      |       |
-| **Polygon Amoy Testnet** | `amoy`           | ✅              |      |      |       |
-| **Sepolia Testnet**      | `sepolia`        | ✅              |      |      |       |
-| **Solana Devnet**        | `solana_devnet`  | ✅              |      |      |       |
-| **Xion Testnet**         | `xion_testnet`   | ✅              |      |      |       |
-| **Tempo Testnet**        | `tempo_testnet`  | ✅              |      |      |       |
+| Onchain Transfer Type | API Identifier | Brale Issuance |
+| :-------------------- | :------------- | :------------- |
+| **Arbitrum**          | `arbitrum`     | ✅              |
+| **Avalanche**         | `avalanche`    | ✅              |
+| **Base**              | `base`         | ✅              |
+| **Canton**            | `canton`       | ✅              |
+| **Celo**              | `celo`         | ✅              |
+| **Cosmos (via IBC)**  | `coreum`       | ✅              |
+| **Coreum**            | `coreum`       | ✅              |
+| **Ethereum**          | `ethereum`     | ✅              |
+| **Ethereum Classic**  | `classic`      | ✅              |
+| **Hedera**            | `hedera`       | ✅              |
+| **Optimism**          | `optimism`     | ✅              |
+| **Polkadot / Kusama** | `kusama`       | ✅              |
+| **Polygon**           | `polygon`      | ✅              |
+| **Solana**            | `solana`       | ✅              |
+| **Spark**             | `spark`        | ✅              |
+| **Stellar**           | `stellar`      | ✅              |
+| **Vechain**           | `vechain`      | ✅              |
+| **XRP Ledger**        | `xrp_ledger`   | ✅              |
+| **Xion**              | `xion`         | ✅              |
 
-Offchain Transfer Types
+### Onchain Test-net Transfer Types
 
-| Offchain Currency | API Identifier       | Transfer Type |
-| ----------------- | -------------------- | ------------- |
-| USD               | `ach_credit`         | ACH Credit    |
-| USD               | `same_day_ach_credit`| Same Day ACH  |
-| USD               | `ach_debit`          | ACH Debit     |
-| USD               | `same_day_ach_debit` | Same Day ACH Debit |
-| USD               | `wire`               | Wire          |
-| USD               | `rtp_credit`         | RTP Credit    |
+| Onchain Transfer Type    | API Identifier   | Brale Issuance |
+| :----------------------- | :--------------- | :------------- |
+| **Base Sepolia Testnet** | `base_sepolia`   | ✅              |
+| **Canton Testnet**       | `canton_testnet` | ✅              |
+| **Polygon Amoy Testnet** | `amoy`           | ✅              |
+| **Sepolia Testnet**      | `sepolia`        | ✅              |
+| **Solana Devnet**        | `solana_devnet`  | ✅              |
+| **Xion Testnet**         | `xion_testnet`   | ✅              |
+| **Tempo Testnet**        | `tempo_testnet`  | ✅              |
 
-We continually bring on new partners to support more payment methods. Please reachout to us at [<u>support@brale.xyz</u>](mailto:support@brale.xyz) if you'd like to see additional methods supported.
+### Offchain Transfer Types - Fiat Transfer Types
+
+| Offchain Currency | API Identifier        | Transfer Type      | First Party | Second Party | Third Party |
+| ----------------- | --------------------- | ------------------ | ----------- | ------------ | ----------- |
+| **USD**           | `ach_credit`          | ACH Credit         | ✅           | ✅            | ✅           |
+| **USD**           | `same_day_ach_credit` | Same Day ACH       | ✅           | ✅            | ✅           |
+| **USD**           | `ach_debit`           | ACH Debit          | ✅           | ✅            | ✅           |
+| **USD**           | `same_day_ach_debit`  | Same Day ACH Debit | ✅           |              |             |
+| **USD**           | `wire`                | Wire               | ✅           |              |             |
+| **USD**           | `rtp_credit`          | RTP Credit         | ✅           |              |             |
+
+We continually bring on new partners to support more transfer types. 
+
+Please reachout to us at [<u>support@brale.xyz</u>](mailto:support@brale.xyz) if you'd like to see additional methods supported.
