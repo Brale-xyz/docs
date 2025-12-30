@@ -15,19 +15,19 @@ The Commons Stablecoin Format is a lightweight standard for describing value mov
 
 ## Quick pattern
 
-1) Define participants (business, platform, exchange, blockchain, recipient).  
-2) Describe each hop as `ValueType TransferType Amount`.  
-3) Include exchanges when converting between value types or rails.  
-4) Render as a Mermaid `sequenceDiagram` for easy sharing.
+1. Define participants (business, platform, exchange, blockchain, recipient).
+2. Describe each hop as `ValueType TransferType Amount`.
+3. Include exchanges when converting between value types or rails.
+4. Render as a Mermaid `sequenceDiagram` for easy sharing.
 
 ## Example prompt
 
 Use this prompt with your preferred LLM to produce a CSF Mermaid diagram:
 
-> Create a funds flow for:  
-> - Off-chain USD wire funding an on-chain USDC payout on Solana  
-> - Participants: Business, Fintech Platform, Exchange, Solana, Recipient  
-> - Show the exchange from USD (Wire) to USDC (Solana)  
+> Create a funds flow for:
+> - Off-chain USD wire funding an on-chain USDC payout on Solana
+> - Participants: Business, Fintech Platform, Exchange, Solana, Recipient
+> - Show the exchange from USD (Wire) to USDC (Solana)
 > - Use CSF labeling: `ValueType TransferType Amount`
 
 ## Sample Mermaid (CSF style)
