@@ -29,12 +29,9 @@
     "tabs": [
       {
         "tab": "Docs",
-        "menu": [
+        "products": [
           {
-            "item": "Documentation"
-          },
-          {
-            "item": "Overview",
+            "product": "Overview",
             "pages": [
               "overview/introduction",
               "overview/quick-start",
@@ -42,7 +39,7 @@
             ]
           },
           {
-            "item": "Key concepts",
+            "product": "Key concepts",
             "pages": [
               "key-concepts/api-concepts-overview",
               "key-concepts/authentication",
@@ -55,7 +52,7 @@
             ]
           },
           {
-            "item": "Guides",
+            "product": "Guides",
             "pages": [
               "guides/fiat-to-stablecoin-onramp",
               "guides/stablecoin-to-fiat-offramp",
@@ -69,14 +66,14 @@
             ]
           },
           {
-            "item": "Coverage",
+            "product": "Coverage",
             "pages": [
               "docs/coverage/transfer-types",
               "coverage/stablecoins-and-blockchains"
             ]
           },
           {
-            "item": "IO",
+            "product": "IO",
             "pages": [
               "io/introduction",
               "io/url-navigation"
@@ -116,6 +113,9 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Documentation"
       }
     ]
   },
