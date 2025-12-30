@@ -1,0 +1,57 @@
+---
+title: "Commons Stablecoin Format"
+description: "Use CSF to generate clear, consistent funds-flow diagrams for Brale workflows."
+---
+
+# Commons Stablecoin Format (CSF)
+
+The Commons Stablecoin Format is a lightweight standard for describing value movement across off-chain and on-chain rails. By structuring flows with CSF, you can generate consistent Mermaid sequence diagrams for reviews, runbooks, and customer-facing docs. Learn more in the CSF introduction: [Better Funds Flows](https://benmilne.com/2025/04/13/better-funds-flows/).
+
+## Why use CSF?
+
+- Consistent labels: every transfer is `ValueType TransferType Amount` (e.g., `USD Wire 5,000`, `USDC Solana 5,000`).
+- Clear role separation: participants (e.g., Customer, Exchange, Bank, Blockchain) are explicit in the flow.
+- Fast visualization: drop the CSF description into Mermaid to produce diagrams for reviews or implementation guides.
+
+## Quick pattern
+
+1) Define participants (business, platform, exchange, blockchain, recipient).  
+2) Describe each hop as `ValueType TransferType Amount`.  
+3) Include exchanges when converting between value types or rails.  
+4) Render as a Mermaid `sequenceDiagram` for easy sharing.
+
+## Example prompt
+
+Use this prompt with your preferred LLM to produce a CSF Mermaid diagram:
+
+> Create a funds flow for:  
+> - Off-chain USD wire funding an on-chain USDC payout on Solana  
+> - Participants: Business, Fintech Platform, Exchange, Solana, Recipient  
+> - Show the exchange from USD (Wire) to USDC (Solana)  
+> - Use CSF labeling: `ValueType TransferType Amount`
+
+## Sample Mermaid (CSF style)
+
+```mermaid
+sequenceDiagram
+    title: Funds Flow – USD Wire to USDC on Solana (CSF)
+    participant Business
+    participant Fintech
+    participant Exchange
+    participant Solana
+    participant Recipient
+
+    Business->>Exchange: Transfer USD Wire 5,000
+    Exchange-->>Fintech: [DATA] Receipt + payout instruction
+    Fintech-->>Exchange: [DATA] Convert & send USDC
+    Exchange->>Exchange: [EXCHANGE] USD to USDC
+    Exchange->>Solana: Transfer USDC Solana 5,000
+    Solana->>Recipient: Confirm receipt
+```
+
+## Tips
+
+- Keep flows concise (light), add compliance/finality notes when needed (medium/heavy).
+- Reuse the same participant names across flows for comparability.
+- Attach these diagrams in implementation guides, runbooks, or customer approvals to align on how value moves.
+

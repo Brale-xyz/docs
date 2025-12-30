@@ -30,7 +30,8 @@
       {
         "tab": "Documentation",
         "pages": [
-          "documentation/introduction"
+          "documentation/introduction",
+          "documentation/commons-stablecoin-format"
         ]
       },
       {
