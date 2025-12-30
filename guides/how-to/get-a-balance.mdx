@@ -3,6 +3,17 @@ title: "Get A Balance"
 description: "Query the stablecoin balance of an internal (custodial) address."
 ---
 
+## Prerequisites
+
+- Get your `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
+- Get a custodial `address_id`: list addresses and choose one with `type=internal`:
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
 ## Overview
 
 Query the stablecoin balance of an internal (custodial) address. This endpoint requires both `transfer_type` and `value_type` because a single custodial address can hold multiple tokens across multiple chains.
