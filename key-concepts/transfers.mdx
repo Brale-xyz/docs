@@ -7,6 +7,12 @@ title: 'Transfers'
   conversions, and stablecoin-to-fiat transactions.
 </p>
 
+**Key rules**
+
+- All IDs are KSUIDs (26-char, time-sortable); copy/paste carefully.
+- `address_id` is the universal source/destination primitive (covers wallets and fiat endpoints).
+- Always send `Idempotency-Key` on create POSTs; never on GETs. Do not reuse a key with a different payload/URI.
+
 Each transfer requires both a source and a destination, which can be:
 
 - Fiat sources (e.g., a bank account for ACH or wire)
@@ -37,12 +43,14 @@ Each source and destination includes:
 
 ## Transfer Scenarios: understanding `value_type` and `transfer_type`
 
-| Flow                                | Source         | Destination                       | Description                                |
-| ----------------------------------- | -------------- | --------------------------------- | ------------------------------------------ |
-| Onramp<br/>(Fiat → Stablecoin)      | USD / wire     | SBC / base                        | Mint SBC on base funded by wire deposit    |
-| Offramp<br/>(Stablecoin → Fiat)     | SBC / solana   | USD / ACH                         | Redeem SBC on Solana to USD via ACH        |
-| Swap<br/>(Stablecoin ↔ Stablecoin) | USDC / solana  | SBC / solana                      | 1:1 swap from USDC to SBC with no slippage |
-| On-chain Payout                     | USDC / polygon | USDC / polygon (external address) | Pay a recipient wallet                     |
+| Flow                                | Source              | Destination                            | Description                                |
+| ----------------------------------- | ------------------- | -------------------------------------- | ------------------------------------------ |
+| Onramp<br/>(Fiat → Stablecoin)      | USD / wire          | SBC / base                             | Mint SBC on Base funded by wire deposit    |
+| Offramp<br/>(Stablecoin → Fiat)     | SBC / solana        | USD / ACH                              | Redeem SBC on Solana to USD via ACH        |
+| Swap<br/>(Stablecoin ↔ Stablecoin)  | USDC / solana       | SBC / solana                           | 1:1 swap from USDC to SBC with no slippage |
+| On-chain Payout                     | USDC / polygon      | USDC / polygon (external address)      | Pay a recipient wallet                     |
+| USDC off-ramp (wire)                | USDC / polygon      | USD / wire                             | Offramp USDC to wire                       |
+| SBC branded ACH payout (ACH only)   | SBC / base          | USD / ach_credit + brand (ACH only)    | ACH payout with brand on statement         |
 
 Every request is scoped to an account, so the path always starts with:
 
@@ -59,7 +67,7 @@ curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Content-Type: application/json" \
   --header "Authorization: Bearer ${AUTH_TOKEN}" \
-  --header "Idempotency-Key: $(uuidgen)" \          # generate a fresh key for each transfer
+  --header "Idempotency-Key: $(uuidgen)" \          # generate a fresh key per logical transfer; reuse on retries of the same transfer
   --data '{
     "amount":    { "value": "10", "currency": "USD" },
     "source":    { "value_type": "usd", "transfer_type": "wire" },
@@ -112,9 +120,9 @@ Onramp to your stablecoin by debiting a Plaid connected address.
     "currency": "USD"
   },
   "source": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",  // address_id is the primitive, even for onchain sources
     "value_type": "SBC",
-    "transfer_type": "Polygon"
+    "transfer_type": "polygon"
   },
   "destination": {
     "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
@@ -244,11 +252,11 @@ Process stablecoin payouts to one or many external addresses (EOAs).
   "updated_at": "2025-02-05T19:39:14.316Z",
   "source": {
     "transfer_type": "wire",
-    "value_type": "usd"
+    "value_type": "USD"
   },
   "destination": {
     "transfer_type": "polygon",
-    "value_type": "ysbc",
+    "value_type": "YSBC",
     "address_id": "d7bd28e4-93e6-4313-880c-ab9178eacd3b"
   },
   "wire_instructions": {
@@ -276,6 +284,12 @@ Use the `pagination.next` token from the previous response.
 **GET** `https://api.brale.xyz/accounts/account_id/transfers/transfer_id?page[prev]=g3QAAAABdw...`
 
 Only one of `page[next]` or `page[prev]` may be present.
+
+## Reconciliation best practices
+
+- Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
+- Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
+- On 401, refresh the token and retry idempotently.
 
 ## Transfer Statuses
 

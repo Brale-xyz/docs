@@ -30,7 +30,8 @@
       {
         "tab": "Documentation",
         "pages": [
-          "documentation/introduction"
+          "documentation/introduction",
+          "documentation/troubleshooting"
         ]
       },
       {
@@ -53,7 +54,7 @@
         ]
       },
       {
-        "tab": "Docs",
+        "tab": "API Docs",
         "groups": [
           {
             "group": "Overview",

@@ -7,6 +7,8 @@ title: 'Addresses'
   specific `transfer_type`.
 </p>
 
+> IDs are KSUIDs (26-char, time-sortable); copy/paste carefully.
+
 An `address_id` can represent either an onchain wallet or offchain account (ACH, Wire, or RTP account), depending on the `transfer_type`. Use `address_id` wherever a source/destination is required in Transfers.
 
 Brale distinguishes between internal and external addresses using the type field:
@@ -28,7 +30,7 @@ Whether internal or external, all addresses possess:
 
 Brale provides custodial wallets that allow businesses to securely hold and transfer stablecoins on behalf of themselves or their customers. Custodial addresses support all supported blockchains.
 
-When your customer's Account is onboarded, Brale automatically generates internal custodial addresses on all supported blockchains. You do not need to create them manually.
+When your customer's Account is onboarded, Brale automatically generates internal custodial addresses on all supported blockchains. You do not need to create them manually. If an address is visible under an account-scoped endpoint but not globally, use the account-scoped endpoint.
 
 ## Non-Custodial (External) Addresses
 

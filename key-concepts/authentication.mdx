@@ -3,7 +3,8 @@ title: 'Authentication'
 ---
 
 <p class="intro-subheading">
-  The Brale API uses Bearer Authentication and API keys to authenticate your requests.
+  The Brale API uses Bearer Authentication and API keys to authenticate your requests. Tokens are
+  short-lived (~60 minutes); refresh automatically using <code>expires_in</code>.
 </p>
 
 ## API Keys
@@ -44,10 +45,10 @@ curl --request GET \
 
 ## Token Expiration
 
-Access tokens are short-lived and expire 60 minutes after issuance.
+Access tokens are short-lived and expire ~60 minutes after issuance.
 
 When a token expires:
 
 - API calls will return a `401 Unauthorized` error.
 - Your application should request a new token using the same client credentials before retrying the request.
-- Best practice is to refresh the token automatically rather than caching it indefinitely.
+- Best practice is to refresh automatically before expiry using `expires_in` and to retry idempotently after refresh.

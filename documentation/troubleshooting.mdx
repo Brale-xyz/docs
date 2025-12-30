@@ -1,0 +1,49 @@
+---
+title: "Troubleshooting & Known Pitfalls"
+description: "Common issues, quick fixes, and how to avoid retries gone wrong."
+---
+
+# Troubleshooting & Known Pitfalls
+
+Use this checklist when integrating and operating at volume.
+
+## Auth & tokens
+
+- Tokens expire in ~60 minutes; refresh using `expires_in` before expiry.
+- 401 → refresh token, retry idempotently. Do not keep reusing an expired token.
+
+## Idempotency
+
+- Required on POST create endpoints (e.g., transfers). Missing key → 400.
+- Never reuse an Idempotency-Key with a different payload or URI (422).
+- Do not send Idempotency-Key on GETs.
+- Best practice: generate one UUID per logical action and persist it so retries reuse the same key.
+
+## IDs (account_id vs address_id)
+
+- IDs are KSUIDs (26-char, time-sortable), not UUIDs—copy/paste carefully.
+- `address_id` is the universal source/destination primitive (wallets and fiat endpoints).
+- Internal (custodial) addresses are auto-created per account/chain; generally you do not create them manually.
+- If an address appears under an account-scoped endpoint but not via a global lookup, use the account-scoped endpoint.
+
+## Transfers: value_type + transfer_type
+
+- Source and destination are always address-based; both carry `value_type` and `transfer_type`.
+- Use valid pairs from Coverage (value types and transfer types are case-sensitive).
+- Branding applies to ACH only (not wire/RTP).
+
+## Pagination & reconciliation
+
+- List transfers with pagination tokens; store transfer id, idempotency key, timestamps, status, and provider references.
+- Poll with backoff; avoid tight loops.
+
+## Headers
+
+- Required: `Authorization: Bearer <token>`, `Content-Type: application/json` on JSON POSTs, `Idempotency-Key` on create POSTs.
+- Avoid sending unexpected headers (including Idempotency-Key) on GET.
+
+## When in doubt
+
+- Re-read Coverage for exact identifiers (case and spelling).
+- Verify example paths and enums against the OpenAPI spec and Postman collection.
+
