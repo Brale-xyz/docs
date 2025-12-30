@@ -12,12 +12,26 @@
   },
   "favicon": "/images/brale/favicon.svg",
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "icon": "book-open-cover",
+          "href": "https://app.brale.xyz"
+        },
+        {
+          "anchor": "Status",
+          "icon": "circle-info",
+          "href": "https://status.brale.xyz"
+        }
+      ]
+    },
     "tabs": [
       {
-        "tab": "Documentation",
-        "groups": [
+        "tab": "Docs",
+        "products": [
           {
-            "group": "Overview",
+            "product": "Overview",
             "pages": [
               "overview/introduction",
               "overview/quick-start",
@@ -25,7 +39,7 @@
             ]
           },
           {
-            "group": "Key concepts",
+            "product": "Key concepts",
             "pages": [
               "key-concepts/api-concepts-overview",
               "key-concepts/authentication",
@@ -38,14 +52,14 @@
             ]
           },
           {
-            "group": "Coverage",
+            "product": "Coverage",
             "pages": [
-              "coverage/payment-methods",
+              "docs/coverage/transfer-types",
               "coverage/stablecoins-and-blockchains"
             ]
           },
           {
-            "group": "IO",
+            "product": "IO",
             "pages": [
               "io/introduction",
               "io/url-navigation"
@@ -104,22 +118,14 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Documentation",
+        "pages": [
+          "documentation/introduction"
+        ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Dashboard",
-          "href": "https://app.brale.xyz",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Status",
-          "href": "https://status.brale.xyz",
-          "icon": "circle-info"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/images/brale/brale-logo-light.svg",
