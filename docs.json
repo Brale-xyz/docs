@@ -68,7 +68,7 @@
           {
             "group": "Coverage",
             "pages": [
-              "coverage/payment-methods",
+              "docs/coverage/transfer-types",
               "coverage/stablecoins-and-blockchains"
             ]
           },
