@@ -43,6 +43,10 @@
               "documentation/add-your-stablecoin",
               "documentation/commons-repo"
             ]
+          },
+          {
+            "group": "Calculators",
+            "pages": []
           }
         ]
       },
