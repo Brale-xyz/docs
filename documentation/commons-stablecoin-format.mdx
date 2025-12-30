@@ -55,3 +55,16 @@ sequenceDiagram
 - Reuse the same participant names across flows for comparability.
 - Attach these diagrams in implementation guides, runbooks, or customer approvals to align on how value moves.
 
+## Live CSF JSON
+
+The canonical CSF spec lives in GitHub and updates automatically:
+
+- GitHub file: [csf.json](https://github.com/Brale-xyz/commons/blob/main/Commons%20Stablecoin%20Format/csf.json)
+- Raw JSON (auto-updating): <https://raw.githubusercontent.com/Brale-xyz/commons/main/Commons%20Stablecoin%20Format/csf.json>
+
+You can fetch the latest spec in scripts or API tooling, for example:
+
+```bash
+curl -s https://raw.githubusercontent.com/Brale-xyz/commons/main/Commons%20Stablecoin%20Format/csf.json | jq .
+```
+
