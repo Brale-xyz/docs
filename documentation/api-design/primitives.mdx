@@ -1,5 +1,50 @@
 ---
 title: "Primitives"
+description: "Core building blocks of the Brale API and how they compose."
 ---
 
-here i am
+## Core resources
+
+- **Accounts**: Client-owned and managed accounts; IDs are KSUIDs (`account_id`).
+- **Addresses**: Universal source/destination primitive. Internal (custodial) vs external (counterparty). IDs are KSUIDs (`address_id`).
+- **Automations**: Virtual accounts that map deposits to addresses with specific `transfer_type`/`value_type`. IDs are KSUIDs (`automation_id`).
+- **Transfers**: Movements across fiat rails and blockchains; always reference `address_id` for source/destination. IDs are KSUIDs (`transfer_id`).
+
+> IDs are KSUIDs (26-char, time-sortable); case-sensitive. Copy/paste carefully.
+
+## Addresses: internal vs external
+
+- `type=internal`: Brale-custodied addresses (one per supported chain per account); balances available; use for mint/payout flows.
+- `type=external`: Counterparty data you register (onchain wallets, offchain bank accounts, Canton parties); no balances.
+- Use `address_id` on all transfer endpoints; financial institution IDs are deprecated.
+
+## Value types and transfer types
+
+- `value_type`: Token/fiat identifier (case-sensitive); see [Value Types](/coverage/value-types).
+- `transfer_type`: Rail or chain (e.g., `wire`, `ach_credit`, `base`, `solana`); see [Transfer Types](/docs/coverage/transfer-types).
+- Always send both on transfers; a custodial address can hold multiple `value_type`/`transfer_type` pairs.
+
+## Idempotency
+
+- Send `Idempotency-Key` on all create POSTs; reuse the same key on retries of the same logical request.
+- Do not send `Idempotency-Key` on GETs.
+
+## Automations
+
+- Create virtual accounts that issue deposit instructions and resolve to addresses with specific rails/tokens.
+- Useful for mapped deposit flows (e.g., branded onramps) and to avoid manual routing.
+
+## Branding
+
+- Optional statement branding applies to ACH payouts only (`brand`/`branding`); not used for wire/RTP.
+
+## Authentication
+
+- Short-lived bearer tokens (~60 minutes); refresh using `expires_in` before expiry.
+- Scope credentials separately for testnet vs mainnet.
+
+## Quick references
+
+- Create external address: `POST /accounts/{account_id}/addresses/external`
+- List custodial addresses: `GET /accounts/{account_id}/addresses` (returns `type=internal`)
+- Create transfer: `POST /accounts/{account_id}/transfers` (requires `address_id`, `transfer_type`, `value_type`, `Idempotency-Key`)
