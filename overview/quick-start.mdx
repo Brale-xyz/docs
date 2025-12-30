@@ -1,10 +1,10 @@
 ---
-title: 'Quick Start - Your First Transfer'
+title: "Quick Start - Your First Transfer"
 ---
 
 <p class="intro-subheading">
-  Get authenticated, grab your IDs, and create your first stablecoin transfer in less than five
-  minutes.
+Get authenticated, grab your IDs, and create your first stablecoin transfer in less than five minutes.
+
 </p>
 
 ## 1. Sign up for Brale
@@ -37,7 +37,7 @@ curl --request POST \
   --data grant_type=client_credentials
 ```
 
-Using the Brale API Postman collection, you can configure the `client_id` and the `client_secret` environment variables that are used to authenticate against the API.
+Using the [Brale API Postman collection](https://www.postman.com/brale-xyz/brale-api/collection/37w2ro3/brale-api-v2-0), you can configure the `client_id` and the `client_secret` environment variables that are used to authenticate against the API.
 
 ![Image](/images/brale/brale-api-postman-collection-variables-dark@2x.png)
 
@@ -51,13 +51,13 @@ Now fetch your account ID that you will pass into subsequent requests. IDs are K
 
 **GET** `https://api.brale.xyz/accounts`
 
-```bash title="Request"
+```bash Request
 curl --request GET \
   --url https://api.brale.xyz/accounts \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
-```json title="Response"
+```json Response
 {
   "accounts": [
     "2Js1YFqlfxgNqC2KTPEjrWIwKU7" // Your account ID
@@ -73,7 +73,7 @@ Brale automatically creates custodial (internal) wallets for your account—you 
 
 **GET** `https://api.brale.xyz/accounts/:account_id/addresses`
 
-```bash title="Request"
+```bash Request
 # 👇 Set this once after Step 4
 ACCOUNT_ID="2Js1YFqlfxgNqC2KTPEjrWIwKU7"
 
@@ -82,7 +82,7 @@ curl --request GET \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
-```json title="Response"
+```json Response
 {
   "addresses": [
     {
@@ -114,10 +114,7 @@ curl --request GET \
 }
 ```
 
-:::info[Path Rule]
-Every endpoint that contains `{account_id}` must be called with the value you fetched in Step 4, e.g.
-`GET` `https://api.brale.xyz/accounts/2Js1YFqlfxgNqC2KTPEjrWIwKU7/addresses`. Do not send the account ID in the body or query string.
-:::
+:::info[Path Rule] Every endpoint that contains `{account_id}` must be called with the value you fetched in Step 4, e.g. `GET` `https://api.brale.xyz/accounts/2Js1YFqlfxgNqC2KTPEjrWIwKU7/addresses`. Do not send the account ID in the body or query string. :::
 
 ## 6. Create your first transfer (Idempotency-Key required)
 
@@ -127,7 +124,7 @@ Here's an example of onramping USD to SBC on Base via wire transfer. Include the
 
 **POST** `https://api.brale.xyz/accounts/your_account_id/transfers`
 
-```bash title="Request"
+```bash Request
 curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Content-Type: application/json" \
@@ -146,7 +143,7 @@ curl --request POST \
 
 The response will include the transfer, which is opened in a pending state and transitions to processing once fiat funds are received.
 
-```json title="Response"
+```json Response
 {
   "id": "2xNL6PAF0cbcQHyjMQJ2RKRfbD9",
   "status": "pending",
