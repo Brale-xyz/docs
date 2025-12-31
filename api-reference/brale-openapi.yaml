@@ -193,15 +193,11 @@ components:
         zip:
           type: string
           example: '12345'
-        country:
-          type: string
-          example: USA
       required:
         - street_line_1
         - city
         - state
         - zip
-        - country
     UltimateBeneficialOwner:
       title: UltimateBeneficialOwner
       type: object
@@ -711,9 +707,6 @@ components:
         zip:
           type: string
           example: '90001'
-        country:
-          type: string
-          example: USA
     ControllingParty:
       type: object
       additionalProperties: false
