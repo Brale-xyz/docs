@@ -1,32 +1,36 @@
 title: 'Transfer Types'
-description: 'Supported transfer rails for moving value on/off chain.'
+description: 'Supported transfer_type identifiers and names for moving value on/off chain.'
 ---
 
 Brale supports these transfer types for funding and payouts. Use them in `transfer_type` fields on addresses and transfers. Source: [TransferType.json](https://github.com/Brale-xyz/commons/blob/main/Resources/TransferType.json).
 
 ## Onchain
 
-- ethereum
-- base
-- solana
-- canton
-- stellar
-- polygon
-- avalanche
-- optimism
-- arbitrum
-- hedera
-- celo
-- kusama
-- spark
-- xrp_ledger
+| transfer_type (API id) | Name       |
+| ---------------------- | ---------- |
+| `ethereum`             | Ethereum   |
+| `base`                 | Base       |
+| `solana`               | Solana     |
+| `canton`               | Canton     |
+| `stellar`              | Stellar    |
+| `polygon`              | Polygon    |
+| `avalanche`            | Avalanche  |
+| `optimism`             | Optimism   |
+| `arbitrum`             | Arbitrum   |
+| `hedera`               | Hedera     |
+| `celo`                 | Celo       |
+| `kusama`               | Kusama     |
+| `spark`                | Spark      |
+| `xrp_ledger`           | XRP Ledger |
 
 ## Offchain
 
-- wire
-- ach-debit
-- ach-credit
-- same-day-ach-credit
-- rtp-credit
+| transfer_type (API id)    | Name                  |
+| ------------------------- | --------------------- |
+| `wire`                    | Wire Transfer         |
+| `ach-debit`               | ACH Debit             |
+| `ach-credit`              | ACH Credit            |
+| `same-day-ach-credit`     | Same Day ACH Credit   |
+| `rtp-credit`              | RTP Credit            |
 
 If you need additional rails, contact support@brale.xyz.
