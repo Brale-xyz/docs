@@ -65,6 +65,13 @@
             "pages": [
               "tools/calculators/stablecoin-calculators"
             ]
+          },
+          {
+            "group": "IO",
+            "pages": [
+              "io/introduction",
+              "io/url-navigation"
+            ]
           }
         ]
       },
@@ -97,13 +104,6 @@
             "pages": [
               "coverage/transfer-types",
               "coverage/value-types"
-            ]
-          },
-          {
-            "group": "IO",
-            "pages": [
-              "io/introduction",
-              "io/url-navigation"
             ]
           }
         ]
