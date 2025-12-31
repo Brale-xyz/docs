@@ -46,6 +46,13 @@
               "documentation/platform/tokenization",
               "documentation/platform/reserves"
             ]
+          },
+          {
+            "group": "Coverage",
+            "pages": [
+              "coverage/transfer-types",
+              "coverage/value-types"
+            ]
           }
         ]
       },
@@ -97,13 +104,6 @@
               "key-concepts/automations",
               "key-concepts/financial-institutions",
               "key-concepts/idempotency"
-            ]
-          },
-          {
-            "group": "Coverage",
-            "pages": [
-              "coverage/transfer-types",
-              "coverage/value-types"
             ]
           }
         ]
