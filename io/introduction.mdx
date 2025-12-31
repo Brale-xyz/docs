@@ -1,74 +1,86 @@
 ---
 title: 'IO Introduction'
+description: 'Fund stablecoins through Brale IO in a few quick steps.'
 ---
 
-## Brale IO Funding Stablecoin's
+Brale IO makes it easy to fund stablecoins and move assets. Follow these quick steps to go from signup to funded stablecoins.
 
-<p class="intro-subheading">
-  Brale IO makes it painless to fund stablecoins and move your assets when you need them.
-</p>
+<Steps>
+<Step title="Create your IO account">
+  Sign up at [app.brale.io/signup](https://app.brale.io/signup). Verify your email (or Google) with a 6-digit code, select your state, and complete identity checks.
 
-To get started, you can sign up for a free IO account [here](https://app.brale.io/signup).
+  <Columns cols={2}>
+    <Card>
+      <img src="/images/brale/io/enter-verification-code.png" alt="Enter verification code" style={{ width: '100%', maxWidth: '360px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/state-selection.png" alt="Select your state" style={{ width: '100%', maxWidth: '360px', borderRadius: '8px' }} />
+    </Card>
+  </Columns>
+</Step>
 
-- You will be prompted to enter your email address or the option to use Google 0Auth, so you can receive a 6-digit
-  verification code via email. From there you are prompted to select the state you operate in, and them you will need to a few key
-  pieces of information to verify your identity after designating what state you operate in.
+<Step title="Choose a stablecoin and chain">
+  On the dashboard, pick the stablecoin you want to mint and the chain to receive it.
 
-<div style={{ display: 'flex', gap: '1rem', height: 'auto' }}>
-  ![Enter verification code](/images/brale/io/enter-verification-code.png)
+  <Columns cols={2}>
+    <Card>
+      <img src="/images/brale/io/select-a-stablecoin.png" alt="Select stablecoin" style={{ width: '100%', maxWidth: '360px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/select-a-chain.png" alt="Select chain" style={{ width: '100%', maxWidth: '360px', borderRadius: '8px' }} />
+    </Card>
+  </Columns>
+</Step>
 
-  ![State selection](/images/brale/io/state-selection.png)
-</div>
+<Step title="Connect your destination wallet">
+  Connect the wallet that will receive the minted stablecoins. Use the Connect flow to pick from supported wallets.
 
-- Once your verification code is verified, you will be redirected to the IO Dashboard. On the dashboard, you will see a
-  few items, including the stablecoin you want to fund, the chain you want the coin minted on, the destination wallet,
-  and the amount of stablecoin you want to fund. Start by selecting the stablecoin you want to fund.
+  <Columns cols={3}>
+    <Card>
+      <img src="/images/brale/io/selected-chain.png" alt="Chain selected" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/connect-a-wallet.png" alt="Connect a wallet" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/connected-wallet.png" alt="Connected wallet" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+  </Columns>
+</Step>
 
-<div style={{ display: 'flex', gap: '1rem', height: 'auto' }}>
-  ![Selecting an stablecoin](/images/brale/io/select-a-stablecoin.png)
+<Step title="Fund and confirm">
+  Pick the source chain holding your USDC, review the details, and continue. Confirm to mint and transfer the stablecoins.
 
-  ![Selecting a chain](/images/brale/io/select-a-chain.png)
-</div>
+  <Columns cols={3}>
+    <Card>
+      <img src="/images/brale/io/continue-funding-stablecoin.png" alt="Continue to fund" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/funding-chain-selected.png" alt="Select funding chain" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/confirm-stablecoin-order.png" alt="Confirm order" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+  </Columns>
+</Step>
 
-- Next you can select the chain you want the coin minted on and connect a crypto wallet to IO; this will be the wallet
-  that will receive the stablecoins.
-  - In the destination wallet section, you can click the 'Connect' button, and you will be prompted to search for and
-    select your wallet from our supported wallet connections.
+<Step title="Sign and track status">
+  Sign the transaction in your connected wallet. Track status in IO and review recent activity.
 
-<div style={{ display: 'flex', gap: '1rem', height: 'auto' }}>
-  ![Selected a chain](/images/brale/io/selected-chain.png)
+  <Columns cols={3}>
+    <Card>
+      <img src="/images/brale/io/sign-transaction.png" alt="Sign transaction" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/transaction-complete.png" alt="Order status" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+    <Card>
+      <img src="/images/brale/io/activity-tab.png" alt="Activity tab" style={{ width: '100%', maxWidth: '320px', borderRadius: '8px' }} />
+    </Card>
+  </Columns>
+</Step>
+</Steps>
 
-![Connect a wallet](/images/brale/io/connect-a-wallet.png)
-
-  ![Connected wallet](/images/brale/io/connected-wallet.png)
-</div>
-
-- Once you have connected your wallet, you can click the 'Continue' button to fund your stablecoin. Here you will
-  need to select the chain you have the USDC on that you wish to fund the Stablecoin with.
-
-<div style={{ display: 'flex', gap: '1rem', height: 'auto' }}>
-  ![Continue to fund your stablecoin](/images/brale/io/continue-funding-stablecoin.png)
-
-![Select a chain to fund your stablecoin](/images/brale/io/funding-chain-selected.png)
-
-  ![Confirm stablecoin funding details](/images/brale/io/confirm-stablecoin-order.png)
-</div>
-
-- Confirm the funding details and click the 'Continue' button to view confirmation of your order and fund your
-  stablecoin. Once confirmed, and you click 'Submit' you will execute the minting, funding, and transfer of your
-  selected stablecoin asset.
-  - You will then be prompted to sign the transaction with your connected wallet in a browser pop-up.
-
-![Sign transaction](/images/brale/io/sign-transaction.png)
-
-- Once you have signed the transaction, the next page will show you the status of your order and status updates as it progresses
-  through minting and transferring your asset.
-
-<div style={{ display: 'flex', gap: '1rem', height: 'auto' }}>
-  ![Order status](/images/brale/io/transaction-complete.png)
-
-  ![Activity tab](/images/brale/io/activity-tab.png)
-</div>
-
-- Now you have your desired stablecoin asset in your connected wallet, you can use it in your applications or send it to another wallet.
-  From here you can click the 'Activity' tab at the top of the UI to view your recent stablecoin transactions.
+<Tip>
+Use testnet first if you’re validating flows. When ready for production, switch to your mainnet credentials and supported chains.
+</Tip>
