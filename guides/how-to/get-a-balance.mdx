@@ -3,8 +3,8 @@ title: "Get A Balance"
 description: "Query the stablecoin balance of an internal (custodial) address."
 ---
 
-## Prerequisites
-
+<Steps>
+<Step title="Prerequisites">
 - Get your `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
 - Get a custodial `address_id`: list addresses and choose one with `type=internal`:
 
@@ -13,35 +13,26 @@ curl --request GET \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
+</Step>
 
-## Overview
-
-Query the stablecoin balance of an internal (custodial) address. This endpoint requires both `transfer_type` and `value_type` because a single custodial address can hold multiple tokens across multiple chains.
-
-:::note
-Balances are only available for `type=internal` custodial addresses managed by Brale.
-:::
-
-## Endpoint
+<Step title="Call the balance endpoint">
+Use your `account_id` and an internal `address_id`. Balances require both `transfer_type` and `value_type`.
 
 `GET /accounts/{account_id}/addresses/{address_id}/balance`
 
-### Required query parameters
-
-| Parameter        | Description                     | Example            |
-| ---------------- | -------------------------------- | ------------------ |
-| `transfer_type`  | The blockchain network          | `solana`, `base`, `ethereum` |
-| `value_type`     | The token symbol (case-sensitive) | `SBC`, `USDC`, `PYUSD` |
-
-## Example request
+| Parameter        | Description                         | Example                  |
+| ---------------- | ----------------------------------- | ------------------------ |
+| `transfer_type`  | Blockchain network                  | `solana`, `base`, `ethereum` |
+| `value_type`     | Token symbol (case-sensitive)       | `SBC`, `USDC`, `PYUSD`   |
 
 ```bash
 curl --request GET \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}/balance?transfer_type=base&value_type=SBC" \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
+</Step>
 
-## Example response
+<Step title="Review the response">
 
 ```json
 {
@@ -57,9 +48,15 @@ curl --request GET \
   "transfer_type": "base"
 }
 ```
+</Step>
+</Steps>
+
+::::note
+Balances are only available for `type=internal` custodial addresses managed by Brale.
+::::
 
 ## Notes
-
 - Works only for internal custodial addresses (`type=internal`).
 - Always send both `transfer_type` and `value_type`; a custodial address can hold multiple tokens across chains.
-- See [Value Types](/coverage/value-types) and [Transfer Types](/docs/coverage/transfer-types) for supported combinations.
+- See [Value Types](/coverage/value-types) and [Transfer Types](/coverage/transfer-types) for supported combinations.
+
