@@ -1,4 +1,27 @@
 ---
-title: 'Tokenization'
+title: "Tokenization"
 ---
 
+Brale’s tokenization API lets you issue and operate your own tokens, such as a local-currency stablecoin, a points system, or a non-fiat asset, while using Brale for:
+
+- Key custody
+- Account and wallet orchestration
+- Mint and burn execution on supported chains
+- Unified reporting across tokenization activity
+
+When utilizing Brale tokenization, you are responsible for coordinating the reserve or backing assets, onramps, and offramps. Brale gives you the multi-chain issuance engine to match off chain reserves to onchain supply.
+
+## How you build with tokenization
+
+At a high level:
+
+1. Brale enables tokenization mode for your account.
+2. Brale configures your token on the chains you need.
+3. You use Accounts and Addresses to manage wallets and balances.
+4. You mint, burn, and transfer tokens via the tokenization API.
+5. You monitor activity via tokenization transaction reporting.
+
+## Next steps
+
+- Read the full implementation guide: [**Tokenization Overview**](https://brale.mintlify.app/guides/tokenization)
+- If you are launching a fiat-backed stablecoin where Brale is issuer, see: [**Stablecoin Issuance**](https://brale.mintlify.app/guides/stablecoin-issuance)
