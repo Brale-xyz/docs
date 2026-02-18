@@ -125,6 +125,7 @@
           {
             "group": "Workflows",
             "pages": [
+              "guides/ach-on-ramp",
               "guides/fiat-to-stablecoin-onramp",
               "guides/stablecoin-to-fiat-offramp",
               "guides/stablecoin-to-stablecoin-swap",
