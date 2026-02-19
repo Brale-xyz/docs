@@ -1,74 +1,65 @@
 ---
 title: "Get your custodial address_ids"
-description: "List your internal (custodial) addresses to retrieve address_ids for transfers and balances."
+description: "A custodial account_id is a internal (custodial) addresses. You can use custodial accounts to manage balances for specific workflows, or to hold onchain balances for others. To retrieve address_ids for transfers and balances."
 ---
 
 Use the Addresses API to fetch your custodial `address_id` values. These are required for transfers and balance checks.
 
 <Steps>
-<Step title="Prerequisite: get your account_id and a bearer token">
+  <Step title="Prerequisite: get your account_id and a bearer token">
+    - Get `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
+    - Get a bearer token using your client credentials:
 
-- Get `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
-- Get a bearer token using your client credentials:
+    ```bash
+    curl --request POST \
+      --url https://auth.brale.xyz/oauth2/token \
+      --header 'Authorization: Basic ${BASE_64_OF(client_id:client_secret)}' \
+      --header 'Content-Type: application/x-www-form-urlencoded' \
+      --data grant_type=client_credentials
+    ```
 
-```bash
-curl --request POST \
-  --url https://auth.brale.xyz/oauth2/token \
-  --header 'Authorization: Basic ${BASE_64_OF(client_id:client_secret)}' \
-  --header 'Content-Type: application/x-www-form-urlencoded' \
-  --data grant_type=client_credentials
-```
+    Use `Authorization: Bearer ${ACCESS_TOKEN}` for the next call.
+  </Step>
+  <Step title="List your addresses">
+    Call `GET /accounts/{account_id}/addresses` to retrieve custodial and external addresses. Filter for `type=internal` to get custodial addresses managed by Brale.
 
-Use `Authorization: Bearer ${ACCESS_TOKEN}` for the next call.
+    ```bash
+    curl --request GET \
+      --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
+      --header "Authorization: Bearer ${ACCESS_TOKEN}"
+    ```
 
-</Step>
+    Example response (truncated):
 
-<Step title="List your addresses">
-
-Call `GET /accounts/{account_id}/addresses` to retrieve custodial and external addresses. Filter for `type=internal` to get custodial addresses managed by Brale.
-
-```bash
-curl --request GET \
-  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
-  --header "Authorization: Bearer ${ACCESS_TOKEN}"
-```
-
-Example response (truncated):
-
-```json
-{
-  "addresses": [
+    ```json
     {
-      "id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
-      "name": "Custodial",
-      "status": "active",
-      "type": "internal",
-      "address": "0xB2952EDba91FeAeaDBeCC4030203367A5B9b4701",
-      "transfer_types": [
-        "avalanche",
-        "ethereum",
-        "base",
-        "polygon",
-        "solana"
+      "addresses": [
+        {
+          "id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+          "name": "Custodial",
+          "status": "active",
+          "type": "internal",
+          "address": "0xB2952EDba91FeAeaDBeCC4030203367A5B9b4701",
+          "transfer_types": [
+            "avalanche",
+            "ethereum",
+            "base",
+            "polygon",
+            "solana"
+          ]
+        }
+        // ...
       ]
     }
-    // ...
-  ]
-}
-```
-
-</Step>
-
-<Step title="Pick the right address_id">
-
-- Use `id` from an entry with `type=internal` for onchain/offchain transfers and balance checks.
-- Choose an address that supports the `transfer_type` you need (e.g., `base`, `solana`, `ethereum`).
-- Keep this `address_id` for subsequent calls (e.g., transfers, balances).
-
-</Step>
+    ```
+  </Step>
+  <Step title="Pick the right address_id">
+    - Use `id` from an entry with `type=internal` for onchain/offchain transfers and balance checks.
+    - Choose an address that supports the `transfer_type` you need (e.g., `base`, `solana`, `ethereum`).
+    - Keep this `address_id` for subsequent calls (e.g., transfers, balances).
+  </Step>
 </Steps>
 
 <Tip>
-For balances, pair the `address_id` with both `transfer_type` and `value_type` in `GET /accounts/{account_id}/addresses/{address_id}/balance`.
+  For balances, pair the `address_id` with both `transfer_type` and `value_type` in `GET /accounts/{account_id}/addresses/{address_id}/balance`.
 </Tip>
-
