@@ -25,7 +25,8 @@ As a quick aside, it is important to note, when making `POST` requests Brale req
 
 ## End Customer Account Creation
 
-- [Here is an example of how to get your `account_id`](https://brale.mintlify.app/guides/how-to/get-your-account-id)
+- [`Here is an example of how to get your account_id`](https://brale.mintlify.app/guides/how-to/get-your-account-id)
+
   ```tsx
   curl --request GET \
     --url https://api.brale.xyz/accounts \
@@ -72,9 +73,9 @@ Response Body Example:
 ## Setup addresses (Funding)
 
 - If the user wants to connect a financial institution to fund their stablecoin with, they will need to create an external address for it. The same goes for funding stablecoins with existing digital assets from an external wallet. When transferring to an external address (on-chain wallet or off-chain bank account), use:
-- **POST `/accounts/{account_id}/addresses/external`**
-- Include an **`Idempotency-Key`** header and a JSON body. Examples:
-  **On-chain wallet (e.g., Solana) request body example:**
+- **`POST /accounts/{account_id}/addresses/external`**
+- Include an **`Idempotency-Key`** header and a JSON body. Examples: **On-chain wallet (e.g., Solana) request body example:**
+
   ```json
   {
     "name": "User Solana Wallet",
@@ -82,10 +83,11 @@ Response Body Example:
     "transfer_types": ["solana"]
   }
   ```
+
   **Off-chain bank account request example:**
   - Partner will need to create a form that requests this information from end users to provide the below data
-  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”.
-    [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
+  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”. [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
+
   ```bash
   curl --request POST \
     --url https://api.brale.xyz/accounts/{account_id}/addresses/external \
@@ -96,8 +98,7 @@ Response Body Example:
   {
     "name": "Operating Account (ACH Debit)",
     "transfer_types": [
-      "ach_debit",
-      "same_day_ach_debit"
+      "ach_debit"
     ],
     "plaid_token": "PUBLIC_TOKEN_EXCHANGED_WITH_BRALE"
   }
@@ -109,9 +110,8 @@ Response Body Example:
 - At this stage your end users’ accounts should already be connected, where Brale will execute debits and mint to desired stablecoins from the process below:
 - You will need to call the following below endpoints with the relevant data to be able to execute a `swap` or a `transfer`.
   - Swap - Stablecoin to Stablecoin
-  - Transfer - Fiat to Stablecoin
-    Transfer scenarios:
-  - [Transfer scenarios: understanding `value_type` and `transfer_type`](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
+  - Transfer - Fiat to Stablecoin Transfer scenarios:
+  - [``Transfer scenarios: understanding value_type and transfer_type``](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
 
   **POST** **`https://api.brale.xyz/accounts/account_id/transfers`**
   - `USDC` to `SBC` request body example:
@@ -134,8 +134,7 @@ Response Body Example:
     }
   }
   ```
-
-  - [`USD` to `Stablecoin` request body example](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
+  - [``USD to Stablecoin request body example``](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
 
   ```json
   {
