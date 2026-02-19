@@ -1,5 +1,5 @@
 ---
-title: "ACH On-Ramp"
+title: "Fiat ACH to Stablecoin (Onramp)"
 description: "Create an ACH on-ramp to fund a stablecoin"
 ---
 
@@ -21,22 +21,21 @@ As a quick aside, it is important to note, when making `POST` requests Brale req
 
 ## Partner Account Creation
 
-- Customers will first need to self onboard at [**https://app.brale.xyz/signup**](https://app.brale.xyz/signup). This will create a record of your business in the Brale API that will have an account ID tied to it - which will be used by various operations throughout the API. Brale will then know which account ID (your company) to execute operations for.
+- Customers will first need to self onboard at [**https://app.brale.xyz/signup**](https://app.brale.xyz/signup). This will create a record of your business in the Brale API that will have an `account_id` tied to it - which will be used by various operations throughout the API. Brale will then know which `account_id` (your company) to execute operations for.
 
 ## End Customer Account Creation
 
-- Non-Managed account model: When you onboard in the Brale XYZ app, you will provide KYB information and this will create an `account_id` that you will use in your API requests. Get your `account_id` by listing with this endpoint: https://brale.mintlify.app/guides/how-to/get-your-account-id. The following HTTP request will provide your account ID(s).
-  - Get your `account_id` - https://brale.mintlify.app/guides/how-to/get-your-account-id
-    ```tsx
-    curl --request GET \
-      --url https://api.brale.xyz/accounts \
-      --header "Authorization: Bearer ${ACCESS_TOKEN}"
-    ```
+- [Here is an example of how to get your `account_id`](https://brale.mintlify.app/guides/how-to/get-your-account-id)
+  ```tsx
+  curl --request GET \
+    --url https://api.brale.xyz/accounts \
+    --header "Authorization: Bearer ${ACCESS_TOKEN}"
+  ```
 - Managed account model: where Partner’s end users can create an account under Partner account, where Partner will have access to those accounts. This will allow end users to view their account and transaction history for all onramp operations executed. The Partner will be able to execute onramp operations on behalf of the end users as well.
 
 ## **Create Plaid link token**
 
-- This will allow you to create a Plaid Token that you will need to use next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
+- The following request is an example of how to create a Plaid Token that you will need to use next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
 - **iOS/Android considerations (Plaid Link):**
   - Your backend should create the `link_token`. Your mobile app uses the `link_token` to initialize Plaid Link.
   - Configure a **redirect URI** in your Plaid dashboard (and in your mobile app) so Plaid can return the user back to your app after they finish the Link flow.
@@ -86,7 +85,7 @@ Response Body Example:
   **Off-chain bank account request example:**
   - Partner will need to create a form that requests this information from end users to provide the below data
   - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”.
-  [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
+    [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
   ```bash
   curl --request POST \
     --url https://api.brale.xyz/accounts/{account_id}/addresses/external \
@@ -111,11 +110,12 @@ Response Body Example:
 - You will need to call the following below endpoints with the relevant data to be able to execute a `swap` or a `transfer`.
   - Swap - Stablecoin to Stablecoin
   - Transfer - Fiat to Stablecoin
-  Transfer scenarios:
+    Transfer scenarios:
   - [Transfer scenarios: understanding `value_type` and `transfer_type`](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
-  - USD to Stablecoin
+
   **POST** **`https://api.brale.xyz/accounts/account_id/transfers`**
   - `USDC` to `SBC` request body example:
+
   ```json
   {
     "amount": {
@@ -134,7 +134,9 @@ Response Body Example:
     }
   }
   ```
-- [`USD` to `Stablecoin` request body example](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
+
+  - [`USD` to `Stablecoin` request body example](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
+
   ```json
   {
     "amount": {
