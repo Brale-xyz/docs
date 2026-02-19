@@ -8,6 +8,8 @@ title: "Branded Transfers"
 
 When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** on the ACH transaction (instead of “Brale”).
 
+Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit.
+
 To learn more and see a demo, schedule a meeting to [talk to sales](https://brale.xyz/contact).
 
 ## Creating 2nd/3rd Party Transfers branded transfers
@@ -16,9 +18,9 @@ To learn more and see a demo, schedule a meeting to [talk to sales](https://bral
 
 Use the `brand` object to control the business name displayed to the receiver. Pass the target account inside the request body under `brand.account_id`. The `brand.account_id` is the **Account whose name should appear** to the receiver.
 
-- `account_id: aB3hJkL9mN2PqRsTuvWxyz1234` = `Company Alpha`
-  - Your business (Brale's direct customer)
-- `account_id: 34fcsGrCgN0Z9zC1v55eP0I6AKW` = `Company Beta`
+- `account_id: aB3hJkL9mN2PqRsTuvWxyz1234` = `Company 1`
+  - Your business 
+- `account_id: 34fcsGrCgN0Z9zC1v55eP0I6AKW` = `Company 2`
   - Your customer
 
 If you omit `brand`, the transfer uses your default branding.
@@ -32,9 +34,9 @@ If you omit `brand`, the transfer uses your default branding.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
-`brand.account_id` = `aB3hJkL9mN2PqRsTuvWxyz1234` (Company Alpha)
+`brand.account_id` = `aB3hJkL9mN2PqRsTuvWxyz1234` (Company 1)
 
-The receiver will see **Company Alpha** as the name on the ACH transaction.
+The receiver will see **Company 1** as the name on the ach_debit transaction.
 
 ```json Request
 {
@@ -44,7 +46,7 @@ The receiver will see **Company Alpha** as the name on the ACH transaction.
   },
   "source": {
     "value_type": "USD",
-    "transfer_type": "ach-debit",
+    "transfer_type": "ach_debit",
     "address_id": "34R7rk6hBuBl8Dmytqyz3iSSSQd"
   },
   "destination": {
@@ -64,13 +66,13 @@ The receiver will see **Company Alpha** as the name on the ACH transaction.
 }
 ```
 
-### Example of a 3rd Party Transfer (brand = your customer)
+### Example of a 3rd Party Transfer (Company 2 = your customer)
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
 `brand.account_id` = `34fcsGrCgN0Z9zC1v55eP0I6AKW` (Company Beta)
 
-The receiver will see Company Beta as the originator name on the ACH transaction.
+The receiver will see Company 2 as the originator name on the ach_debit transaction.
 
 ```json Request
 {
@@ -80,7 +82,7 @@ The receiver will see Company Beta as the originator name on the ACH transaction
   },
   "source": {
     "value_type": "USD",
-    "transfer_type": "ach-debit",
+    "transfer_type": "ach_debit",
     "address_id": "34R7rk6hBuBl8Dmytqyz3iSSSQd"
   },
   "destination": {
