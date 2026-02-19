@@ -12,10 +12,10 @@ As a quick aside, it is important to note, when making `POST` requests Brale req
 ---
 
 - **Sandbox Environment**
-    - If users wants to first test the below endpoints in sanbox, they will need to create API credentials that are scoped to testnet - please follow the below link for more information:
-        - [Sandbox and Testnet walkthrough](https://brale.mintlify.app/overview/sandbox-and-testnet)
+  - If users wants to first test the below endpoints in sanbox, they will need to create API credentials that are scoped to testnet - please follow the below link for more information:
+    - [Sandbox and Testnet walkthrough](https://brale.mintlify.app/overview/sandbox-and-testnet)
 - **Production Environment**
-    - Partners can leverage the below production APIs by using their original API keys they received when they create their account with Brale.
+  - Partners can leverage the below production APIs by using their original API keys they received when they create their account with Brale.
 
 ---
 
@@ -26,24 +26,22 @@ As a quick aside, it is important to note, when making `POST` requests Brale req
 ## End Customer Account Creation
 
 - Non-Managed account model: When you onboard in the Brale XYZ app, you will provide KYB information and this will create an `account_id` that you will use in your API requests. Get your `account_id` by listing with this endpoint: https://brale.mintlify.app/guides/how-to/get-your-account-id. The following HTTP request will provide your account ID(s).
-    - Get your `account_id` - https://brale.mintlify.app/guides/how-to/get-your-account-id
-        
-        ```tsx
-        curl --request GET \
-          --url https://api.brale.xyz/accounts \
-          --header "Authorization: Bearer ${ACCESS_TOKEN}"
-        ```
-        
+  - Get your `account_id` - https://brale.mintlify.app/guides/how-to/get-your-account-id
+    ```tsx
+    curl --request GET \
+      --url https://api.brale.xyz/accounts \
+      --header "Authorization: Bearer ${ACCESS_TOKEN}"
+    ```
 - Managed account model: where Partner’s end users can create an account under Partner account, where Partner will have access to those accounts. This will allow end users to view their account and transaction history for all onramp operations executed. The Partner will be able to execute onramp operations on behalf of the end users as well.
 
 ## **Create Plaid link token**
 
 - This will allow you to create a Plaid Token that you will need to use next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
 - **iOS/Android considerations (Plaid Link):**
-    - Your backend should create the `link_token`. Your mobile app uses the `link_token` to initialize Plaid Link.
-    - Configure a **redirect URI** in your Plaid dashboard (and in your mobile app) so Plaid can return the user back to your app after they finish the Link flow.
-    - Use either a **custom URL scheme** (e.g., `myapp://plaid-redirect`) or a **universal/app link** (e.g., `https://example.com/plaid-redirect`) depending on your app’s setup.
-    - Make sure the redirect URI configured in Plaid **exactly matches** what the app is registered to handle, otherwise the Link handoff back to the app can fail.
+  - Your backend should create the `link_token`. Your mobile app uses the `link_token` to initialize Plaid Link.
+  - Configure a **redirect URI** in your Plaid dashboard (and in your mobile app) so Plaid can return the user back to your app after they finish the Link flow.
+  - Use either a **custom URL scheme** (e.g., `myapp://plaid-redirect`) or a **universal/app link** (e.g., `https://example.com/plaid-redirect`) depending on your app’s setup.
+  - Make sure the redirect URI configured in Plaid **exactly matches** what the app is registered to handle, otherwise the Link handoff back to the app can fail.
 
 ```bash
 curl --request POST \
@@ -75,98 +73,84 @@ Response Body Example:
 ## Setup addresses (Funding)
 
 - If the user wants to connect a financial institution to fund their stablecoin with, they will need to create an external address for it. The same goes for funding stablecoins with existing digital assets from an external wallet. When transferring to an external address (on-chain wallet or off-chain bank account), use:
-    - **POST `/accounts/{account_id}/addresses/external`**
-    - Include an **`Idempotency-Key`** header and a JSON body. Examples:
-    
-    **On-chain wallet (e.g., Solana) request body example:**
-    
-    ```json
-    {
-      "name": "User Solana Wallet",
-      "address": "7xKXtg...",
-      "transfer_types": ["solana"]
-    }
-    ```
-    
-    **Off-chain bank account request example:** 
-    
-    - Partner will need to create a form that requests this information from end users to provide the below data
-    - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”.
-    
-    [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
-    
-    ```bash
-    curl --request POST \
-      --url https://api.brale.xyz/accounts/{account_id}/addresses/external \
-      --header 'Authorization: Bearer <token>' \
-      --header 'Content-Type: application/json' \
-      --header 'Idempotency-Key: <idempotency-key>' \
-      --data '
-    {
-      "name": "Operating Account (ACH Debit)",
-      "transfer_types": [
-        "ach_debit",
-        "same_day_ach_debit"
-      ],
-      "plaid_token": "PUBLIC_TOKEN_EXCHANGED_WITH_BRALE"
-    }
-    '
-    ```
-    
+- **POST `/accounts/{account_id}/addresses/external`**
+- Include an **`Idempotency-Key`** header and a JSON body. Examples:
+  **On-chain wallet (e.g., Solana) request body example:**
+  ```json
+  {
+    "name": "User Solana Wallet",
+    "address": "7xKXtg...",
+    "transfer_types": ["solana"]
+  }
+  ```
+  **Off-chain bank account request example:**
+  - Partner will need to create a form that requests this information from end users to provide the below data
+  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”.
+  [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
+  ```bash
+  curl --request POST \
+    --url https://api.brale.xyz/accounts/{account_id}/addresses/external \
+    --header 'Authorization: Bearer <token>' \
+    --header 'Content-Type: application/json' \
+    --header 'Idempotency-Key: <idempotency-key>' \
+    --data '
+  {
+    "name": "Operating Account (ACH Debit)",
+    "transfer_types": [
+      "ach_debit",
+      "same_day_ach_debit"
+    ],
+    "plaid_token": "PUBLIC_TOKEN_EXCHANGED_WITH_BRALE"
+  }
+  '
+  ```
 
 ## Requesting Mint/On-ramping
 
 - At this stage your end users’ accounts should already be connected, where Brale will execute debits and mint to desired stablecoins from the process below:
 - You will need to call the following below endpoints with the relevant data to be able to execute a `swap` or a `transfer`.
-    - Swap - Stablecoin to Stablecoin
-    - Transfer - Fiat to Stablecoin
-    
-    Transfer scenarios:
-    
-    - [Transfer scenarios: understanding `value_type` and `transfer_type`](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
-    - USD to Stablecoin
-    
-    **POST** **`https://api.brale.xyz/accounts/account_id/transfers`**
-    
-    - USDC to SBC request body example:
-    
-    ```json
-    {
-      "amount": {
-        "value": "100",
-        "currency": "USD"
-      },
-      "source": {
-        "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
-        "value_type": "USDC",
-        "transfer_type": "Solana"
-      },
-      "destination": {
-        "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
-        "value_type": "YSBC",
-        "transfer_type": "Solana"
-      }
+  - Swap - Stablecoin to Stablecoin
+  - Transfer - Fiat to Stablecoin
+  Transfer scenarios:
+  - [Transfer scenarios: understanding `value_type` and `transfer_type`](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
+  - USD to Stablecoin
+  **POST** **`https://api.brale.xyz/accounts/account_id/transfers`**
+  - `USDC` to `SBC` request body example:
+  ```json
+  {
+    "amount": {
+      "value": "100",
+      "currency": "USD"
+    },
+    "source": {
+      "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+      "value_type": "USDC",
+      "transfer_type": "Solana"
+    },
+    "destination": {
+      "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+      "value_type": "YSBC",
+      "transfer_type": "Solana"
     }
-    ```
-    
-    - [USD to Stablecoin request body example](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
-    
-    ```json
-    {
-      "amount": {
-        "value": "1",
-        "currency": "USD"
-      },
-      "source": {
-        "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",  // address_id is the primitive, even for onchain sources
-        "value_type": "USD",
-        "transfer_type": "wire"
-      },
-      "destination": {
-        "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
-        "value_type": "SBC",
-        "transfer_type": "polygon"
-      },
-      "brand": { "account_id": "34lCJZ2bxbPAzB3ou67Md01veUo" }
-    }
-    ```
+  }
+  ```
+- [`USD` to `Stablecoin` request body example](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
+  ```json
+  {
+    "amount": {
+      "value": "1",
+      "currency": "USD"
+    },
+    "source": {
+      "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4", // address_id is the primitive, even for onchain sources
+      "value_type": "USD",
+      "transfer_type": "ach_debit"
+    },
+    "destination": {
+      "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+      "value_type": "SBC",
+      "transfer_type": "polygon"
+    },
+    "brand": { "account_id": "34lCJZ2bxbPAzB3ou67Md01veUo" }
+  }
+  ```

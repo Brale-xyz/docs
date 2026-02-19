@@ -1,10 +1,10 @@
 ---
-title: 'Transfers'
+title: "Transfers"
 ---
 
 <p class="intro-subheading">
-  Transfers enable the movement of funds between fiat and stablecoins, stablecoin-to-stablecoin
-  conversions, and stablecoin-to-fiat transactions.
+  Transfers enable the movement of funds between fiat and stablecoins,
+  stablecoin-to-stablecoin conversions, and stablecoin-to-fiat transactions.
 </p>
 
 **Key rules**
@@ -43,14 +43,14 @@ Each source and destination includes:
 
 ## Transfer Scenarios: understanding `value_type` and `transfer_type`
 
-| Flow                                | Source              | Destination                            | Description                                |
-| ----------------------------------- | ------------------- | -------------------------------------- | ------------------------------------------ |
-| Onramp<br/>(Fiat → Stablecoin)      | USD / wire          | SBC / base                             | Mint SBC on Base funded by wire deposit    |
-| Offramp<br/>(Stablecoin → Fiat)     | SBC / solana        | USD / ACH                              | Redeem SBC on Solana to USD via ACH        |
-| Swap<br/>(Stablecoin ↔ Stablecoin)  | USDC / solana       | SBC / solana                           | 1:1 swap from USDC to SBC with no slippage |
-| On-chain Payout                     | USDC / polygon      | USDC / polygon (external address)      | Pay a recipient wallet                     |
-| USDC off-ramp (wire)                | USDC / polygon      | USD / wire                             | Offramp USDC to wire                       |
-| SBC branded ACH payout (ACH only)   | SBC / base          | USD / ach_credit + brand (ACH only)    | ACH payout with brand on statement         |
+| Flow                               | Source         | Destination                         | Description                                |
+| ---------------------------------- | -------------- | ----------------------------------- | ------------------------------------------ |
+| Onramp<br/>(Fiat → Stablecoin)     | USD / wire     | SBC / base                          | Mint SBC on Base funded by wire deposit    |
+| Offramp<br/>(Stablecoin → Fiat)    | SBC / solana   | USD / ACH                           | Redeem SBC on Solana to USD via ACH        |
+| Swap<br/>(Stablecoin ↔ Stablecoin) | USDC / solana  | SBC / solana                        | 1:1 swap from USDC to SBC with no slippage |
+| On-chain Payout                    | USDC / polygon | USDC / polygon (external address)   | Pay a recipient wallet                     |
+| USDC off-ramp (wire)               | USDC / polygon | USD / wire                          | Offramp USDC to wire                       |
+| SBC branded ACH payout (ACH only)  | SBC / base     | USD / ach_credit + brand (ACH only) | ACH payout with brand on statement         |
 
 Every request is scoped to an account, so the path always starts with:
 
@@ -120,14 +120,14 @@ Onramp to your stablecoin by debiting a Plaid connected address.
     "currency": "USD"
   },
   "source": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",  // address_id is the primitive, even for onchain sources
-    "value_type": "SBC",
-    "transfer_type": "polygon"
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4", // address_id is the primitive, even for onchain sources
+    "value_type": "USD",
+    "transfer_type": "ach_debit"
   },
   "destination": {
     "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
-    "value_type": "USD",
-    "transfer_type": "wire"
+    "value_type": "SBC",
+    "transfer_type": "polygon"
   },
   "brand": { "account_id": "34lCJZ2bxbPAzB3ou67Md01veUo" }
 }
