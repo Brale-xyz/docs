@@ -1,22 +1,19 @@
 ---
-title: "Fiat Wire to Stablecoin (Onramp)"
+title: "wire to Stablecoin (Onramp)"
 ---
 
 <p className="intro-subheading">
-Brale makes it easy for you and your customers to convert USD into stablecoins via wire transfer or ACH.
-
+  Brale makes it easy for you and your customers to convert USD into stablecoins via wire transfer or ACH.
 </p>
 
-There are two ways to onramp to stablecoins through the Brale API:
+There are two ways to onramp to stablecoins via the Brale API using wire as a transfer type:
 
-- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `wire`, or `ach_debit`.
+- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `wire`
 - Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received (Automatic Onramp)
-
-Businesses can also onramp directly via the Brale Dashboard, and individuals can onramp through [Brale.io](https://brale.io/).
 
 ## Fiat to Stablecoin via Wire
 
-Here is an example of onramping to your own stablecoin (YSBC) via wire transfer by calling the Transfers endpoint with the source `transfer_type` of `wire`.
+Here is an example of onramping to your own stablecoin (SBC) via wire transfer by calling the Transfers endpoint with the source `transfer_type` of `wire`.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
@@ -139,8 +136,7 @@ Query a transfer that has been created.
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
-Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically mints stablecoins to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in customers' wallets.
-
+  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically mints stablecoins to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in customers' wallets.
 </div>
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
