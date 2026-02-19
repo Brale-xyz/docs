@@ -1,17 +1,18 @@
 ---
-title: "wire to Stablecoin (Onramp)"
+title: "wire or ach_debit to custodial wallet"
 ---
 
 <p className="intro-subheading">
-  Brale makes it easy for you and your customers to convert USD into stablecoins via wire transfer or ACH.
+  Brale makes it easy for you to fund stablecoins in custodial wallets via offchain transfer types like ach\_credit, or wire.
+
+  There are three common ways of funding a custodial wallet at brale (Type=Internal) using offchain transfers:
 </p>
 
-There are two ways to onramp to stablecoins via the Brale API using wire as a transfer type:
-
 - Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `wire`
-- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received (Automatic Onramp)
+- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `ach_debit`
+- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received via ach or wire.
 
-## Fiat to Stablecoin via Wire
+## Submitting a Transfer request with a source value_type of `wire`
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by calling the Transfers endpoint with the source `transfer_type` of `wire`.
 
@@ -60,9 +61,9 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
 
 Initially, the status of the transfer will be `pending`. Once Brale receives the funds at the bank account provided in `source_deposit_instructions` the stablecoins will immediately be minted to the destination wallet.
 
-## Fiat to Stablecoin via ACH Debit
+## Submitting a Transfer request with a source value_type of `ach_debit`
 
-You can initiate ACH debits (same day or standard) from Plaid-linked addresses. See [Addresses](https://docs.brale.xyz/key-concepts/addresses) for the full flow of linking Plaid accounts as addresses you can pull from.
+You can initiate ACH debits from Plaid-linked addresses. See [Addresses](https://docs.brale.xyz/key-concepts/addresses) for the full flow of linking Plaid accounts as addresses you can pull from. This guide is specifically designed for first party funding of stablecoin mints, into a Brale custodial wallet.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
@@ -136,7 +137,7 @@ Query a transfer that has been created.
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
-  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically mints stablecoins to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in customers' wallets.
+  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically reconcials funds received and mints them to a bound wallet address. 
 </div>
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
@@ -157,7 +158,7 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
 }
 ```
 
-Automations are opened in a pending state and automatically transition into processing. Once virtual accounts are created and the automation is ready to use, it will transition to a completed status.
+Automations are opened in a pending state and automatically transition into processing. 
 
 When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
 
