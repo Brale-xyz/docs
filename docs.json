@@ -19,7 +19,7 @@
         {
           "anchor": "API Logs",
           "icon": "database",
-          "href": "https://status.brale.xyz"
+          "href": "https://app.brale.xyz/api?tab=activity"
         }
       ]
     },
