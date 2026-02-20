@@ -79,6 +79,12 @@
               "io/introduction",
               "io/url-navigation"
             ]
+          },
+          {
+            "group": "MCP",
+            "pages": [
+              "api-mcp-server"
+            ]
           }
         ]
       },
