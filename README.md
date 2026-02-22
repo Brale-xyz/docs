@@ -1,43 +1,22 @@
-# Mintlify Starter Kit
+# Brale API Docs
 
-Use the starter kit to get your docs deployed and ready to customize.
+This is documentation for the [Brale](https://brale.xyz) stablecoin infrastructure API. Live at [docs.brale.xyz](https://docs.brale.xyz).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+Brale provides stablecoin infrastructure. Issue your own stablecoin, move value between fiat and stablecoins across chains, and manage accounts and transfers through a single API. Brale supports 20+ blockchains in virtually infinite variations including Paxos, Brale, and Circle issued stablecoins.
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+## Getting started
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+- [Quick Start](https://docs.brale.xyz/overview/quick-start) — authenticate, grab your IDs, create your first transfer
+- [Key Concepts](https://docs.brale.xyz/key-concepts/api-concepts-overview) — transfers, accounts, addresses, automations
+- [API Reference](https://docs.brale.xyz/api-reference/brale-introduction) — endpoint docs generated from the [OpenAPI spec](https://api.brale.xyz/openapi)
+- [Guides](https://docs.brale.xyz/guides/ach-on-ramp) — step-by-step workflows for onramps, offramps, swaps, and payouts
 
-## Development
+## Found an issue?
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+Open a pull request. 
 
-```
-npm i -g mint
-```
+## Links
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
-
-```
-mint dev
-```
-
-View your local preview at `http://localhost:3000`.
-
-## Publishing changes
-
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
-
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+- [docs.brale.xyz](https://docs.brale.xyz) — live docs
+- [app.brale.xyz](https://app.brale.xyz) — dashboard
+- [api.brale.xyz/openapi](https://api.brale.xyz/openapi) — OpenAPI spec
