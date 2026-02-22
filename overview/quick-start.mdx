@@ -1,112 +1,96 @@
 ---
-title: "Quick Start - Your First Transfer"
+title: "Quick Start - Your First Brale Stablecoin Transfer"
 description: "Get authenticated, grab your IDs, and create your first stablecoin transfer in minutes."
 ---
 
+Before you start: you need a Brale account ([sign up](https://app.brale.xyz/signup), KYB started/completed), an API client created in the Dashboard for the right environment (testnet or mainnet), and `curl` or any HTTP client.
+
 <Steps>
-<Step title="Prerequisites">
-- Brale account (KYB started/completed)
-- API client created for the right environment (testnet or mainnet)
-- `curl` (or HTTP client) and ability to Base64-encode `client_id:client_secret`
-</Step>
+  <Step title="Authenticate">
+    Create an API client in the Dashboard (keys shown once — store securely). Clients are environment-scoped; use testnet while integrating, mainnet when ready to move value.
 
-<Step title="Quick path (copy/paste)">
-1) Auth → `access_token`  
-2) Get `account_id`  
-3) Get custodial `address_id` (internal)  
-4) POST transfer with `Idempotency-Key`  
-5) Poll transfers for status
-</Step>
+    Tokens expire in ~60 minutes; refresh using `expires_in` before expiry.
 
-<Step title="Sign up for Brale">
-Complete KYB to enable API access: [Sign up](https://app.brale.xyz/signup).
-</Step>
+    ```bash
+    CLIENT_CREDENTIALS=$(echo -n "${CLIENT_ID}:${CLIENT_SECRET}" | base64)
+    
+    curl --request POST \
+      --url https://auth.brale.xyz/oauth2/token \
+      --header "Authorization: Basic ${CLIENT_CREDENTIALS}" \
+      --header 'Content-Type: application/x-www-form-urlencoded' \
+      --data grant_type=client_credentials
+    ```
 
-<Step title="Create API credentials (mainnet vs testnet)">
-Create an API client in the Dashboard (keys shown once—store securely). Clients are environment-scoped; use testnet while integrating, mainnet when ready to move value.
-</Step>
+    Expected: `access_token`, `token_type` (Bearer), `expires_in`.
+  </Step>
+  <Step title="Get your account_id">
+    Use the bearer token from the previous step. The response contains your `account_id` — a 27-character KSUID.
 
-<Step title="Authenticate (client_credentials; short-lived tokens)">
-Tokens expire in ~60 minutes; refresh using `expires_in` before expiry.
+    ```bash
+    curl --request GET \
+      --url https://api.brale.xyz/accounts \
+      --header "Authorization: Bearer ${AUTH_TOKEN}"
+    ```
+  </Step>
+  <Step title="Get your custodial address_id">
+    Brale auto-creates internal wallets (EVM, Solana, Stellar) when your account is provisioned. List them:
 
-```bash
-curl --request POST \
-  --url https://auth.brale.xyz/oauth2/token \
-  --header 'Authorization: Basic ${BASE_64_OF(client_id:client_secret)}' \
-  --header 'Content-Type: application/x-www-form-urlencoded' \
-  --data grant_type=client_credentials
-```
+    ```bash
+    ACCOUNT_ID="2awTHmuEhx4Rjhqf9bWhSJNeNq2"  # replace with your account_id
+    
+    curl --request GET \
+      --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
+      --header "Authorization: Bearer ${AUTH_TOKEN}"
+    ```
 
-Expected: `access_token`, `token_type` (Bearer), `expires_in`.
-</Step>
+    Pick the `address_id` whose `transfer_types` array includes the chain you want to land on (e.g., `base`).
 
-<Step title="Get your `account_id` (KSUID)">
-Use the bearer token from the previous step.
+    <Accordion title="Supported transfer_types (mainnet/testnet)">
+      **Mainnet (onchain):** `ethereum`, `base`, `solana`, `canton`, `stellar`, `polygon`, `avalanche`, `optimism`, `arbitrum`, `hedera`, `celo`, `kusama`, `spark`, `xrp_ledger`
 
-```bash
-curl --request GET \
-  --url https://api.brale.xyz/accounts \
-  --header "Authorization: Bearer ${AUTH_TOKEN}"
-```
-</Step>
+      **Offchain:** `wire`, `ach_debit`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`
 
-<Step title="Get your custodial `address_id` (internal)">
-Brale auto-creates internal wallets (EVM, Solana, Stellar). Use your `ACCOUNT_ID`.
+      **Testnet:** `base_sepolia`, `canton_testnet`, `amoy`, `sepolia`, `solana_devnet`, `xion_testnet`, `tempo_testnet`
+    </Accordion>
+  </Step>
+  <Step title="Create your first transfer">
+    Example: offchain wire → onchain stablecoin on Base. Always send a unique `Idempotency-Key` per logical transfer and reuse it on retries.
 
-```bash
-ACCOUNT_ID="2Js1YFqlfxgNqC2KTPEjrWIwKU7"
+    > Examples use **SBC** as the placeholder stablecoin. Replace it with your own stablecoin ticker (e.g., USDGLO, USDB). See [Value Types](/coverage/value-types) for the full list.
 
-curl --request GET \
-  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses" \
-  --header "Authorization: Bearer ${AUTH_TOKEN}"
-```
+    ```bash
+    ADDRESS_ID="2bFGkrQ7mPp8dCvBNx1TqWYz5kj"  # replace with your address_id
+    
+    curl --request POST \
+      --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
+      --header "Content-Type: application/json" \
+      --header "Authorization: Bearer ${AUTH_TOKEN}" \
+      --header "Idempotency-Key: $(uuidgen)" \
+      --data '{
+        "amount": { "value": "10", "currency": "USD" },
+        "source": { "value_type": "USD", "transfer_type": "wire" },
+        "destination": {
+          "address_id": "'"${ADDRESS_ID}"'",
+          "value_type": "SBC",
+          "transfer_type": "base"
+        }
+      }'
+    ```
 
-<details>
-<summary>Supported transfer_types (mainnet/testnet)</summary>
-
-**Mainnet (onchain):** `ethereum`, `base`, `solana`, `canton`, `stellar`, `polygon`, `avalanche`, `optimism`, `arbitrum`, `hedera`, `celo`, `kusama`, `spark`, `xrp_ledger`  
-**Offchain:** `wire`, `ach-debit`, `ach-credit`, `same-day-ach-credit`, `rtp-credit`  
-**Testnet:** `base_sepolia`, `canton_testnet`, `amoy`, `sepolia`, `solana_devnet`, `xion_testnet`, `tempo_testnet`
-</details>
-</Step>
-
-<Step title="Create your first transfer (Idempotency-Key required)">
-Example: offchain wire → onchain stablecoin on Base. Always send a unique `Idempotency-Key` per logical transfer and reuse on retries.
-
-Headers: `Authorization: Bearer`, `Content-Type: application/json`, `Idempotency-Key: $(uuidgen)`
-
-```bash
-ADDRESS_ID="2MhCCIHulVdXrHiEuQDJvnKbSkl"
-
-curl --request POST \
-  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
-  --header "Content-Type: application/json" \
-  --header "Authorization: Bearer ${AUTH_TOKEN}" \
-  --header "Idempotency-Key: $(uuidgen)" \
-  --data '{
-    "amount": { "value": "10", "currency": "USD" },
-    "source": { "value_type": "USD", "transfer_type": "wire" },
-    "destination": {
-      "address_id": "'"${ADDRESS_ID}"'",
-      "value_type": "SBC",
-      "transfer_type": "base"
-    }
-  }'
-```
-</Step>
-
-<Step title="Poll and reconcile">
-- Poll `GET /accounts/{account_id}/transfers` with pagination; store `id`, idempotency key, timestamps, status, references.
-- On 401, refresh the token and retry idempotently with the same `Idempotency-Key`.
-</Step>
+    > **Testnet?** Use testnet transfer_types instead: `base_sepolia`, `solana_devnet`, `sepolia`, etc. 
+  </Step>
+  <Step title="Poll for status">
+    Poll `GET /accounts/{account_id}/transfers` with pagination. Store `id`, idempotency key, timestamps, status, and references for reconciliation. On 401, refresh the token and retry with the same `Idempotency-Key`.
+  </Step>
 </Steps>
 
 ## Common errors
-- `403 network_not_supported`: Using a testnet client/token on mainnet (or vice versa). Mint a token with a client for the target environment.
-- `404 compatible_address_not_found`: Address doesn’t support the `transfer_type`, typo in `address_id`, or wrong `account_id` in the path.
+
+- `403 network_not_supported`: Using a testnet client/token on mainnet (or vice versa). Create a client for the target environment.
+- `404 compatible_address_not_found`: Address doesn't support the `transfer_type`, typo in `address_id`, or wrong `account_id` in the path.
 - `400 missing Idempotency-Key`: All POST creates must include `Idempotency-Key`.
 
 ## Next steps
+
 - See Guides for on/off-ramps, swaps, payouts.
 - For production hardening, review Troubleshooting and Coverage (transfer_types, value_types).
-
