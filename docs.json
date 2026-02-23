@@ -1,13 +1,21 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Brale API Docs",
+  "name": "Brale",
+  "description": "API documentation for issuing, moving, and managing stablecoins on any blockchain with Brale.",
   "colors": {
     "primary": "#000000",
     "light": "#6938EF",
     "dark": "#18181B"
   },
   "favicon": "/favicon.svg",
+  "seo": {
+    "indexing": "all",
+    "metatags": {
+      "og:site_name": "Brale",
+      "og:image": "https://docs.brale.xyz/images/brale/brale-logo-light.svg"
+    }
+  },
   "navigation": {
     "global": {
       "anchors": [
@@ -192,21 +200,30 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
       "github": "https://github.com/Brale-xyz"
     }
   },
-  "openapi": "https://api.brale.xyz/openapi"
+  "openapi": "https://api.brale.xyz/openapi",
+  "redirects": [
+    {
+      "source": "/docs/:slug*",
+      "destination": "/documentation/:slug*"
+    },
+    {
+      "source": "/reference/:slug*",
+      "destination": "/api-reference/brale/:slug*"
+    }
+  ]
 }
-
