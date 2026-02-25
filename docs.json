@@ -8,7 +8,7 @@
     "light": "#6938EF",
     "dark": "#18181B"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/brale/favicon@2x.png",
   "seo": {
     "indexing": "all",
     "metatags": {
@@ -41,7 +41,8 @@
             "group": "API Design",
             "pages": [
               "documentation/api-design/primitives",
-              "documentation/api-design/structure"
+              "documentation/api-design/structure",
+              "documentation/api-design/example-standard"
             ]
           },
           {
