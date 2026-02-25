@@ -91,7 +91,7 @@
           {
             "group": "MCP",
             "pages": [
-              "mcp/api",
+              "mcp/api-mcp-server",
               "mcp/documentation"
             ]
           }
