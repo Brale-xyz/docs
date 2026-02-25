@@ -1,0 +1,85 @@
+---
+title: "API MCP"
+---
+
+The Brale API MCP Server exposes the Brale API directly into your MCP-compatible LLM client. Make API calls, explore endpoints, and build integrations with up-to-date, live access to our production APIs for both testnets and mainnets.
+
+Most LLMs have unique terminology and steps to add an MCP server, yet they all require a display name, the remote server URL, and your credentials to authenticate.
+
+| **Field**                 | **Value**                |
+| ------------------------- | ------------------------ |
+| **Name**                  | Brale API                |
+| **Remote MCP Server URL** | `https://mcp.brale.xyz/` |
+| **Authentication**        | OAuth                    |
+
+# Authentication
+
+The Brale API MCP uses OAuth to authenticate. You'll need a `client_id` and `client_secret`, which you can generate by creating an API app in your [Brale.xyz account](https://brale.xyz).
+
+**To get your credentials:**
+
+1. Sign in to your [Brale.xyz account](https://brale.xyz)
+2. Navigate to **Settings → API **
+3. Create a new API app by clicking **Create Application**
+4. Give your Application a **Name**, choose the **Network** as _mainnet or testnet_
+4. Copy the generated `Client ID `and `Client Secret`
+
+<Warning>
+  Store your `Client Secret` somewhere safe — it won't be shown again after creation.
+</Warning>
+
+# Setup
+
+## Hosted MCP Server
+
+The steps to add an MCP server vary by client. In general, look for an **MCP**, **Tools**, or **Integrations** section in your client's settings and add a new remote server entry using the name and URL above.
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    1. Open Claude Desktop and navigate to **Settings → Connectors**
+    2. Click **Add custom connector** at the bottom of the section
+    3. Enter the Remote MCP Server URL: `https://mcp.brale.xyz/`
+    4. Click **Advanced settings** and enter your **OAuth Client ID** and **OAuth Client Secret**
+    5. Click **Add** to save
+
+    Once added, enable the connector from the **Search and Tools** menu in your chat interface.
+
+    <Info>
+      Custom Connectors are available on Pro, Max, Team, and Enterprise plans.
+    </Info>
+  </Tab>
+  <Tab title="Cursor">
+    Go to **Settings → MCP** and add a new server entry:
+
+    ```json
+    {
+      "name": "Brale API MCP",
+      "url": "https://mcp.brale.xyz/",
+      "env": {
+        "CLIENT_ID": "your_client_id",
+        "CLIENT_SECRET": "your_client_secret"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windsurf">
+    Open `~/.codeium/windsurf/mcp_config.json` and add:
+
+    ```json
+    {
+      "mcpServers": {
+        "Brale API MCP": {
+          "url": "https://mcp.brale.xyz/",
+          "env": {
+            "CLIENT_ID": "your_client_id",
+            "CLIENT_SECRET": "your_client_secret"
+          }
+        }
+      }
+    }
+    ```
+
+    Restart Windsurf to apply the changes.
+  </Tab>
+</Tabs>
+
