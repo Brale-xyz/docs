@@ -1,5 +1,5 @@
 ---
-title: 'Stablecoin to Fiat (Offramp)'
+title: "Stablecoin to Fiat (Offramp)"
 ---
 
 <p class="intro-subheading">
@@ -9,7 +9,7 @@ title: 'Stablecoin to Fiat (Offramp)'
 
 In order to submit a stablecoin-to-fiat transaction, first you need to:
 
-- Create an [Account](/key-concepts/accounts) respresenting your customer
+- Create an [Account](/key-concepts/accounts) representing your customer
 - Create an [Address](/key-concepts/addresses) which is your customer's bank account where Brale will deposit USD
 - Deposit stablecoins to a Brale custodial address (address with type `internal`)
 
@@ -24,7 +24,7 @@ Here is an example of directly adding an offchain address.
 
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
-```json title="Request"
+```json Request
 {
   "owner": "Jane Doe",
   "account_number": "1234567890",
@@ -49,7 +49,7 @@ Here is an example of directly adding an offchain address.
 }
 ```
 
-```json title="Response"
+```json Response
 {
   "id": "34yxvqP90NfeeYkQGriO6bSfn1K",
   "name": "THE BANK OF TAMPA",
@@ -87,11 +87,11 @@ Offramps via RTP use the `rtp_credit` transfer_type on the destination Address. 
 
 ## Stablecoin to USD via Wire
 
-Once your customer has anAddress and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address.
+Once your customer has an Address and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
-```json title="Request"
+```json Request
 {
   "amount": {
     "value": "100",
@@ -99,8 +99,8 @@ Once your customer has anAddress and stablecoins are held in a Brale controlled 
   },
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
-    "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "value_type": "SBC",
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",

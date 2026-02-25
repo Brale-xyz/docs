@@ -8,8 +8,8 @@ title: "wire or ach_debit to custodial wallet"
   There are three common ways of funding a custodial wallet at brale (Type=Internal) using offchain transfers:
 </p>
 
-- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `wire`
-- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `ach_debit`
+- Submit a [Transfer](/key-concepts/transfers) request with a source transfer_type of `wire`
+- Submit a [Transfer](/key-concepts/transfers) request with a source transfer_type of `ach_debit`
 - Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received via ach or wire.
 
 ## Submitting a Transfer request with a source value_type of `wire`
@@ -137,7 +137,7 @@ Query a transfer that has been created.
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
-  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically reconcials funds received and mints them to a bound wallet address. 
+  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically reconcials funds received and mints them to a bound wallet address.
 </div>
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
@@ -158,7 +158,7 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
 }
 ```
 
-Automations are opened in a pending state and automatically transition into processing. 
+Automations are opened in a pending state and automatically transition into processing.
 
 When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
 

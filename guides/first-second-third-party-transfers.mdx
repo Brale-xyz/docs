@@ -1,0 +1,93 @@
+---
+title: "Party Types (1st, 2nd, and 3rd Party Transfers)"
+---
+
+**Purpose:** define party types (1st/2nd/3rd), when to use **client account** vs **managed accounts**, and how **addresses** map to each party.
+
+### Quick definitions
+
+- **Client account**: your Brale account (KYB’d). It owns the API key and is the top-level container.
+- **Managed account**: a sub-entity under the client account that represents _your end customer_ (your customer’s customer).
+- **Address**: a destination or source for value movement. Addresses can be **internal** (Brale-custodied wallets tied to an account) or **external** (bank accounts or non-custodial on-chain wallets associated to an account).
+
+### Party types (what “party” means)
+
+A “party type” tells you **who is the principal** in the transfer (whose transaction it is), and whether Brale is acting **for itself** or **on behalf of** a client.
+
+#### 1st party
+
+Brale ↔ Brale. You will not use this for typical integrations.
+
+#### 2nd party
+
+Client ↔ Brale. The transfer is between Brale and the client (direct customer relationship).
+
+#### 3rd party
+
+End customer (managed account) ↔ someone else, _with the client initiating on their behalf_.
+
+### When to use client account vs managed accounts
+
+Use this decision rule:
+
+- Use the **client account** when the transfer is for the **client’s own treasury** (the client is the principal).
+- Use a **managed account** when the transfer is for the client’s **end customer** (the end customer is the principal), especially when:
+  - the end customer needs their own internal custodial wallets
+  - you need to track activity per end customer
+  - you need “who is this transfer for?” to be explicit in your system
+
+### How addresses map to parties
+
+Addresses always belong to (are created under / associated with) either the **client account** or a **managed account**.
+
+| Party type | Principal (who it’s “for”) | Account used                                                                      | Typical address ownership                                                      | Typical use                               |
+| :--------- | :------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- | :---------------------------------------- |
+| 1st party  | Brale                      | N/A (Brale internal)                                                              | Brale-owned bank + wallets                                                     | Brale treasury operations                 |
+| 2nd party  | Client                     | Client account                                                                    | Client’s internal wallets + client’s external bank/wallet addresses            | Client mints/redeems/swaps for themselves |
+| 3rd party  | End customer               | Managed account (recommended) or client account with explicit branding (advanced) | End customer internal wallets; external recipient addresses (bank or on-chain) | Payouts/collections for end users         |
+
+### Worked examples
+
+#### Example A — 2nd party onramp (client mints for themselves)
+
+Scenario: the client funds a mint using their own bank rail and receives stablecoin to their own wallet.
+
+- **Party:** 2nd party
+- **Account to use:** client account
+- **Addresses:** client external bank address (source) → client internal wallet (destination)
+
+#### Example B — 2nd party offramp (client redeems for themselves)
+
+Scenario: the client redeems stablecoin and receives USD to their own bank.
+
+- **Party:** 2nd party
+- **Account to use:** client account
+- **Addresses:** client internal wallet (source) → client external bank address (destination)
+
+#### Example C — 3rd party on-chain payout (client pays an end user)
+
+Scenario: the client pays a recipient wallet that belongs to an end customer.
+
+- **Party:** 3rd party
+- **Account to use:** managed account (end customer)
+- **Addresses:** managed account internal wallet (source) → external on-chain address (destination)
+
+#### Example D — 3rd party ACH payout with branding
+
+Scenario: the client initiates an ACH payout to an end recipient bank account and wants the client’s name shown on statement.
+
+- **Party:** 3rd party
+- **Account to use:** managed account (end customer) for tracking, plus branding rules as applicable
+- **Addresses:** managed account internal wallet (source) → external bank address (destination)
+
+### Common pitfalls
+
+- If you are paying **someone other than the client**, it’s almost always **3rd party**.
+- If you cannot answer “who is this transfer for?” from the resource model, you likely need **managed accounts**.
+- Treat “branded” payouts as **3rd party** by default.
+
+---
+
+### Reference (existing material to align with)
+
+- Existing public guide (2nd & 3rd party transfers): https://docs.brale.xyz/guides/2nd-and-3rd-party-transfers
