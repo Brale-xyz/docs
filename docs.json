@@ -41,7 +41,8 @@
             "group": "API Design",
             "pages": [
               "documentation/api-design/primitives",
-              "documentation/api-design/structure"
+              "documentation/api-design/structure",
+              "documentation/api-design/example-standard"
             ]
           },
           {
