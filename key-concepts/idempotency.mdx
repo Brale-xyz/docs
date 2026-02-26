@@ -8,6 +8,10 @@ title: 'Idempotency'
 
 When you POST a request (create a transfer, etc.) you include a unique `Idempotency-Key` header. Brale stores that key along with the request signature so if you retry—because the network dropped or timed out—Brale recognizes the duplicate and returns the original response instead of performing the operation twice.
 
+The primary goal is to prevent double spends. Without idempotency keys, a retry after a network failure could result in two transfers being created and two debits hitting your customer's account.
+
+Keys are required on all `POST` requests and should be reused when retrying the exact same operation. Transient failures — like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved — can all be retried with the same key. Generate a new key only when the request itself is intentionally changing (e.g. fixing a validation error or initiating a second distinct transfer).
+
 ```shell
 Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
 ```
@@ -52,14 +56,40 @@ Most HTTP clients let you generate a UUID at call time or set a default header.
 | Retry with _same_ body                   | `201`: `Created`              | Same JSON as first call                                                       |
 | Retry with same key but _different_ body | `422`: `Unprocessable Entity` | `{ "This Idempotency-Key can't be reused with a different payload or URI"" }` |
 
+## When to reuse the same key vs. generate a new one
+
+**Reuse the same key** when retrying the exact same operation:
+
+| Scenario | Action |
+| --- | --- |
+| Network timeout — no response received | Retry with same key |
+| `5xx` server error | Retry with same key (with backoff) |
+| `429` rate limited | Retry with same key (with backoff) |
+| `422 insufficient_balance` — customer has since funded their account | Retry with same key |
+
+**Generate a new key** when the request itself is changing:
+
+| Scenario | Action |
+| --- | --- |
+| Fixing a validation error before resubmitting | New key |
+| Intentionally initiating the same operation a second time | New key |
+| `422 idempotency_key_mismatch` | New key — and fix the request body |
+
+### Insufficient balance
+
+`422 insufficient_balance` is a special case. The request is valid — the account simply didn't have enough funds at the time. Once the customer funds their account, they can retry with the **same idempotency key** and the transfer will be processed.
+
+This is different from permanent validation failures (e.g. `invalid_account_number`), which will always fail regardless of account state. For those, the request itself must change, which requires a new key.
+
 ## Troubleshooting
 
 | Error                            | Likely cause                            | Fix                                        |
 | -------------------------------- | --------------------------------------- | ------------------------------------------ |
-| `400`: `Missing Idempotency-Key` | Header omitted on POST/PUT              | Add a unique key (UUID).                   |
+| `400`: `Missing Idempotency-Key` | Header omitted on POST                  | Add a unique key (UUID).                   |
 | `422`: `Unprocessable Entity`    | Re-used key with different request body | Generate a fresh key per _logical_ action. |
 
 ## Best Practices
 
 - Generate a UUID per logical action. Store it with your job record so retries use the same value.
 - Do not share keys across different endpoints. Keep one key scoped to one operation.
+- On `insufficient_balance`, do not generate a new key — store the original key and reuse it after the account is funded.
