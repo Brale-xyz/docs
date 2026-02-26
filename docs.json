@@ -150,6 +150,12 @@
               "guides/canton-token-standard",
               "guides/tokenization"
             ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "guides/integrations/para-wallet"
+            ]
           }
         ]
       },
