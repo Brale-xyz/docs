@@ -1,13 +1,13 @@
 ---
-title: Para Wallet integration
-description: Use Para to provision self-custody wallets and Brale to on/off-ramp and orchestrate stablecoin flows to those wallets.
+title: "Para Wallet integration"
+description: "Use Para to provision self-custody wallets and Brale to on/off-ramp and orchestrate stablecoin flows to those wallets."
 ---
 
 ## Overview
 
 This guide shows a common pairing:
 
-- [**Para**](https://blog.getpara.com/) for embedded / self-custody wallet UX and key management
+- [**Para**](https://www.getpara.com/) for embedded / self-custody wallet UX and key management
 - **Brale** for regulated stablecoin issuance + on/off-ramps + orchestration
 
 At a high level:
@@ -18,7 +18,7 @@ At a high level:
 4. Use that `address_id` as the destination (or source) in Brale Transfers
 
 <Note>
-Para’s Brale walkthrough includes example Brale requests for convenience. For the latest Brale auth, required headers (like `Idempotency-Key`), and request body shapes, refer to Brale API Docs.
+  Para’s Brale walkthrough includes example Brale requests for convenience. For the latest Brale auth, required headers (like `Idempotency-Key`), and request body shapes, refer to Brale API Docs.
 </Note>
 
 ## What is Para?
@@ -26,6 +26,7 @@ Para’s Brale walkthrough includes example Brale requests for convenience. For 
 Para is an embedded wallet platform that helps fintech and payments teams ship **self-custody wallets** with a polished wallet UX and **modern authentication** (like passkeys), without forcing users into seed phrases or external wallet apps.
 
 **Why teams choose Para (briefly):**
+
 - **Smooth onboarding:** familiar sign-in flows with embedded wallet UX.
 - **Self-custody security model:** 2-of-2 MPC + passkeys and a defense-in-depth security architecture.
 - **Flexible integration options:** SDK-first (React and more) plus a REST API for server-side wallet + signing workflows.
@@ -133,7 +134,7 @@ export default function AllWallets() {
 ```
 
 <Note>
-Not using React? Para supports other environments (REST API, server-side, React Native, etc.). Use Para’s docs as the source of truth for retrieving wallet data and for signing/broadcasting transactions.
+  Not using React? Para supports other environments (REST API, server-side, React Native, etc.). Use Para’s docs as the source of truth for retrieving wallet data and for signing/broadcasting transactions.
 </Note>
 
 ---
@@ -164,7 +165,7 @@ Response:
 That `id` is the Brale `address_id` you’ll use in Transfers.
 
 <Tip>
-If the same address format is valid across multiple networks (e.g., EVM chains), include all relevant onchain `transfer_types`. Otherwise, create separate external Addresses per chain/wallet type.
+  If the same address format is valid across multiple networks (e.g., EVM chains), include all relevant onchain `transfer_types`. Otherwise, create separate external Addresses per chain/wallet type.
 </Tip>
 
 ---
@@ -193,7 +194,7 @@ curl --request POST \
 ```
 
 <Note>
-Examples use `SBC` as a placeholder stablecoin. Replace it with the value type you intend to mint or pay out.
+  Examples use `SBC` as a placeholder stablecoin. Replace it with the value type you intend to mint or pay out.
 </Note>
 
 ### Option B: ach_debit → stablecoin → Para wallet
@@ -236,6 +237,7 @@ See: [Stablecoin to Fiat (Offramp)](/guides/stablecoin-to-fiat-offramp)
 ## References
 
 **Brale**
+
 - [Quick Start - Your First Brale Stablecoin Transfer](/overview/quick-start)
 - [Authentication](/key-concepts/authentication)
 - [Create a new external address](/api-reference/brale/create-address)
@@ -243,6 +245,7 @@ See: [Stablecoin to Fiat (Offramp)](/guides/stablecoin-to-fiat-offramp)
 - [Stablecoin to Fiat (Offramp)](/guides/stablecoin-to-fiat-offramp)
 
 **Para**
+
 - [Integrate Brale with Para](https://docs.getpara.com/v2/walkthroughs/brale)
 - [Get Wallet Data (useWallet / useAccount)](https://docs.getpara.com/v2/react/guides/web3-operations/get-wallet-address)
 - [Key Management System](https://docs.getpara.com/v2/concepts/key-management)
