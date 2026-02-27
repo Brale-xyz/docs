@@ -84,6 +84,7 @@
           },
           {
             "group": "IO",
+            "hidden": true,
             "pages": [
               "io/introduction",
               "io/url-navigation"
