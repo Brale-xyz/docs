@@ -1,0 +1,311 @@
+---
+title: Self-custody wallets
+description: Provider-agnostic integration pattern for pairing Brale rails with any self-custody wallet provider.
+---
+
+## Overview
+
+Brale is a flexible stablecoin rail that works with **any self-custody wallet**. Pairing Brale with a self-custody wallet provider gives you everything you need to run stablecoin-powered money movement—while keeping wallet choice and key control inside your product.
+
+This guide describes a **provider-agnostic pattern** you can reuse across current or future wallet partners.
+
+<Tip>
+Want a concrete example implementation? See [Para Wallet integration](/guides/integrations/para-wallet).
+</Tip>
+
+### What “self-custody” means in Brale
+
+In Brale, wallets and bank endpoints are represented as **Addresses** (`address_id`). Addresses come in two types:
+
+- `type=internal` — Brale-custodied addresses generated for an Account
+- `type=external` — an address managed outside Brale (e.g., a user-owned wallet, external bank account, or Canton party)
+
+Self-custody = your end users’ wallets are represented as `type=external` Addresses.
+
+---
+
+## Why Brale + a self-custody wallet
+
+Using a self-custody wallet provider for the wallet layer and Brale for rails gives you:
+
+- **Full rails + orchestration:** onramps, offramps, transfers, swaps using one set of core primitives.
+- **Wallet optionality:** standardize once, then add/swap wallet providers without rewriting the rails.
+- **End-user trust + control:** users control keys (or an MPC equivalent); Brale never holds end-user keys.
+- **A clean integration boundary:** wallet provider handles key mgmt + signing; Brale handles regulated money movement.
+
+---
+
+## Core model (what maps to the Brale API)
+
+Brale is built around a small set of resources:
+
+- **Accounts (`account_id`)** represent KYB’d business entities. Your application has its own `account_id`, and you can create additional `account_id` values for business clients.
+- **Addresses (`address_id`)** are the universal source/destination primitive for transfers.
+- **Transfers (`transfer_id`)** move value across fiat rails and blockchains and always reference `address_id` for source + destination.
+
+### Identifiers: `transfer_type` and `value_type`
+
+Brale is strict about canonical identifiers:
+
+- `transfer_type` = the rail or chain (e.g., `wire`, `ach_debit`, `base`, `solana`)
+- `value_type` = the currency/token (e.g., `usd`, `USDC`, `SBC`) and is **case-sensitive**
+
+<Note>
+Offchain USD is `value_type=usd` (lowercase). Many onchain stablecoins are uppercase (e.g., `USDC`, `SBC`). Always use Coverage as the source of truth.
+</Note>
+
+---
+
+## Integration pattern (provider-agnostic)
+
+### 1) Authenticate to Brale
+
+Create API credentials in the Brale dashboard, then exchange them for a bearer token.
+
+```bash
+CLIENT_CREDENTIALS=$(
+  printf "%s:%s" "${CLIENT_ID}" "${CLIENT_SECRET}" | base64 | tr -d '\n'
+)
+
+curl --request POST \
+  --url https://auth.brale.xyz/oauth2/token \
+  --header "Authorization: Basic ${CLIENT_CREDENTIALS}" \
+  --header "Content-Type: application/x-www-form-urlencoded" \
+  --data grant_type=client_credentials
+```
+
+Use `Authorization: Bearer ${access_token}` for subsequent calls. Tokens are short-lived—refresh using `expires_in`.
+
+---
+
+### 2) Get your `account_id`
+
+```bash
+curl --request GET \
+  --url https://api.brale.xyz/accounts \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Use:
+- your primary `account_id` for your own program operations
+- a managed customer `account_id` when moving funds for an end business/customer
+
+---
+
+### 3) Get your internal custodial wallets (`type=internal`)
+
+Brale automatically generates internal custodial addresses on supported chains for an onboarded Account.
+
+You can filter addresses using query parameters on `GET /accounts/{account_id}/addresses`, including:
+
+- `type=internal|external`
+- `transfer_type=...` (repeatable)
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses?type=internal&transfer_type=base" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Pick an internal `address_id` whose `transfer_types` include the chain(s) you need.
+
+#### Query an internal balance (custodial only)
+
+Balances require both `transfer_type` and `value_type` and work only for `type=internal`. 
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}/balance?transfer_type=base&value_type=SBC" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+---
+
+### 4) Register the user’s self-custody wallet as an external Address (`type=external`)
+
+Your wallet provider provisions a wallet and returns an onchain address. Register it with Brale so it can be used as a transfer source/destination.
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/external" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "name": "User Wallet (EVM)",
+    "address": "0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b",
+    "transfer_types": ["ethereum", "base", "polygon", "arbitrum"]
+  }'
+```
+
+Response:
+
+```json
+{ "id": "2VcUIIsgARwVbEGlIYbhg6fGG57" }
+```
+
+Store that `id` as the user’s Brale `address_id`.
+
+Notes:
+- If the same user has wallets on **multiple non-EVM chains** (e.g., Solana + Stellar), create separate external Addresses (you’ll get distinct `address_id` values).
+- You **cannot query balances** for external addresses—only internal custodial ones.
+- For more chain-specific examples, see [Add an External Destination](/guides/how-to/add-external-destination).
+
+---
+
+### 5) Create transfers using `address_id`
+
+Transfers are how you do onramps/offramps, payouts, and swaps. Every transfer references `address_id` for source + destination and includes both `transfer_type` and `value_type`.
+
+**Idempotency rules**
+- Always send `Idempotency-Key` on create POSTs; never on GETs.
+- Reuse the same key only when retrying the **same** logical request; never reuse with a different payload or URI.
+
+#### Example A — Stablecoin payout (internal → external wallet)
+
+```bash
+DESTINATION_ADDRESS_ID="2VcUIIsgARwVbEGlIYbhg6fGG57"   # the user wallet (type=external)
+SOURCE_ADDRESS_ID="2VcUIonJeVQzFoBuC7LdFT0dRe4"        # your custodial wallet (type=internal)
+
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "25", "currency": "USD" },
+    "source": {
+      "address_id": "'"${SOURCE_ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "base"
+    },
+    "destination": {
+      "address_id": "'"${DESTINATION_ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "base"
+    }
+  }'
+```
+
+#### Example B — ach_debit funded mint to a self-custody wallet
+
+Brale supports `ach_debit` flows that mint to a custodial **or self-custody** wallet. 
+
+This assumes you’ve already created a funding Address for the end user’s bank account (typically via Plaid) and have its `address_id`.
+
+```bash
+FUNDING_ADDRESS_ID="34yGFQf7tP1HJCPAWNGaN4rh4nX"       # end user bank funding address (type=external)
+DESTINATION_ADDRESS_ID="2VcUIIsgARwVbEGlIYbhg6fGG57"    # end user wallet (type=external)
+
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "100", "currency": "USD" },
+    "source": {
+      "address_id": "'"${FUNDING_ADDRESS_ID}"'",
+      "value_type": "usd",
+      "transfer_type": "ach_debit"
+    },
+    "destination": {
+      "address_id": "'"${DESTINATION_ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "base"
+    }
+  }'
+```
+
+For full setup and testing flow, see [ach_debit to end user wallet](/guides/ach-on-ramp).
+
+#### Example C — Stablecoin swap / cross-chain move (1:1, no slippage)
+
+Stablecoins can be swapped 1:1 across chains; Brale burns on the source chain and mints on the destination chain.
+
+```bash
+SOURCE_ADDRESS_ID="2VcUIonJeVQzFoBuC7LdFT0dRe4"
+DESTINATION_ADDRESS_ID="2VcUIjvaXjMUVAWLT8R9LzEUDed"
+
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "100", "currency": "USD" },
+    "source": {
+      "address_id": "'"${SOURCE_ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "solana"
+    },
+    "destination": {
+      "address_id": "'"${DESTINATION_ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "base"
+    }
+  }'
+```
+
+---
+
+## Offramping (stablecoin → USD) with self-custody
+
+To offramp to USD, stablecoins must be held in a Brale custodial address (`type=internal`).
+
+For self-custody users, the common pattern is:
+
+1) User sends stablecoins from their wallet → your Brale custodial deposit address  
+2) You initiate a stablecoin→USD offramp to the customer’s bank Address
+
+See: [Stablecoin to Fiat (Offramp)](/guides/stablecoin-to-fiat-offramp)
+
+---
+
+## Provider optionality (recommended abstraction)
+
+To keep wallet choice flexible, model wallet providers behind a small interface.
+
+```tsx
+export interface SelfCustodyWalletProvider {
+  createOrGetWallet(params: {
+    userId: string;
+    transferType: string; // e.g., "base", "solana"
+  }): Promise<{ walletAddress: string }>;
+}
+```
+
+Recommended records to store:
+
+- `user_id`
+- `wallet_provider`
+- `wallet_address` (chain-format address)
+- `transfer_types` enabled for this wallet (e.g., `["base","ethereum"]` or `["solana"]`)
+- Corresponding Brale `address_id`
+- `created_at`, `updated_at`
+
+---
+
+## Troubleshooting & known pitfalls
+
+- **Account is pending:** you may need to wait for KYB to complete before creating/linking resources for that Account.
+- **Internal vs external confusion:** use `type=internal` for Brale-custodied; `type=external` for user wallets/bank accounts.
+- **Case sensitivity:** use canonical identifiers from Coverage; they are case-sensitive.
+- **Environment mismatch:** don’t mix testnet and mainnet credentials/resources (common cause of `network_not_supported`).
+- **Branding:** `brand` applies to ACH only (not wire/RTP).
+
+---
+
+## Related docs
+
+- [Addresses (Key concepts)](/key-concepts/addresses)
+- [Accounts (Key concepts)](/key-concepts/accounts)
+- [Transfers (Key concepts)](/key-concepts/transfers)
+- [Add an External Destination](/guides/how-to/add-external-destination)
+- [Get A Balance](/guides/how-to/get-a-balance)
+- [ach_debit to end user wallet](/guides/ach-on-ramp)
+- [Stablecoin to Fiat (Offramp)](/guides/stablecoin-to-fiat-offramp)
+- [Stablecoin to Stablecoin (Swap)](/guides/stablecoin-to-stablecoin-swap)
+- [Coverage: Transfer Types](/coverage/transfer-types)
+- [Coverage: Value Types](/coverage/value-types)
+- [Para Wallet integration](/guides/integrations/para-wallet)

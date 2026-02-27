@@ -147,6 +147,7 @@
               "guides/stablecoin-payouts",
               "guides/2nd-and-3rd-party-transfers",
               "guides/managed-accounts",
+              "guides/self-custody-wallets",
               "guides/canton-token-standard",
               "guides/tokenization"
             ]
