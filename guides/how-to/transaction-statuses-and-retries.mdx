@@ -1,0 +1,103 @@
+---
+title: "Transaction Statuses & Retries"
+---
+
+### What this guide is for
+
+If you are building on Brale, you will occasionally see a transaction that does not complete on the first attempt.
+
+This guide explains:
+
+- What transaction statuses mean, including what is terminal vs non-terminal.
+- How Brale automatic retries work.
+- When and how to request assistance.
+
+### Key ideas
+
+- A transaction can enter a `failed` status even when the overall outcome is not final. `failed` is often a _non-terminal_ state.
+- Some failures are automatically retried. Others require investigation or manual handling.
+- If automatic retries do not succeed, manual intervention may be required.
+
+---
+
+### Statuses
+
+> The exact set of statuses and fields may vary by product surface and endpoint. This page focuses on how to interpret the most commonly observed states.
+
+#### `completed`
+
+- **Meaning:** The transaction succeeded.
+
+
+- **What you should do:** Nothing.
+
+#### `cancelled`
+
+- **Meaning:** The transaction will not be completed. This is a terminal outcome.
+- **What you should do:**
+  - Treat this as final for your system.
+  - If you expected the transaction to complete, contact support with the information in Reporting / requesting assistance (below).
+
+#### `failed`
+
+- **Meaning:** An attempt to process the transaction did not succeed.
+  - **Important:** `failed` is _not necessarily terminal_. A transaction in `failed` often later transitions to `cancelled` or `completed` after retries and or manual processing.[[1]](https://linear.app/brale/issue/1da92cc3-c06b-45ac-a59f-9d5d38635ef5)
+- **What you should do:**
+  - If your integration is polling, continue to poll until the transaction reaches a terminal outcome.
+  - If your integration is event-driven, handle `failed` as an intermediate state and continue listening for later updates.
+  - If the transaction remains `failed` after a reasonable amount of time, follow the instructions in Reporting / requesting assistance (below).
+
+---
+
+### Automatic retries
+
+Some failures are retryable. If the failure reason is known to be retryable, Brale automatically retries the transaction on supported chains.
+
+- **Retry limit:** Brale attempts automatic retries up to **15 times**. After that point, the transaction typically requires manual intervention.
+
+> Note: Retry eligibility is based on the underlying failure reason, not just the `failed` status.
+
+---
+
+### How to build resilient integrations
+
+#### 1) Do not treat `failed` as final
+
+Design your state machine so that `failed` can later become `completed` or `cancelled`.
+
+#### 2) Use idempotency (recommended)
+
+When you re-submit operations on your side (for example, after timeouts), ensure your requests are idempotent to avoid duplicates.
+
+#### 3) Handle delayed completion
+
+If your product experience needs a “final answer” quickly, consider:
+
+- Displaying a “processing” state until terminal.
+- Allowing users to refresh or check back.
+
+---
+
+### Reporting / requesting assistance
+
+If a transaction appears stuck (for example, it remains `failed` and is not progressing), Brale may need to investigate.
+
+When contacting Brale support, include:
+
+- Transaction ID (and or order ID, if applicable)
+- Approximate timestamp of creation (with timezone)
+- Chain (if relevant)
+- Any visible error messages
+- Whether this is blocking an end-user flow
+
+---
+
+### FAQ
+
+#### Are retryable `failed` transactions retried indefinitely?
+
+No. Brale automatically retries up to **15** times. After that, manual intervention is typically required.
+
+#### Which chains have auto-retry?
+
+Auto-retry is supported for EVM and Solana chains (for retryable reasons).
