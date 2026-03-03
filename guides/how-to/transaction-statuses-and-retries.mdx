@@ -24,16 +24,14 @@ This guide explains:
 
 > The exact set of statuses and fields may vary by product surface and endpoint. This page focuses on how to interpret the most commonly observed states.
 
-#### `completed`
+#### `complete`
 
 - **Meaning:** The transaction succeeded.
-
-
 - **What you should do:** Nothing.
 
-#### `cancelled`
+#### `canceled`
 
-- **Meaning:** The transaction will not be completed. This is a terminal outcome.
+- **Meaning:** The transaction will not be complete. This is a terminal outcome.
 - **What you should do:**
   - Treat this as final for your system.
   - If you expected the transaction to complete, contact support with the information in Reporting / requesting assistance (below).
@@ -41,7 +39,7 @@ This guide explains:
 #### `failed`
 
 - **Meaning:** An attempt to process the transaction did not succeed.
-  - **Important:** `failed` is _not necessarily terminal_. A transaction in `failed` often later transitions to `cancelled` or `completed` after retries and or manual processing.[[1]](https://linear.app/brale/issue/1da92cc3-c06b-45ac-a59f-9d5d38635ef5)
+  - **Important:** `failed` is _not necessarily terminal_. A transaction in `failed` often later transitions to `canceled` or `complete` after retries and or manual processing.[[1]](https://linear.app/brale/issue/1da92cc3-c06b-45ac-a59f-9d5d38635ef5)
 - **What you should do:**
   - If your integration is polling, continue to poll until the transaction reaches a terminal outcome.
   - If your integration is event-driven, handle `failed` as an intermediate state and continue listening for later updates.
@@ -63,7 +61,7 @@ Some failures are retryable. If the failure reason is known to be retryable, Bra
 
 #### 1) Do not treat `failed` as final
 
-Design your state machine so that `failed` can later become `completed` or `cancelled`.
+Design your state machine so that `failed` can later become `complete` or `canceled`.
 
 #### 2) Use idempotency (recommended)
 
