@@ -134,7 +134,8 @@
               "guides/how-to/get-your-account-id",
               "guides/how-to/get-your-address-ids",
               "guides/how-to/get-a-balance",
-              "guides/how-to/add-external-destination"
+              "guides/how-to/add-external-destination",
+              "guides/how-to/transaction-statuses-and-retries"
             ]
           },
           {
@@ -146,6 +147,7 @@
               "guides/stablecoin-to-stablecoin-swap",
               "guides/stablecoin-issuance",
               "guides/stablecoin-payouts",
+              "guides/first-second-third-party-transfers",
               "guides/2nd-and-3rd-party-transfers",
               "guides/managed-accounts",
               "guides/self-custody-wallets",

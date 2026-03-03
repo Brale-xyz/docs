@@ -19,7 +19,7 @@ To learn more and see a demo, schedule a meeting to [talk to sales](https://bral
 Use the `brand` object to control the business name displayed to the receiver. Pass the target account inside the request body under `brand.account_id`. The `brand.account_id` is the **Account whose name should appear** to the receiver.
 
 - `account_id: aB3hJkL9mN2PqRsTuvWxyz1234` = `Company 1`
-  - Your business 
+  - Your business
 - `account_id: 34fcsGrCgN0Z9zC1v55eP0I6AKW` = `Company 2`
   - Your customer
 
@@ -51,7 +51,7 @@ The receiver will see **Company 1** as the name on the ach_debit transaction.
   },
   "destination": {
     "value_type": "SBC",
-    "transfer_type": "Canton",
+    "transfer_type": "canton",
     "address_id": "34R8PiuPLgHlXbWci7JlSmLapQY"
   },
   "brand": {
@@ -87,7 +87,7 @@ The receiver will see Company 2 as the originator name on the ach_debit transact
   },
   "destination": {
     "value_type": "SBC",
-    "transfer_type": "Canton",
+    "transfer_type": "canton",
     "address_id": "34fczKxoKRUMuZeWyMj9hhqVjuJ"
   },
   "brand": {
@@ -101,3 +101,17 @@ The receiver will see Company 2 as the originator name on the ach_debit transact
   "id": "9f80c1f5-80df-4c5e-9b68-b9f5712d46d4"
 }
 ```
+
+**Transfer Parties** (or **Parties**)
+
+- **1st party:** Brale ↔ Brale (not typical for API integrations)
+- **2nd party:** Client ↔ Brale (client mints/redeems/swaps for themselves)
+- **3rd party:** Client acting on behalf of an end customer (payouts/collections to someone other than the client, branded flows, etc.)
+
+| Party     | Principal (who it’s for)         | `account_id` to use                                                                                               | `address_id` usage                                                                                                                                                                                                                        | Managed accounts?     | Common examples                                                                              |
+| :-------- | :------------------------------- | :---------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- | :------------------------------------------------------------------------------------------- |
+| 1st party | Brale                            | N/A (Brale internal)                                                                                              | Brale-internal `address_id`s only (not customer-created)                                                                                                                                                                                  | No                    | Brale treasury moves, internal liquidity rebalancing                                         |
+| 2nd party | Client (Brale’s direct customer) | Use the client’s `account_id` in the transfers endpoint (and when creating / listing addresses under that client) | Use `address_id` for ACH (`ach_debit`, `ach_credit`) and for on-chain destination addresses. For wire sources, `address_id` is typically omitted and you use deposit instructions instead.                                                | Optional (usually no) | Client onramp, client offramp, client swap, client sending to its own external wallet        |
+| 3rd party | End customer (client’s customer) | Use a managed account’s `account_id`(recommended) when the transfer is “for” a specific end customer              | Use `address_id` for the end customer’s internal wallet (source) and the recipient’s external bank / on-chain address (destination). If you use branding, you may also include a `brand.account_id` to control statement name (ACH-only). | Yes (recommended)     | On-chain payouts to recipients, branded ACH payouts, collections from end-user bank accounts |
+
+For a full walkthrough with examples, see: _Party Types (1st, 2nd, and 3rd Party Transfers)_

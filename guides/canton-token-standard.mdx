@@ -1,5 +1,5 @@
 ---
-title: 'Canton Token Standard'
+title: "Canton Token Standard"
 ---
 
 <p class="intro-subheading">
@@ -10,13 +10,13 @@ title: 'Canton Token Standard'
 
 Stablecoins issued by Brale are compatible with the Canton Token Standard, which specifies an interface which can be used to transfer any tokens that have smart contract Templates that comply in the same manner.
 
-This is a 2-step process, in which the transfer is offered by the sender creating a Contract instance which implements the TransferInstruction interface and the recipient exercising the Accept choice on the TrnasferInstruction contract.
+This is a 2-step process, in which the transfer is offered by the sender creating a Contract instance which implements the TransferInstruction interface and the recipient exercising the Accept choice on the TransferInstruction contract.
 
-For transfers to parties also custodied by Brale, this acceptance is peformed automatically.
+For transfers to parties also custodied by Brale, this acceptance is performed automatically.
 
 For Canton network transfers to parties not custodied by Brale, a User with permission to ActAs the recipient party must use the Ledger API. Support for manually accepting transfers is included in the Canton Utility UI as well as other Token Standard-compliant wallet applications.
 
-Offers must be accepted within 72 hours or they will expire and be automaticaly withdrawn.
+Offers must be accepted within 72 hours or they will expire and be automatically withdrawn.
 
 ## Accepting a Transfer via the Ledger and Token Standard APIs
 
@@ -28,7 +28,7 @@ First, query your node to list all pending TransferInstructions associated with 
 
 To query for the transfer instructions, it is first necessary to get the current ledger end offset.
 
-```shell title="Get current ledger end offset"
+```shell Get current ledger end offset
 curl -s GET \
   --url "${HTTP_JSON_API}/v2/state/ledger-end" \
   --header "Accept: application/json" \
@@ -37,7 +37,7 @@ curl -s GET \
 
 Note the value of offset in the response, which will be used in the request to obtain the TransferInstructions.
 
-```shell title="Get the active contracts as of the offset"
+```shell Get the active contracts as of the offset
 curl -s \
   --url "${HTTP_JSON_API}/v2/state/active-contracts" \
   --header "Authorization: Bearer ${RECEIVER_TOKEN}" \
@@ -74,7 +74,7 @@ Find the TransferInstruction you want to accept in the response and note it's co
 
 In order to exercise the choice to accept the transfer, it is necessary to obtain some contextual information about it that cannot easily be obtained using the ledger, for which a off-ledger Token Standard API has been implemented.
 
-```shell title="Use the Token Standard API to get the contextual information"
+```shell Use the Token Standard API to get the contextual information
 curl -s \
     --url "https://api.utilities.digitalasset-dev.com/api/token-standard/v0/registrars/party-28dc4516-b5ca-44ff-86c7-2107e90a6807%3A%3A1220b8301e18aa8a401d6e34e6c20f8b0243183c514373bca8f1b6b9270246341a9e/registry/transfer-instruction/v1/${TRANSFERINSTRUCTION_CONTRACT_ID}/choice-contexts/accept" \
     --header "Content-Type: application/json" \
@@ -95,7 +95,7 @@ Note the choiceContextData and disclosedContracts in the response, which will ne
 
 Once all the contextual information is obtained, the Accept choice of the TransferInstruction can be exercised via the ledger API to complete the transfer.
 
-```shell title="Use the Ledger API to Excercise the Choice
+```shell "Use
 curl -s \
     --url "${HTTP_JSON_API}/v2/commands/submit-and-wait-for-transaction" \
     --header "Authorization: Bearer ${RECEIVER_TOKEN}" \
