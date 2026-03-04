@@ -1,5 +1,5 @@
 ---
-title: 'Idempotency'
+title: "Idempotency"
 ---
 
 <p class="intro-subheading">Guarantee that each POST request executes exactly once.</p>
@@ -44,9 +44,9 @@ curl --request POST \
   }'
 ```
 
-:::tip
-Most HTTP clients let you generate a UUID at call time or set a default header.
-:::
+<Tip>
+  Most HTTP clients let you generate a UUID at call time or set a default header.
+</Tip>
 
 ## Request Responses
 
@@ -60,20 +60,20 @@ Most HTTP clients let you generate a UUID at call time or set a default header.
 
 **Reuse the same key** when retrying the exact same operation:
 
-| Scenario | Action |
-| --- | --- |
-| Network timeout — no response received | Retry with same key |
-| `5xx` server error | Retry with same key (with backoff) |
-| `429` rate limited | Retry with same key (with backoff) |
-| `422 insufficient_balance` — customer has since funded their account | Retry with same key |
+| Scenario                                                             | Action                             |
+| -------------------------------------------------------------------- | ---------------------------------- |
+| Network timeout — no response received                               | Retry with same key                |
+| `5xx` server error                                                   | Retry with same key (with backoff) |
+| `429` rate limited                                                   | Retry with same key (with backoff) |
+| `422 insufficient_balance` — customer has since funded their account | Retry with same key                |
 
 **Generate a new key** when the request itself is changing:
 
-| Scenario | Action |
-| --- | --- |
-| Fixing a validation error before resubmitting | New key |
-| Intentionally initiating the same operation a second time | New key |
-| `422 idempotency_key_mismatch` | New key — and fix the request body |
+| Scenario                                                  | Action                             |
+| --------------------------------------------------------- | ---------------------------------- |
+| Fixing a validation error before resubmitting             | New key                            |
+| Intentionally initiating the same operation a second time | New key                            |
+| `422 idempotency_key_mismatch`                            | New key — and fix the request body |
 
 ### Insufficient balance
 
