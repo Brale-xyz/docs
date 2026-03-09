@@ -150,7 +150,8 @@
               "guides/managed-accounts",
               "guides/self-custody-wallets",
               "guides/canton-token-standard",
-              "guides/tokenization"
+              "guides/tokenization",
+              "guides/canton-token-transfers-to-eoas"
             ]
           },
           {
