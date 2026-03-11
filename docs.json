@@ -8,7 +8,7 @@
     "light": "#6938EF",
     "dark": "#18181B"
   },
-  "favicon": "/images/brale/favicon@2x.png",
+  "favicon": "/favicon.svg",
   "seo": {
     "indexing": "all",
     "metatags": {
