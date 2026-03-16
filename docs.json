@@ -13,8 +13,7 @@
     "indexing": "all",
     "metatags": {
       "canonical": "https://docs.brale.xyz",
-      "og:site_name": "Brale",
-      "og:image": "https://docs.brale.xyz/images/og-background.png"
+      "og:site_name": "Brale"
     }
   },
   "navigation": {
