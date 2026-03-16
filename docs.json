@@ -6,15 +6,18 @@
   "colors": {
     "primary": "#000000",
     "light": "#6938EF",
-    "dark": "#18181B"
+    "dark": "#18181B",
+    "background": {
+      "light": "#ffffff",
+      "dark": "#18181B"
+    }
   },
   "favicon": "/favicon.svg",
   "seo": {
     "indexing": "all",
     "metatags": {
       "canonical": "https://docs.brale.xyz",
-      "og:site_name": "Brale",
-      "og:image": "https://docs.brale.xyz/images/og-background.png"
+      "og:site_name": "Brale"
     }
   },
   "navigation": {
