@@ -12,8 +12,9 @@
   "seo": {
     "indexing": "all",
     "metatags": {
+      "canonical": "https://docs.brale.xyz",
       "og:site_name": "Brale",
-      "og:image": "https://docs.brale.xyz/images/brale/brale-logo-light.svg"
+      "og:image": "https://yourdomain.com/path/to/your-og-background.png"
     }
   },
   "navigation": {
