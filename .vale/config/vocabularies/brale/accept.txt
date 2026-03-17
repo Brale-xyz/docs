@@ -42,7 +42,7 @@ redemptions
 (?i)stablecoin
 (?i)stablecoins
 (?i)testnet
-testnets
+(?i)testnets
 (?i)tokenization
 
 # API and technical
