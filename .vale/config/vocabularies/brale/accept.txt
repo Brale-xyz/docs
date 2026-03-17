@@ -6,12 +6,9 @@ Blockcity
 Coinflow
 Dolr
 Glo
-Mintlify
 Paxos
 Perena
 Soakmont
-VSCode
-Windsurf's
 
 # Domain terms
 (?i)ach
