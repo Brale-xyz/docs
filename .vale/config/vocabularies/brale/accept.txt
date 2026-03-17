@@ -1,41 +1,81 @@
 # Brand
-Brale
+Banxa
+Blockcity
+(?i)brale
+Coinflow
 Dolr
 Glo
+Mintlify
 Paxos
 Perena
+Soakmont
+VSCode
 
 # Domain terms
-ach
+(?i)ach
+(?i)appchain
 blockchain
+blockchains
+custodied
 mainnet
+mainnets
 (?i)devnet
+Enablement
 (?i)fintech
+(?i)fintechs
 (?i)offramp
+offramps
 (?i)onchain
 (?i)offchain
 (?i)onramp
 onramps
 (?i)repo
-rtp
-stablecoin
-stablecoins
+(?i)rtp
+(?i)stablecoin
+(?i)stablecoins
 (?i)testnet
+testnets
+(?i)tokenization
 
 # API and technical
+access_token
+account_id
+account_ids
+ach_credit
+ach_debit
+ach_debits
+additional_transfer_types
+automation_id
+(?i)automations
 backoff
+camelCase
+client_credentials
+contractId
+counterparty
+counterparties
 created_at
 creds
+disclosedContracts
 (?i)enum
 enums
+financial_institution_id
+interfaceId
+link_token
+public_token
 (?i)idempotency
+idempotently
 mgmt
 OAuth
+Param
+same_day_ach_credit
 sdf
 signup
+Snake_case
 transfer_type
+transfer_types
 updated_at
 value_type
+value_types
 
 # Blockchain networks
 Algorand
@@ -47,11 +87,43 @@ Hedera
 Kusama
 Polkadot
 Sepolia
-Solana
+(?i)solana
 Vechain
 Xion
 
-## Acronyms
+# Workflow and config
+automerge
+cron
+frontmatter
+
+# Writing and UI
+auditability
+auditable
+Blockquotes
+blockquote
+Cloudinary
+discoverability
+Multiline
+onboarded
+onramping
+preloads
+redemptions
+runbooks
+Singleline
+Strikethrough
+useAccount
+useWallet
+walkthrough
+
+# Companies and products
+Anthropic's
+Neobanks
+neobanks
+Offramping
+Offramps
+Windsurf's
+
+# Acronyms
 APIs
 EOAs
 LLMs
@@ -59,7 +131,5 @@ KSUIDs
 MSAs
 SLAs
 
-## Software
-VSCode
-
 # Other
+reachout
