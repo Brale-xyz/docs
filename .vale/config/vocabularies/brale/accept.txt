@@ -123,6 +123,8 @@ walkthrough
 APIs
 EOAs
 KSUIDs
+KYB
+KYB'd
 LLMs
 MSAs
 SLAs
