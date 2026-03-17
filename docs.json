@@ -53,7 +53,8 @@
               "documentation/platform/stablecoin-orchestration",
               "documentation/platform/interoperability",
               "documentation/platform/tokenization",
-              "documentation/platform/reserves"
+              "documentation/platform/reserves",
+              "documentation/platform/transfer-timing"
             ]
           },
           {
