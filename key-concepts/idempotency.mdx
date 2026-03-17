@@ -3,8 +3,6 @@ title: "Idempotency"
 description: "Use idempotency keys on POST requests to guarantee each operation executes exactly once and prevent duplicate transfers."
 ---
 
-<p class="intro-subheading">Guarantee that each POST request executes exactly once.</p>
-
 ## What is an Idempotency Key?
 
 When you POST a request (create a transfer, etc.) you include a unique `Idempotency-Key` header. Brale stores that key along with the request signature so if you retry—because the network dropped or timed out—Brale recognizes the duplicate and returns the original response instead of performing the operation twice.
@@ -46,7 +44,8 @@ curl --request POST \
 ```
 
 <Tip>
-  Most HTTP clients let you generate a UUID at call time or set a default header.
+  Most HTTP clients let you generate a UUID at call time or set a default
+  header.
 </Tip>
 
 ## Request Responses

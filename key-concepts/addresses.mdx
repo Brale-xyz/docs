@@ -1,12 +1,9 @@
 ---
 title: "Addresses"
-description: "Addresses represent onchain wallets and offchain bank accounts, identified by address_id for use in transfers."
+description: "Addresses represent onchain wallets and offchain bank accounts, identified by `address_id` for use in transfers."
 ---
 
-<p class="intro-subheading">
 Addresses are represented by an `address_id`, which uniquely identifies a wallet or account for a specific `transfer_type`.
-
-</p>
 
 > IDs are KSUIDs (26-char, time-sortable); copy/paste carefully.
 
@@ -270,7 +267,12 @@ Send us the public_token you received from Plaid Link. Brale securely exchanges 
 {
   "public_token": "public_token_XYZ",
   "customer_webhook_url": "https://mywebhook.com",
-  "transfer_types": ["ach_debit", "same_day_ach_debit", "ach_credit", "same_day_ach_credit"]
+  "transfer_types": [
+    "ach_debit",
+    "same_day_ach_debit",
+    "ach_credit",
+    "same_day_ach_credit"
+  ]
 }
 ```
 
@@ -302,7 +304,7 @@ Shortly after exchanging the public token, the user's bank accounts are idempote
       "street_line_2": "Suite 500",
       "city": "Springfield",
       "state": "CA",
-        "zip": "90001"
+      "zip": "90001"
     },
     "account_type": "checking"
   }
