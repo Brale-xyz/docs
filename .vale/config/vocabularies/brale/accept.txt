@@ -1,0 +1,65 @@
+# Brand
+Brale
+Dolr
+Glo
+Paxos
+Perena
+
+# Domain terms
+ach
+blockchain
+mainnet
+(?i)devnet
+(?i)fintech
+(?i)offramp
+(?i)onchain
+(?i)offchain
+(?i)onramp
+onramps
+(?i)repo
+rtp
+stablecoin
+stablecoins
+(?i)testnet
+
+# API and technical
+backoff
+created_at
+creds
+(?i)enum
+enums
+(?i)idempotency
+mgmt
+OAuth
+sdf
+signup
+transfer_type
+updated_at
+value_type
+
+# Blockchain networks
+Algorand
+Arbitrum
+Celo
+Coreum
+Ethereum
+Hedera
+Kusama
+Polkadot
+Sepolia
+Solana
+Vechain
+Xion
+
+## Acronyms
+APIs
+EOAs
+LLMs
+KSUIDs
+MSAs
+SLAs
+
+## Software
+VSCode
+
+# Other
