@@ -124,7 +124,8 @@
               "guides/how-to/get-your-address-ids",
               "guides/how-to/get-a-balance",
               "guides/how-to/add-external-destination",
-              "guides/how-to/transaction-statuses-and-retries"
+              "guides/how-to/transaction-statuses-and-retries",
+              "guides/how-to/light-payouts-ach-credit-branded-payouts"
             ]
           },
           {

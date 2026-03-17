@@ -1,0 +1,139 @@
+---
+title: "Light Payouts (ACH Credit) + Branded Payouts"
+---
+
+This guide shows how to set up a recipient bank account **without Plaid** and send an **ACH Credit payout**, including how to make the payout appear as a specific “brand” on the recipient’s bank statement.
+
+#### Prerequisites
+
+- You have a Brale `account_id`.
+- You can create Transfers (you have an auth token).
+- You generate a new `Idempotency-Key` for each logical create request, and reuse it only when retrying that same request.
+
+---
+
+## 1) Add a recipient bank account for ACH credit (no Plaid)
+
+To pay out over ACH credit without Plaid, create an **external Address** (off-chain bank account) by supplying:
+
+- `routing_number`
+- `account_number`
+- `bank_address`
+- `beneficiary_address`
+- `account_type`
+- `transfer_types` including `ach_credit` (and optionally `same_day_ach_credit`)
+
+**Endpoint**
+
+- `POST /accounts/{account_id}/addresses/external`[[2]](https://brale.mintlify.app/api-reference/brale/create-address)
+
+**Example request**
+
+```text
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["ach_credit", "same_day_ach_credit"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "name": "Example Bank",
+  "bank_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "beneficiary_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "account_type": "checking"
+}
+```
+
+**Response**
+
+- You will receive an `id` which is the `address_id` you will use as the ACH destination in Transfers.
+
+---
+
+## 2) Create a “light payout” as an ACH Credit transfer
+
+Once you have the recipient’s ACH `address_id`, you can create a Transfer where:
+
+- the **destination** is `USD` over `ach_credit` (or `same_day_ach_credit`)
+- the destination includes the recipient’s `address_id`
+- you include an `Idempotency-Key` header
+
+**Key rule:** Transfers use `address_id` for both on-chain and off-chain endpoints.
+
+**Endpoint**
+
+- `POST /accounts/{account_id}/transfers`
+
+**Example request (unbranded ACH payout)**
+
+```text
+{
+  "amount": { "value": "100.00", "currency": "USD" },
+  "source": {
+    "address_id": "<SOURCE_ADDRESS_ID>",
+    "value_type": "SBC",
+    "transfer_type": "base"
+  },
+  "destination": {
+    "address_id": "<RECIPIENT_ACH_ADDRESS_ID>",
+    "value_type": "USD",
+    "transfer_type": "ach_credit"
+  }
+}
+```
+
+Notes:
+
+- Use `same_day_ach_credit` instead of `ach_credit` if you want same-day rail and it is enabled for that Address.
+- Transfer statuses typically progress `pending` → `processing` → `complete`.
+
+---
+
+## 3) Branded ACH payouts (statement descriptor control)
+
+For **ACH only**, you can include a `brand` object in the transfer request:
+
+```text
+"brand": { "account_id": "<BRAND_ACCOUNT_ID>" }
+```
+
+This controls **which Account name appears on ACH bank statement line items** (ACH debit + ACH credit). It is **not supported for wire or RTP**.
+
+**Example request (branded ACH payout)**
+
+```text
+{
+  "amount": { "value": "100.00", "currency": "USD" },
+  "source": {
+    "address_id": "<SOURCE_ADDRESS_ID>",
+    "value_type": "SBC",
+    "transfer_type": "base"
+  },
+  "destination": {
+    "address_id": "<RECIPIENT_ACH_ADDRESS_ID>",
+    "value_type": "USD",
+    "transfer_type": "ach_credit"
+  },
+  "brand": { "account_id": "<BRAND_ACCOUNT_ID>" }
+}
+```
+
+---
+
+## 4) Operational guidance (recommended)
+
+- Always set a fresh `Idempotency-Key` for each new POST, and reuse it only on retries of the _same_ transfer/create.
+- Store `transfer_id`, `Idempotency-Key`, timestamps, and status so you can reconcile and safely retry.
+- Poll transfers with backoff rather than tight loops.
+
+---
