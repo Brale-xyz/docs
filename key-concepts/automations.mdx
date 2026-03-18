@@ -1,5 +1,6 @@
 ---
 title: "Automations"
+description: "Configure automatic onramps, offramps, and swaps that trigger when funds are received without manual transfer requests."
 ---
 
 <p class="intro-subheading">
@@ -76,7 +77,32 @@ Automations are opened in a pending state and automatically transition into proc
 }
 ```
 
-When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
+When an automation becomes active, the `source.funding_instructions` object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
+
+## Branded Automations
+
+Branded Automations let you control the beneficiary name shown on funding instructions for a virtual account.
+
+With Branded Automations, you can control which business name appears on funding instructions by adding a `brand` object to the create request:
+
+| Field   | Where | Type   | Description |
+| :------ | :---- | :----- | :---------- |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account whose business name and address will appear as the beneficiary on wire and ACH funding instructions. |
+
+```json Request
+{
+  "name": "XYZ Onramp",
+  "source": { "value_type": "USD" },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "Solana"
+  },
+  "brand": { "account_id": "<ACCOUNT_ID>" }
+}
+```
+
+When the automation becomes active, `beneficiary_name` in `source.funding_instructions` will reflect that account’s business name.
 
 ## Listing Automations for a Customer
 
