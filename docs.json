@@ -28,6 +28,11 @@
           "anchor": "API Logs",
           "icon": "database",
           "href": "https://app.brale.xyz/api?tab=activity"
+        },
+        {
+          "anchor": "Changelog",
+          "icon": "clock-rotate-left",
+          "href": "/changelog"
         }
       ]
     },
