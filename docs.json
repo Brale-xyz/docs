@@ -165,7 +165,6 @@
       },
       {
         "tab": "API reference",
-        "openapi": "https://api.brale.xyz/openapi",
         "groups": [
           {
             "group": "API overview",
@@ -196,6 +195,10 @@
             ]
           }
         ]
+      },
+      {
+        "tab":"OpenAPI Reference",
+        "openapi": "https://api.brale.xyz/openapi"
       }
     ]
   },
