@@ -165,6 +165,7 @@
       },
       {
         "tab": "API reference",
+        "openapi": "https://api.brale.xyz/openapi",
         "groups": [
           {
             "group": "API overview",
@@ -227,7 +228,6 @@
       "github": "https://github.com/Brale-xyz"
     }
   },
-  "openapi": "https://api.brale.xyz/openapi",
   "redirects": [
     {
       "source": "/docs/:slug*",
