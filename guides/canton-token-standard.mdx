@@ -1,25 +1,31 @@
 ---
 title: 'Canton Token Standard'
-description: "Transfer stablecoins to Canton Network parties using the Token Standard interface for offers and acceptance."
+description: "Transfer stablecoins to Canton Network parties using the Canton Token Standard interface."
 ---
 
 <p class="intro-subheading">
   Transfer Stablecoins from your Brale account to other parties on the Canton Network.
 </p>
 
-## Transfer Overview
+## Transfer overview
 
-Stablecoins issued by Brale are compatible with the Canton Token Standard, which specifies an interface which can be used to transfer any tokens that have smart contract Templates that comply in the same manner.
+Stablecoins issued by Brale are compatible with the Canton Token Standard, which specifies an interface for transferring any tokens with compliant smart contract templates.
 
-This is a 2-step process, in which the transfer is offered by the sender creating a Contract instance which implements the TransferInstruction interface and the recipient exercising the Accept choice on the TrnasferInstruction contract.
+Canton transfers are **1-step by default** — you create a transfer via the Brale API and it settles directly to the recipient with no separate acceptance step required.
 
-For transfers to parties also custodied by Brale, this acceptance is peformed automatically.
+For transfers to parties also custodied by Brale, settlement is automatic.
 
-For Canton network transfers to parties not custodied by Brale, a User with permission to ActAs the recipient party must use the Ledger API. Support for manually accepting transfers is included in the Canton Utility UI as well as other Token Standard-compliant wallet applications.
+<Note>
+  The legacy 2-step offer/accept flow described below is only relevant if you are integrating directly with the Canton Ledger API outside of Brale. For standard Brale API transfers, no additional steps are needed.
+</Note>
 
-Offers must be accepted within 72 hours or they will expire and be automaticaly withdrawn.
+## Legacy: accepting a transfer via the Ledger and Token Standard APIs
 
-## Accepting a Transfer via the Ledger and Token Standard APIs
+The Canton Token Standard also supports a 2-step offer/accept pattern for direct Ledger API integrations. In this flow, the sender creates a `TransferInstruction` contract and the recipient exercises the `Accept` choice. If you are using the Brale API to create transfers, you can skip this section.
+
+Offers created through the legacy flow must be accepted within 72 hours or they will expire and be automatically withdrawn.
+
+### Accepting a transfer via the Ledger and Token Standard APIs
 
 Acceptance can be automated by using the Ledger and Token Standard APIs to retrieve the necessary contextual information and exercise the Accept choice. The below example shows how to accept an offer using the HTTP JSON Ledger API of the recipient's participant.
 
