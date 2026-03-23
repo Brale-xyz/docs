@@ -3,11 +3,6 @@ title: "Automations"
 description: "Configure automatic onramps, offramps, and swaps that trigger when funds are received without manual transfer requests."
 ---
 
-<p class="intro-subheading">
-  Automations allow businesses to set up automatic onramps, offramps, or stablecoin swaps that are
-  triggered upon receiving funds—without requiring a manual transfer request.
-</p>
-
 ## Common Automation Flows
 
 - **Fiat to Stablecoin (Onramp)** - Automatically mints stablecoins when a fiat deposit is received.
@@ -85,8 +80,8 @@ Branded Automations let you control the beneficiary name shown on funding instru
 
 With Branded Automations, you can control which business name appears on funding instructions by adding a `brand` object to the create request:
 
-| Field   | Where | Type   | Description |
-| :------ | :---- | :----- | :---------- |
+| Field   | Where | Type   | Description                                                                                                                                                                     |
+| :------ | :---- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account whose business name and address will appear as the beneficiary on wire and ACH funding instructions. |
 
 ```json Request

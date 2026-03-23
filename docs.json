@@ -10,7 +10,6 @@
   },
   "favicon": "/favicon.svg",
   "seo": {
-    "indexing": "all",
     "metatags": {
       "canonical": "https://docs.brale.xyz",
       "og:site_name": "Brale"
@@ -64,10 +63,7 @@
           },
           {
             "group": "Coverage",
-            "pages": [
-              "coverage/transfer-types",
-              "coverage/value-types"
-            ]
+            "pages": ["coverage/transfer-types", "coverage/value-types"]
           }
         ]
       },
@@ -84,24 +80,16 @@
           },
           {
             "group": "Calculators",
-            "pages": [
-              "tools/calculators/stablecoin-calculators"
-            ]
+            "pages": ["tools/calculators/stablecoin-calculators"]
           },
           {
             "group": "IO",
             "hidden": true,
-            "pages": [
-              "io/introduction",
-              "io/url-navigation"
-            ]
+            "pages": ["io/introduction", "io/url-navigation"]
           },
           {
             "group": "MCP",
-            "pages": [
-              "mcp/api",
-              "mcp/documentation"
-            ]
+            "pages": ["mcp/api", "mcp/documentation"]
           }
         ]
       },
@@ -163,9 +151,7 @@
           },
           {
             "group": "Integrations",
-            "pages": [
-              "guides/integrations/para-wallet"
-            ]
+            "pages": ["guides/integrations/para-wallet"]
           }
         ]
       },
@@ -174,9 +160,7 @@
         "groups": [
           {
             "group": "API overview",
-            "pages": [
-              "api-reference/brale-introduction"
-            ]
+            "pages": ["api-reference/brale-introduction"]
           },
           {
             "group": "Endpoints",

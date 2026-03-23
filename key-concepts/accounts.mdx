@@ -1,23 +1,17 @@
 ---
 title: "Accounts"
-description: "Accounts represent KYB-verified business entities with account_ids used to scope API requests and manage custodial wallets."
+description: "Accounts represent KYB-verified business entities with `account_id` values used to scope API requests and manage custodial wallets."
 ---
 
-<p class="intro-subheading">
-  Accounts are represented by account\_ids, which are assigned to KYB'd (business) entities. If you
-  have an API Key and Secret, your application has its own `account_id`. You can also create
-  additional `account_ids` for your business clients.
-</p>
+Accounts are represented by `account_id` values, which are assigned to KYB'd (business) entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients.
 
-Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_ids`. An `account_id` may also be linked to a `financial_institution_id` to enable first-party fiat funding for mints and redemptions.
+Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. An `account_id` may also be linked to a `financial_institution_id` to enable first-party fiat funding for mints and redemptions.
 
 The `account_id` is used in the request URL across many Brale API endpoints to scope the request to a specific application or client.
 
 To KYB and approve an account, we collect key details such as business name and EIN. For more information, see our Compliance Requirements. If additional details are required, we will notify you with the necessary steps to complete KYB.
 
-<Tip>
-  Customers can also self onboard at https://app.brale.xyz/signup.
-</Tip>
+<Tip>Customers can also self onboard at https://app.brale.xyz/signup.</Tip>
 
 ## Creating an account
 
@@ -90,7 +84,7 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 
 | Field                            | Type   | Required | Description                                                                                                                                                                                       |
 | -------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `business.name	`                 | string | Yes      | Registered legal name                                                                                                                                                                             |
+| `business.name	`                  | string | Yes      | Registered legal name                                                                                                                                                                             |
 | `business.website`               | string | Yes      | Full URL incl. https://                                                                                                                                                                           |
 | `business.phone`                 | string | Yes      | Accepts multiple common formats: digits only `8134688604`, dashed `813-468-8604`, or with country code `18134688604`. Area code must be valid.                                                    |
 | `business.address.street_line_1` | string | Yes      |                                                                                                                                                                                                   |
@@ -136,5 +130,8 @@ Brale will review the Account and return a `status` field denoting the customer'
 All resources in the Brale API (Addresses, Financial Institutions, Transfers, Automations, etc.) are scoped to specific accounts. Supply the ID in the path, never in the body.
 
 <Note>
-  Every endpoint that contains `{account_id}` must be called by including the account ID in the path. E.g. `GET` `https://api.brale.xyz/accounts/2Js1YFqlfxgNqC2KTPEjrWIwKU7/addresses`. Do not send the account ID in the body or query string.
+  Every endpoint that contains `{account_id}` must be called by including the
+  account ID in the path. E.g. `GET`
+  `https://api.brale.xyz/accounts/2Js1YFqlfxgNqC2KTPEjrWIwKU7/addresses`. Do not
+  send the account ID in the body or query string.
 </Note>
