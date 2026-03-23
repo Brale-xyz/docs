@@ -498,23 +498,31 @@ You can query the stablecoin balance of an internal address.
 
 You can narrow results on `GET /accounts/{account_id}/addresses` with optional query parameters.
 
-## Query Parameters
+## Query parameters
 
-| Param           | Type              | Description                                                                           |
-| --------------- | ----------------- | ------------------------------------------------------------------------------------- |
-| `address`       | string            | Exact on-chain address (e.g., EVM, Solana).                                           |
-| `type`          | enum              | Filter by address type: `internal` \| `external`.                                     |
-| `transfer_type` | enum (repeatable) | Filter by one or more transfer types (e.g., `ethereum`, `base`, `solana`, `stellar`). |
+| Param           | Type              | Description                                                                                                              |
+| --------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `address`       | string            | Filters results to addresses whose onchain address exactly matches the provided value (e.g., an EVM or Solana address).  |
+| `type`          | enum              | Filter by address type: `internal` \| `external`.                                                                        |
+| `transfer_type` | enum (repeatable) | Filter by one or more transfer types (e.g., `ethereum`, `base`, `solana`, `stellar`).                                    |
+
+<Tip>
+If you already know the onchain address you are looking for, you can filter the addresses list by passing the exact address in the `address` query parameter. This is intended for exact address matching—partial matches are not supported.
+</Tip>
 
 ## Examples
+
+Find a specific registered onchain address
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses?address=0xcdCfd05B57c6136F090658C123063d12DebaA51D" \
+  --header "Authorization: Bearer ${ACCESS_TOKEN}"
+```
 
 External addresses usable on Solana OR Base
 
 **GET** `/accounts/{account_id}/addresses?type=external&transfer_type=solana&transfer_type=base`
-
-Exact EVM address (case-insensitive)
-
-**GET** `/accounts/{account_id}/addresses?address=0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE`
 
 Internal EVM addresses that support Ethereum
 
