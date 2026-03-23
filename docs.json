@@ -124,6 +124,7 @@
               "key-concepts/transfers",
               "key-concepts/accounts",
               "key-concepts/addresses",
+              "key-concepts/external-bank-addresses",
               "key-concepts/automations",
               "key-concepts/financial-institutions",
               "key-concepts/idempotency"

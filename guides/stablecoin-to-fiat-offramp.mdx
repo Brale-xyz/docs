@@ -10,18 +10,29 @@ description: "Convert stablecoins to USD and withdraw to bank accounts via wire,
 
 In order to submit a stablecoin-to-fiat transaction, first you need to:
 
-- Create an [Account](/key-concepts/accounts) respresenting your customer
+- Create an [Account](/key-concepts/accounts) representing your customer
 - Create an [Address](/key-concepts/addresses) which is your customer's bank account where Brale will deposit USD
 - Deposit stablecoins to a Brale custodial address (address with type `internal`)
 
 ## Link an Address to your customer's Account
 
-You can add addresses in two ways:
+Destination bank addresses can be created in two ways:
 
-1. Addresses API
-2. Plaid
+- **Plaid-linked bank account** — Securely connect a bank account via the Plaid Link SDK. Supports `ach_debit`, `ach_credit`, and `rtp`.
+- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, and `rtp`.
 
-Here is an example of directly adding an offchain address.
+| Capability | Plaid-linked bank account | Direct bank entry |
+| --- | --- | --- |
+| `ach_debit` | Supported | Not supported |
+| `ach_credit` | Supported | Supported |
+| `rtp` | Supported | Supported |
+| `wire` | Not supported | Supported |
+
+**Direct bank entry** is the right path when you already have bank account details or need `wire` transfers. For the full comparison and guidance, see [External bank addresses](/key-concepts/external-bank-addresses).
+
+### Direct bank entry
+
+Here is an example of adding an offchain address via Direct bank entry using [Create a new external address](/api-reference/brale/create-address).
 
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
@@ -81,6 +92,10 @@ Here is an example of directly adding an offchain address.
   "account_type": "checking"
 }
 ```
+
+<Note>
+Need `ach_debit`? Use the [Plaid-linked bank account flow](/api-reference/brale/create-plaid-link-token) instead. See [External bank addresses](/key-concepts/external-bank-addresses) for details.
+</Note>
 
 ### RTP Enablement
 

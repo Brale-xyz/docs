@@ -1,6 +1,15 @@
 ---
 title: 'Create Plaid link token'
-description: 'Generate a Plaid Link token that launches the Plaid UI for connecting a bank account.'
+description: 'Step 1 of the Plaid-linked bank account flow. Generates a Plaid Link token to launch the Plaid UI for connecting a bank account.'
 openapi: 'POST /accounts/{account_id}/plaid/link_token'
 ---
+
+This endpoint is **step 1** of the **Plaid-linked bank account** flow for creating external off-chain bank addresses.
+
+The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp`. This is the **only** path that enables `ach_debit`.
+
+**Next step:** After the user completes the Plaid Link flow, exchange the `public_token` using [Register financial institution account via Plaid](/api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id) to create the `address_id`.
+
+For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
