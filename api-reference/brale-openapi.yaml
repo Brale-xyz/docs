@@ -255,6 +255,13 @@ components:
           example: wire
         address_id:
           $ref: '#/components/schemas/Ksuid'
+        transaction_id:
+          type: string
+          description: >-
+            On-chain transaction hash or off-chain payment reference. Present in
+            responses once the leg has been submitted to the network. Not included
+            in create requests.
+          example: '0xdd5646ea…'
       required:
         - address_id
         - value_type
@@ -1143,6 +1150,35 @@ paths:
           schema:
             $ref: '#/components/schemas/Ksuid'
           description: The ID of the account
+        - name: automation_id
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: >-
+            Filter transfers to only those created by the specified Automation.
+            Must be a valid KSUID. Exact match.
+          example: 2MhCCIHuK4TGVgT9a4loQzJx1rj
+        - name: value_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter transfers by currency or token identifier. Matches transfers
+            where the source **or** destination `value_type` equals this value.
+            Case-sensitive. Use canonical API ids from the Coverage page.
+          example: USDC
+        - name: transfer_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter transfers by payment rail or chain identifier. Matches transfers
+            where the source **or** destination `transfer_type` equals this value.
+            Case-sensitive. Use canonical API ids from the Coverage page.
+          example: polygon
         - name: page[size]
           in: query
           required: false
@@ -1151,7 +1187,7 @@ paths:
             minimum: 1
             maximum: 100
           example: 50
-          description: The number of transfers to return
+          description: The number of transfers to return per page (1–100, default 25).
         - name: page[next]
           in: query
           required: false
