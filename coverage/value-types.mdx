@@ -1,11 +1,29 @@
 ---
 title: "Value Types"
-description: "Canonical value_type identifiers for Brale transfers (onchain and offchain)."
+description: "Canonical value_type identifiers for Brale transfers, including supported chains for USDC, USDT, and RLUSD."
 ---
 
 <p class="intro-subheading">
   Supported `value_type` identifiers for Brale transfers. Keep examples aligned to the published list below and the source JSON.
 </p>
+
+## Supported chains for USDC, USDT, and RLUSD
+
+Not every stablecoin is available on every chain. The table below shows exactly which chains support USDC, USDT, and RLUSD through Brale.
+
+| Stablecoin | Supported chains |
+| --- | --- |
+| **USDC** | Arbitrum, Avalanche, Base, Celo, Ethereum, Hedera, Optimism, Polygon, Solana |
+| **USDT** | Tron |
+| **RLUSD** | Ethereum, XRPL |
+
+<Info>
+  For Brale-issued stablecoins (e.g., `SBC`, `USDGLO`), supported chains are configured during onboarding. Contact [support@brale.xyz](mailto:support@brale.xyz) for details.
+</Info>
+
+See [Transfer Types](/coverage/transfer-types) for the full list of onchain and offchain rails.
+
+---
 
 <Note>
   **Source:** `ValueType.json`. Values are case-sensitive.
