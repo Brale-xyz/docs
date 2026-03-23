@@ -232,54 +232,94 @@ Process stablecoin payouts to one or many external addresses (EOAs).
 }
 ```
 
-## Retrieving Transfers
+## Retrieving a single transfer
 
-**GET** `https://api.brale.xyz/accounts/account_id/transfers/transfer_id`
+**GET** `https://api.brale.xyz/accounts/{account_id}/transfers/{transfer_id}`
 
 ```json title="Response"
 {
-  "id": "transfer_123",
-  "status": "pending",
+  "id": "30NoY6R1Ns2tRBcx1Kb16SnuXOW",
+  "status": "complete",
   "amount": {
-    "value": "1",
+    "value": "100.00",
     "currency": "USD"
   },
-  "created_at": "2025-02-05T19:39:14.316Z",
-  "updated_at": "2025-02-05T19:39:14.316Z",
+  "created_at": "2025-07-25T21:03:55.364134Z",
+  "updated_at": "2025-07-25T21:05:07.779018Z",
   "source": {
-    "transfer_type": "wire",
-    "value_type": "USD"
+    "address_id": "2MhCCIHuK4TGVgT9a4loQzJx1rj",
+    "value_type": "USDC",
+    "transfer_type": "polygon",
+    "transaction_id": "0xdd5646ea…"
   },
   "destination": {
+    "address_id": "2O6asmNK4TGVgT9a4loQzJx1rj",
+    "value_type": "USDC",
     "transfer_type": "polygon",
-    "value_type": "YSBC",
-    "address_id": "d7bd28e4-93e6-4313-880c-ab9178eacd3b"
+    "transaction_id": "0xdd5646ea…"
   },
-  "wire_instructions": {
-    // ...Brale bank details
-  }
+  "note": null
 }
 ```
 
-## Retrieving Transfers & Pagination
+<Note>
+  `transaction_id` is a response-only field on `source` and `destination`. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network. It is not present in create requests.
+</Note>
 
-### List Call
+## Listing transfers
 
-**GET** `https://api.brale.xyz/accounts/account_id/transfers/transfer_id?page[size]=50`
+**GET** `https://api.brale.xyz/accounts/{account_id}/transfers`
 
-Returns the 50 most recent transfers.
+Returns a paginated list of transfers for the account. You can narrow results with query-parameter filters.
 
-### Paging Forward
+### Filters
 
-**GET** `https://api.brale.xyz/accounts/account_id/transfers/transfer_id?page[next]=g3QAAAABdw...`
+All filters are **exact match** and **case-sensitive**. When you combine multiple filters they apply with **AND** semantics.
 
-Use the `pagination.next` token from the previous response.
+| Parameter | Filters by | Format | Example |
+| :--- | :--- | :--- | :--- |
+| `automation_id` | Automation that created the transfer | KSUID | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
+| `value_type` | Currency / token on source or destination | Canonical API id | `USDC`, `SBC`, `usd` |
+| `transfer_type` | Payment rail / chain on source or destination | Canonical API id | `polygon`, `wire`, `solana` |
 
-### Paging Backward
+<Info>
+  `value_type` and `transfer_type` use canonical identifiers listed on the [Value types](/coverage/value-types) and [Transfer types](/coverage/transfer-types) coverage pages.
+</Info>
 
-**GET** `https://api.brale.xyz/accounts/account_id/transfers/transfer_id?page[prev]=g3QAAAABdw...`
+If no transfers match, the API returns `200` with an empty `transfers` array.
 
-Only one of `page[next]` or `page[prev]` may be present.
+**`transaction_id` is not a list filter.** It appears only in transfer responses. To locate a transfer by its on-chain hash, filter by `transfer_type` and match `transaction_id` client-side.
+
+### Example: filter by automation
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=2MhCCIHuK4TGVgT9a4loQzJx1rj" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+### Example: combined filters
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?value_type=USDC&transfer_type=polygon&page[size]=10" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+### Pagination
+
+| Parameter | Description | Default |
+| :--- | :--- | :--- |
+| `page[size]` | Results per page (1–100) | 25 |
+| `page[next]` | Cursor from `pagination.next` | — |
+| `page[prev]` | Cursor from `pagination.prev` | — |
+
+Only one of `page[next]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging.
+
+Use the `pagination.next` cursor from the previous response to page forward:
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[next]=g3QAAAABdw..." \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
 
 ## Reconciliation best practices
 

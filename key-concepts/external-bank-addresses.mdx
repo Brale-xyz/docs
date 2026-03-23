@@ -3,27 +3,27 @@ title: "External bank addresses"
 description: "Two paths for creating external off-chain bank addresses: Plaid-linked bank account and Direct bank entry."
 ---
 
-<p class="intro-subheading">
 Brale supports two paths for creating an external off-chain bank address, each unlocking different transfer types.
-</p>
 
 When you create an external bank address, the path you choose determines which `transfer_types` are available for that address. Choose the right path based on the transfer rails you need.
 
 ## Comparison
 
-| Capability | Plaid-linked bank account | Direct bank entry |
-| --- | --- | --- |
-| `ach_debit` | Supported | Not supported |
-| `ach_credit` | Supported | Supported |
-| `rtp` | Supported | Supported |
-| `wire` | Not supported | Supported |
+| Capability   | Plaid-linked bank account | Direct bank entry |
+| ------------ | ------------------------- | ----------------- |
+| `ach_debit`  | Supported                 | Not supported     |
+| `ach_credit` | Supported                 | Supported         |
+| `rtp`        | Supported                 | Supported         |
+| `wire`       | Not supported             | Supported         |
 
 <Warning>
-**ACH debit** is only available through the **Plaid-linked bank account** flow. You cannot enable `ach_debit` via Direct bank entry.
+  **ACH debit** is only available through the **Plaid-linked bank account**
+  flow. You cannot enable `ach_debit` via Direct bank entry.
 </Warning>
 
 <Warning>
-**Wire** is only available through the **Direct bank entry** flow. You cannot enable `wire` via the Plaid-linked bank account flow.
+  **Wire** is only available through the **Direct bank entry** flow. You cannot
+  enable `wire` via the Plaid-linked bank account flow.
 </Warning>
 
 ## Which path should you use?

@@ -13,7 +13,8 @@
     "metatags": {
       "canonical": "https://docs.brale.xyz",
       "og:site_name": "Brale"
-    }
+    },
+    "indexing": "navigable"
   },
   "navigation": {
     "global": {
@@ -85,7 +86,7 @@
           {
             "group": "IO",
             "hidden": true,
-            "pages": ["io/introduction", "io/url-navigation"]
+            "pages": ["io/introduction"]
           },
           {
             "group": "MCP",
