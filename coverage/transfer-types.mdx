@@ -64,4 +64,39 @@ Use these values when working in testnet. They mirror the corresponding mainnet 
 | `tron_testnet` | Tron Testnet |
 | `xion_testnet` | Xion Testnet |
 
+## Supported `transfer_type` values by `value_type`
+
+Not every `value_type` is available on every `transfer_type`. The tables below list the supported `transfer_type` values for USDC, USDT, and RLUSD.
+
+### Supported `transfer_type` values for USDC
+
+| transfer\_type (API id) | Name |
+| --- | --- |
+| `arbitrum` | Arbitrum |
+| `avalanche` | Avalanche |
+| `base` | Base |
+| `celo` | Celo |
+| `ethereum` | Ethereum |
+| `hedera` | Hedera |
+| `optimism` | Optimism |
+| `polygon` | Polygon |
+| `solana` | Solana |
+
+### Supported `transfer_type` values for USDT
+
+| transfer\_type (API id) | Name |
+| --- | --- |
+| `tron` | Tron |
+
+### Supported `transfer_type` values for RLUSD
+
+| transfer\_type (API id) | Name |
+| --- | --- |
+| `xrp_ledger` | XRP Ledger |
+| `ethereum` | Ethereum |
+
+<Info>
+  For Brale-issued `value_type` stablecoins (e.g., `SBC`, `USDGLO`), supported `transfer_type` values are configured during onboarding. Contact [support@brale.xyz](mailto:support@brale.xyz) for details.
+</Info>
+
 If you need additional rails, contact [support@brale.xyz](mailto:support@brale.xyz).

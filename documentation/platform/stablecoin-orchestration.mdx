@@ -25,7 +25,7 @@ Stablecoin orchestration coordinates how funds enter, move, and exit your ecosys
 
 ## Implementation checkpoints
 
-- **Identify rails**: choose `transfer_type` + `value_type` pairs from [Transfer Types](/docs/coverage/transfer-types) and [Value Types](/coverage/value-types).
+- **Identify rails**: choose `transfer_type` + `value_type` pairs from [Transfer Types](/coverage/transfer-types) and [Value Types](/coverage/value-types).
 - **Use internal custody**: fetch custodial addresses (`type=internal`) per chain for mint/payout flows; register external addresses for counterparties.
 - **Always send Idempotency-Key** on create POSTs; reuse the same key on retries.
 - **Brand ACH payouts** when needed; omit branding for wire/RTP.
@@ -37,5 +37,5 @@ Stablecoin orchestration coordinates how funds enter, move, and exit your ecosys
 - [Addresses](/key-concepts/addresses)  
 - [Automations](/key-concepts/automations)  
 - [Value Types](/coverage/value-types)  
-- [Transfer Types](/docs/coverage/transfer-types)  
+- [Transfer Types](/coverage/transfer-types)  
 - [Troubleshooting](/documentation/troubleshooting)
