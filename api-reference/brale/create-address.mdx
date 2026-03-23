@@ -1,6 +1,102 @@
 ---
 title: 'Create a new external address'
-description: 'Creates a non-custodial address (EOA) for the specified account.'
+description: 'Creates a non-custodial address (EOA) for the specified account using the Direct bank entry path.'
 openapi: 'POST /accounts/{account_id}/addresses/external'
 ---
+
+This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, or `rtp`.
+
+<Note>
+This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [Plaid-linked bank account flow](/api-reference/brale/create-plaid-link-token) instead.
+</Note>
+
+For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
+
+### Direct bank entry examples
+
+#### ACH credit
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["ach_credit", "same_day_ach_credit"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "name": "Example Bank",
+  "bank_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "beneficiary_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "account_type": "checking"
+}
+```
+
+#### Wire
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["wire"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "name": "Example Bank",
+  "bank_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "beneficiary_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "account_type": "checking"
+}
+```
+
+#### RTP
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "name": "Example Bank",
+  "bank_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "beneficiary_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "account_type": "checking"
+}
+```
+
+<Info>
+RTP eligibility is determined asynchronously by the banking partner after the address is created. The `rtp_credit` transfer type may not appear immediately. See [Key Concepts → Addresses](/key-concepts/addresses#create-external-address-for-rtp) for details.
+</Info>
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

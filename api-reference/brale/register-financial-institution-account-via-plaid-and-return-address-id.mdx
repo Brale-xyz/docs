@@ -1,6 +1,17 @@
 ---
 title: 'Register financial institution account via Plaid and return address ID'
-description: 'Registers a bank using a Plaid public_token and returns the new Address ID.'
+description: 'Completes the Plaid-linked bank account flow by exchanging a Plaid public_token and returning the new address_id.'
 openapi: 'POST /accounts/{account_id}/plaid/register-account'
 ---
+
+This endpoint completes the **Plaid-linked bank account** flow. It exchanges the `public_token` from Plaid Link, registers the bank account, and returns an `address_id` you can use in transfers.
+
+The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp`. It does **not** support `wire`.
+
+<Note>
+**Previous step:** Generate a `link_token` using [Create Plaid link token](/api-reference/brale/create-plaid-link-token) and complete the Plaid Link flow before calling this endpoint.
+</Note>
+
+For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
