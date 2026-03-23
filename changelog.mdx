@@ -1,0 +1,27 @@
+---
+title: "Changelog"
+description: "The latest updates and improvements to the Brale platform."
+---
+
+<Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
+  ## Tron support
+
+  Brale now supports **Tron** as a transfer type. You can mint, burn, and transfer stablecoins on Tron mainnet and Tron testnet. Use `tron` and `tron_testnet` as `transfer_type` values in the API. See [transfer types](/coverage/transfer-types) for the full list of supported chains.
+
+  ## USDT and RLUSD now available
+
+  Two new third-party stablecoins are available as value types:
+
+  - **USDT** (Tether USD) — issued by Tether
+  - **RLUSD** (Ripple USD) — issued by Ripple
+
+  You can now use these alongside Brale-issued stablecoins in transfers. See [value types](/coverage/value-types) for the complete registry.
+
+  ## Transfer timing reference
+
+  A new [transfer timing](/documentation/platform/transfer-timing) page documents cut-off times, settlement windows, and finality expectations for every supported transfer type — including fiat rails (wire, ACH, RTP) and onchain networks grouped by speed tier. Use it to set polling intervals and plan around settlement times.
+
+  ## 20+ supported blockchains
+
+  The platform now supports over 20 blockchain networks for stablecoin issuance and transfers, up from 14. See the full list in [transfer types](/coverage/transfer-types).
+</Update>

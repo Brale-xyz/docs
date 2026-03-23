@@ -34,14 +34,26 @@ When your customer's Account is onboarded, Brale automatically generates interna
 
 Create external addresses to link on-chain wallets or off-chain bank endpoints.
 
-Addresses can be created in two ways:
+### Two ways to create an external bank address
 
-- Addresses API
-- Plaid
+Brale supports two paths for creating an external off-chain bank address. The path you choose determines which `transfer_types` are available.
 
-**POST** `/accounts/{account_id}/addresses/external`
+| Capability | Plaid-linked bank account | Direct bank entry |
+| --- | --- | --- |
+| `ach_debit` | Supported | Not supported |
+| `ach_credit` | Supported | Supported |
+| `rtp` | Supported | Supported |
+| `wire` | Not supported | Supported |
 
-Offchain addresses supporting ach and rtp related transfer_types can also be registered via Plaid. See the full guide below.
+<Warning>
+**ACH debit** is only available through the **Plaid-linked bank account** flow. You cannot enable `ach_debit` via Direct bank entry.
+</Warning>
+
+<Warning>
+**Wire** is only available through the **Direct bank entry** flow. You cannot enable `wire` via the Plaid-linked bank account flow.
+</Warning>
+
+For a full comparison and guidance on which path to use, see [External bank addresses](/key-concepts/external-bank-addresses).
 
 ### Create onchain external address
 
@@ -61,12 +73,13 @@ The blockchains the address supports. See [Supported Chains](/coverage/value-typ
 }
 ```
 
-### Create Non-Custodial (External) Address for ACH Credits
+### Create via Direct bank entry
 
-These support the following `transfer_types` and enable USD to be sent to a destination in a transfer.
+Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, and `rtp`. It does **not** support `ach_debit`.
 
-- `ach_credit`
-- `same_day_ach_credit`
+**POST** `/accounts/{account_id}/addresses/external`
+
+#### ACH credit example
 
 ```json Request
 {
@@ -99,7 +112,44 @@ These support the following `transfer_types` and enable USD to be sent to a dest
 }
 ```
 
-### Create External Address for RTP
+#### Wire example
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["wire"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "name": "Example Bank",
+  "bank_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "beneficiary_address": {
+    "street_line_1": "100 Example St",
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  },
+  "account_type": "checking"
+}
+```
+
+```json Response
+{
+  "id": "2VcUIIsgARwVbEGlIYbhg6fGG57"
+}
+```
+
+<Note>
+Need `ach_debit`? Use the [Plaid-linked bank account flow](#create-via-plaid-linked-bank-account) instead.
+</Note>
+
+### Create external address for RTP
 
 Real-time payments (`rtp_credit`) work slightly differently from other transfer types.
 
@@ -212,9 +262,11 @@ You can also use this endpoint to update the human-readable name (alias) of an A
 - Sending a transfer type that is already enabled is idempotent and has no effect.
 - This endpoint can also be used to update the `name` of the address, a human readable alias.
 
-## Create Addresses through Plaid
+## Create via Plaid-linked bank account
 
-This guide walks you through how to enable your customers to securely link their bank accounts via Plaid. After linking, the new Addresses can be used for ACH debits, ACH credits and RTP.
+This flow lets your customers securely link their bank accounts via Plaid. Addresses created through Plaid support `ach_debit`, `ach_credit`, and `rtp`. This is the **only** path that supports `ach_debit`.
+
+For a full comparison of both paths, see [External bank addresses](/key-concepts/external-bank-addresses).
 
 ### Overview of the Flow
 

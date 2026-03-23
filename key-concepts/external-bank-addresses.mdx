@@ -1,0 +1,49 @@
+---
+title: "External bank addresses"
+description: "Two paths for creating external off-chain bank addresses: Plaid-linked bank account and Direct bank entry."
+---
+
+<p class="intro-subheading">
+Brale supports two paths for creating an external off-chain bank address, each unlocking different transfer types.
+</p>
+
+When you create an external bank address, the path you choose determines which `transfer_types` are available for that address. Choose the right path based on the transfer rails you need.
+
+## Comparison
+
+| Capability | Plaid-linked bank account | Direct bank entry |
+| --- | --- | --- |
+| `ach_debit` | Supported | Not supported |
+| `ach_credit` | Supported | Supported |
+| `rtp` | Supported | Supported |
+| `wire` | Not supported | Supported |
+
+<Warning>
+**ACH debit** is only available through the **Plaid-linked bank account** flow. You cannot enable `ach_debit` via Direct bank entry.
+</Warning>
+
+<Warning>
+**Wire** is only available through the **Direct bank entry** flow. You cannot enable `wire` via the Plaid-linked bank account flow.
+</Warning>
+
+## Which path should you use?
+
+- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `rtp`.
+- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, and `rtp`.
+
+## Plaid-linked bank account flow
+
+This flow uses the Plaid Link SDK to securely connect a bank account in two steps:
+
+1. [Create a Plaid link token](/api-reference/brale/create-plaid-link-token) — Generate a `link_token` to launch Plaid Link in your front-end.
+2. [Register the account via Plaid](/api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id) — Exchange the `public_token` from Plaid to create an `address_id`.
+
+For a full walkthrough, see [Key Concepts → Addresses → Create addresses through Plaid](/key-concepts/addresses#create-addresses-through-plaid).
+
+## Direct bank entry flow
+
+Submit bank account details directly using the Addresses API:
+
+- [Create a new external address](/api-reference/brale/create-address) — Provide account number, routing number, and bank details to create an `address_id` supporting `wire`, `ach_credit`, and `rtp`.
+
+For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).

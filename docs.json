@@ -27,6 +27,11 @@
           "anchor": "API Logs",
           "icon": "database",
           "href": "https://app.brale.xyz/api?tab=activity"
+        },
+        {
+          "anchor": "Changelog",
+          "icon": "clock-rotate-left",
+          "href": "/changelog"
         }
       ]
     },
@@ -107,6 +112,7 @@
               "key-concepts/transfers",
               "key-concepts/accounts",
               "key-concepts/addresses",
+              "key-concepts/external-bank-addresses",
               "key-concepts/automations",
               "key-concepts/financial-institutions",
               "key-concepts/idempotency"
