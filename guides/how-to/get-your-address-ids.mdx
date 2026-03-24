@@ -63,3 +63,7 @@ Use the Addresses API to fetch your custodial `address_id` values. These are req
 <Tip>
   For balances, pair the `address_id` with both `transfer_type` and `value_type` in `GET /accounts/{account_id}/addresses/{address_id}/balance`.
 </Tip>
+
+<Tip>
+  To find a specific registered onchain address, call `GET /accounts/{account_id}/addresses?address=0x...` with the exact onchain address. You can also filter by `type` and `transfer_type`.
+</Tip>

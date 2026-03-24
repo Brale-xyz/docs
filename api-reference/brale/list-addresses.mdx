@@ -3,4 +3,37 @@ title: 'Fetch all addresses'
 description: 'Retrieves all addresses (internal and external) associated with the given account.'
 openapi: 'GET /accounts/{account_id}/addresses'
 ---
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+## Supported query parameters
+
+You can filter the results using the following query parameters:
+
+| Parameter       | Type              | Description                                                                                                        |
+| --------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `address`       | string            | Filters results to addresses whose onchain address exactly matches the provided value (e.g., an EVM or Solana address). |
+| `type`          | enum              | Filter by address type: `internal` \| `external`.                                                                  |
+| `transfer_type` | enum (repeatable) | Filter by one or more transfer types (e.g., `ethereum`, `base`, `solana`, `stellar`).                              |
+
+<Tip>
+If you already know the onchain address you are looking for, you can filter the addresses list by passing the exact address in the `address` query parameter. This is useful when you need to resolve an onchain address to its Brale `address_id`.
+</Tip>
+
+### Example: filter by exact onchain address
+
+To find a specific registered onchain address, pass it as the `address` query parameter:
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses?address=0xcdCfd05B57c6136F090658C123063d12DebaA51D" \
+  --header "Authorization: Bearer ${ACCESS_TOKEN}"
+```
+
+### Example: filter by type and transfer type
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses?type=external&transfer_type=solana&transfer_type=base" \
+  --header "Authorization: Bearer ${ACCESS_TOKEN}"
+```
