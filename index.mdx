@@ -52,25 +52,39 @@ description: "Issue, move, and manage stablecoins with Brale's APIs."
 
 <Columns cols={3}>
   <Card
-    title="Onramp (fiat → stablecoin)"
+    title="Onramp to custodial wallet"
     icon="arrow-up-right"
     href="/guides/fiat-to-stablecoin-onramp"
   >
-    Move USD to stablecoin on supported chains.
+    Deposit USD and mint stablecoins. Wire · ACH debit · Automation.
   </Card>
   <Card
-    title="Offramp (stablecoin → fiat)"
+    title="Onramp to end-user wallet"
+    icon="arrow-up-right"
+    href="/guides/ach-on-ramp"
+  >
+    Fund end-user wallets via ACH debit.
+  </Card>
+  <Card
+    title="Offramp to bank account"
     icon="arrow-down-left"
     href="/guides/stablecoin-to-fiat-offramp"
   >
-    Convert stablecoin back to USD.
+    Convert stablecoins to USD. Wire · ACH · RTP.
   </Card>
   <Card
-    title="Swap stablecoins/chains"
+    title="Swap stablecoins or chains"
     icon="shuffle"
     href="/guides/stablecoin-to-stablecoin-swap"
   >
-    Swap between stablecoins or networks.
+    1:1 swaps between stablecoins or cross-chain moves.
+  </Card>
+  <Card
+    title="Send stablecoin payouts"
+    icon="money-bill-transfer"
+    href="/guides/stablecoin-payouts"
+  >
+    Distribute stablecoins to external wallets.
   </Card>
   <Card
     title="Issue your stablecoin"
@@ -79,15 +93,8 @@ description: "Issue, move, and manage stablecoins with Brale's APIs."
   >
     Create and manage a branded stablecoin with Brale.
   </Card>
-  <Card title="Managed accounts" icon="users" href="/guides/managed-accounts">
-    Manage funds for end customers with managed accounts.
-  </Card>
-  <Card
-    title="Payouts"
-    icon="money-bill-transfer"
-    href="/guides/stablecoin-payouts"
-  >
-    Send payouts programmatically.
+  <Card title="Custodial accounts" icon="users" href="/guides/managed-accounts">
+    Hold stablecoins on behalf of your end users.
   </Card>
 </Columns>
 
