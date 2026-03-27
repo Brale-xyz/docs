@@ -15,17 +15,17 @@ When you submit a [transfer](/key-concepts/transfers) through the Brale API, the
 
 ## At a Glance
 
-| `transfer_type`       | Rail                              | Settlement        | Availability     |
-| --------------------- | --------------------------------- | ----------------- | ---------------- |
-| `wire`                | Wire                              | ~2 hours          | US business days |
-| `same_day_ach_credit` | Same-Day ACH                      | Same day          | US business days |
-| `ach_credit`          | ACH Credit                        | 1–3 business days | US business days |
-| `ach_debit`           | ACH Debit                         | 1–3 business days | US business days |
-| `rtp_credit`          | RTP                               | Minutes           | 24/7/365         |
-| Onchain (Tier 0)      | Monad, Radius                     | Under 10 seconds  | 24/7/365         |
-| Onchain (Tier 1)      | Avalanche, Solana, Stellar, etc.  | Under 30 seconds  | 24/7/365         |
-| Onchain (Tier 2)      | Base, Celo, Optimism, etc.        | Under 60 seconds  | 24/7/365         |
-| Onchain (Tier 3)      | Ethereum, Polygon, Arbitrum, etc. | Over 60 seconds   | 24/7/365         |
+| `transfer_type` | Rail | Settlement | Availability |
+| --- | --- | --- | --- |
+| `wire` | Wire | ~2 hours | US business days |
+| `same_day_ach_credit` | Same-Day ACH | Same day | US business days |
+| `ach_credit` | ACH Credit | 1–3 business days | US business days |
+| `ach_debit` | ACH Debit | 1–3 business days | US business days |
+| `rtp_credit` | RTP | Minutes | 24/7/365 |
+| Onchain (Tier 0) | Monad, Radius | Under 10 seconds | 24/7/365 |
+| Onchain (Tier 1) | Avalanche, Solana, Stellar, etc. | Under 30 seconds | 24/7/365 |
+| Onchain (Tier 2) | Base, Celo, Optimism, etc. | Under 60 seconds | 24/7/365 |
+| Onchain (Tier 3) | Ethereum, Polygon, Arbitrum, etc. | Over 60 seconds | 24/7/365 |
 
 ## Offchain Transfer Timing
 
@@ -35,58 +35,58 @@ See [Transfer Types](/coverage/transfer-types) for the full list of offchain `tr
 
 ### Wire Transfer
 
-| Property                | Value                |
-| ----------------------- | -------------------- |
-| `transfer_type`         | `wire`               |
-| Cut-off time            | 5:00 PM ET           |
-| Average Settlement time | 2 hours or less      |
-| Availability            | US business days     |
-| Direction               | Inbound and outbound |
+| Property | Value |
+| --- | --- |
+| `transfer_type` | `wire` |
+| Cut-off time | 5:00 PM ET |
+| Average Settlement time | 2 hours or less |
+| Availability | US business days |
+| Direction | Inbound and outbound |
 
 Wire transfers settle within approximately 2 hours. To ensure same-day settlement, submit wires by 3:00 PM ET — this allows time for the ~2-hour reconciliation window before the 5:00 PM ET cut-off. Wires submitted after the recommended submission time of 3PM ET are processed on the next business day. Inbound wire recognition is also dependent on the sending bank's processing time, risk review, and compliance checks if there are abnormal patterns.
 
 ### Same-Day ACH Credit
 
-| Property           | Value                                         |
-| ------------------ | --------------------------------------------- |
-| `transfer_type`    | `same_day_ach_credit`                         |
-| Processing windows | 10:30 AM / 2:45 PM / 4:45 PM ET               |
-| Settlement time    | Same day (by ~1:00 PM / 5:00 PM / 6:00 PM ET) |
-| Availability       | US business days                              |
-| Direction          | Outbound                                      |
+| Property | Value |
+| --- | --- |
+| `transfer_type` | `same_day_ach_credit` |
+| Processing windows | 10:30 AM / 2:45 PM / 4:45 PM ET |
+| Settlement time | Same day (by ~1:00 PM / 5:00 PM / 6:00 PM ET) |
+| Availability | US business days |
+| Direction | Outbound |
 
 Same-Day ACH operates in three daily processing windows set by the Federal Reserve. Transfers are batched into the next available window after submission. Settlement occurs approximately 2 hours after each window closes.
 
 ### ACH Credit
 
-| Property        | Value             |
-| --------------- | ----------------- |
-| `transfer_type` | `ach_credit`      |
+| Property | Value |
+| --- | --- |
+| `transfer_type` | `ach_credit` |
 | Settlement time | 1–3 business days |
-| Availability    | US business days  |
-| Direction       | Outbound          |
+| Availability | US business days |
+| Direction | Outbound |
 
 Standard ACH credit transfers settle within 1 to 3 business days depending on the receiving bank.
 
 ### ACH Debit
 
-| Property        | Value             |
-| --------------- | ----------------- |
-| `transfer_type` | `ach_debit`       |
+| Property | Value |
+| --- | --- |
+| `transfer_type` | `ach_debit` |
 | Settlement time | 1–3 business days |
-| Availability    | US business days  |
-| Direction       | Inbound           |
+| Availability | US business days |
+| Direction | Inbound |
 
 ACH debit (pull) transfers settle within 1 to 3 business days based on risk controls. ACH debits are subject to returns based on standard ACH returns and corrections. If an ACH debit is returned (for example, due to insufficient funds), the associated transfer will be canceled and you will need to re-initiate the transfer.
 
 ### RTP Credit
 
-| Property        | Value        |
-| --------------- | ------------ |
+| Property | Value |
+| --- | --- |
 | `transfer_type` | `rtp_credit` |
-| Settlement time | Minutes      |
-| Availability    | 24/7/365     |
-| Direction       | Outbound     |
+| Settlement time | Minutes |
+| Availability | 24/7/365 |
+| Direction | Outbound |
 
 Real-Time Payments (RTP) settle in minutes with immediate confirmation. RTP is available around the clock, including weekends and holidays. The recipient's bank must support the RTP network. RTP transfers are irrevocable once sent.
 
@@ -108,38 +108,38 @@ Time to settle indicates end-to-end API averages to inform your time to first po
 
 To keep things simple, we group blockchain end-to-end settlement time via the API into speed tiers to set expectations. Actual on-chain confirmations may be faster — these averages are derived from transaction data across platform testing.
 
-| Tier | Timing           |
-| ---- | ---------------- |
-| 0    | Under 10 seconds |
-| 1    | Under 30 seconds |
-| 2    | Under 60 seconds |
-| 3    | Over 60 seconds  |
+| Tier | Timing |
+| --- | --- |
+| 0 | Under 10 seconds |
+| 1 | Under 30 seconds |
+| 2 | Under 60 seconds |
+| 3 | Over 60 seconds |
 
 ### Onchain Transfer Types
 
-| `transfer_type` | Network           | Speed Tier |
-| --------------- | ----------------- | ---------- |
-| `monad`         | Monad             | 0          |
-| `radius`        | Radius            | 0          |
-| `avalanche`     | Avalanche         | 1          |
-| `canton`        | Canton            | 1          |
-| `solana`        | Solana            | 1          |
-| `spark`         | Spark (Flare)     | 1          |
-| `stellar`       | Stellar           | 1          |
-| `tempo`         | Tempo             | 1          |
-| `xrp_ledger`    | XRP Ledger        | 1          |
-| `algorand`      | Algorand          | 2          |
-| `base`          | Base              | 2          |
-| `celo`          | Celo              | 2          |
-| `coreum`        | Coreum            | 2          |
-| `optimism`      | Optimism          | 2          |
-| `arbitrum`      | Arbitrum          | 3          |
-| `classic`       | Ethereum Classic  | 3          |
-| `ethereum`      | Ethereum          | 3          |
-| `hedera`        | Hedera            | 3          |
-| `kusama`        | Polkadot / Kusama | 3          |
-| `polygon`       | Polygon PoS       | 3          |
-| `xion`          | Xion              | 3          |
+| `transfer_type` | Network | Speed Tier |
+| --- | --- | --- |
+| `monad` | Monad | 0 |
+| `radius` | Radius | 0 |
+| `avalanche` | Avalanche | 1 |
+| `canton` | Canton | 1 |
+| `solana` | Solana | 1 |
+| `spark` | Spark | 1 |
+| `stellar` | Stellar | 1 |
+| `tempo` | Tempo | 1 |
+| `xrp_ledger` | XRP Ledger | 1 |
+| `algorand` | Algorand | 2 |
+| `base` | Base | 2 |
+| `celo` | Celo | 2 |
+| `coreum` | Coreum | 2 |
+| `optimism` | Optimism | 2 |
+| `arbitrum` | Arbitrum | 3 |
+| `classic` | Ethereum Classic | 3 |
+| `ethereum` | Ethereum | 3 |
+| `hedera` | Hedera | 3 |
+| `kusama` | Polkadot / Kusama | 3 |
+| `polygon` | Polygon PoS | 3 |
+| `xion` | Xion | 3 |
 
 <Tip>
   As a best practice, begin polling at **25% of the expected settlement time** for your transfer type's speed tier. For example, for a Tier 1 network (~30 seconds), start your first poll at ~7 seconds.
@@ -160,12 +160,12 @@ stateDiagram-v2
     canceled --> [*]
 ```
 
-| Status       | Terminal | Description                                                                                                                                                                                                                                                                                                            |
-| ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pending`    | No       | The transfer has been submitted but is not yet in progress. For fiat transfers, this typically means the system is waiting for funds, confirmation from a correspondent, or the transfer is under review.                                                                                                              |
-| `processing` | No       | The transfer is actively being processed. For onchain transfers, this includes signing, broadcasting, and awaiting network confirmation. If an onchain transaction encounters a transient error (such as a signing timeout or network congestion), Brale will automatically retry it while it remains in `processing`. |
-| `complete`   | Yes      | The transfer has finalized and funds have arrived at the destination.                                                                                                                                                                                                                                                  |
-| `canceled`   | Yes      | The transfer has been permanently canceled and will not be retried. This is the only terminal failure state.                                                                                                                                                                                                           |
+| Status | Terminal | Description |
+| --- | --- | --- |
+| `pending` | No | The transfer has been submitted but is not yet in progress. For fiat transfers, this typically means the system is waiting for funds, confirmation from a correspondent, or the transfer is under review. |
+| `processing` | No | The transfer is actively being processed. For onchain transfers, this includes signing, broadcasting, and awaiting network confirmation. If an onchain transaction encounters a transient error (such as a signing timeout or network congestion), Brale will automatically retry it while it remains in `processing`. |
+| `complete` | Yes | The transfer has finalized and funds have arrived at the destination. |
+| `canceled` | Yes | The transfer has been permanently canceled and will not be retried. This is the only terminal failure state. |
 
 <Note>
   `complete` and `canceled` are the only terminal statuses. If a transfer is in `pending` or `processing`, it is still in progress and may still complete. Do not treat a non-terminal status as a final outcome.
@@ -229,16 +229,19 @@ The response includes a `status` field with one of the values described above, a
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card icon="route" href="/coverage/transfer-types" title="Transfer Types">
-    Full list of supported onchain and offchain transfer_type identifiers.
+  <Card title="Transfer Types" icon="route" href="/coverage/transfer-types">
+    Full list of supported onchain and offchain transfer\_type identifiers.
   </Card>
-  <Card icon="coins" href="/coverage/value-types" title="Value Types">
-    Canonical value_type identifiers for stablecoins and fiat currencies.
+
+  <Card title="Value Types" icon="coins" href="/coverage/value-types">
+    Canonical value\_type identifiers for stablecoins and fiat currencies.
   </Card>
-  <Card icon="arrow-right-arrow-left" href="/key-concepts/transfers" title="Transfers">
+
+  <Card title="Transfers" icon="arrow-right-arrow-left" href="/key-concepts/transfers">
     How transfers work — required fields, scenarios, and status lifecycle.
   </Card>
-  <Card icon="bolt" href="/overview/quick-start" title="Quick Start">
+
+  <Card title="Quick Start" icon="bolt" href="/overview/quick-start">
     Create your first stablecoin transfer in minutes.
   </Card>
 </CardGroup>
