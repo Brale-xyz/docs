@@ -4,3 +4,34 @@ description: 'Create an automation that mints stablecoins to a destination walle
 openapi: 'POST /accounts/{account_id}/automations'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+## Branded Automations
+
+You can optionally include a `brand` object in the request body to control which business name appears as the beneficiary on funding instructions.
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `brand` | object | No | Controls the beneficiary name on the Automation's funding instructions. |
+| `brand.account_id` | string | Yes (if `brand` is provided) | The account whose business name and address appear as the beneficiary. Can be the caller's own account or a managed account. |
+
+<Note>
+  **Default behavior is unchanged.** If you omit `brand`, the beneficiary on funding instructions defaults to Brale. If you include `brand.account_id`, the beneficiary reflects that account's business name instead.
+</Note>
+
+### Example: branded automation request
+
+```json
+{
+  "name": "XYZ Onramp",
+  "destination_address": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "brand": { "account_id": "34lCJZ2bxbPAzB3ou67Md01veUo" }
+}
+```
+
+Once the Automation becomes active, `source.funding_instructions.beneficiary_name` in the response will reflect the branded account's business name.
+
+For more details on how branded Automations work, see the [Automations concept page](/key-concepts/automations#branded-automations).

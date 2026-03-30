@@ -533,9 +533,26 @@ components:
           example: XYZ Onramp
         destination_address:
           $ref: '#/components/schemas/AutomationDestinationAddress'
+        brand:
+          $ref: '#/components/schemas/AutomationBrand'
       required:
         - name
         - destination_address
+    AutomationBrand:
+      title: AutomationBrand
+      type: object
+      description: >-
+        Optional. Controls the beneficiary name on funding instructions. Pass the
+        account_id of your own account or a managed account whose business name
+        should appear as the beneficiary. If omitted, Brale is the default beneficiary.
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Ksuid'
+          description: >-
+            The account whose business name and address will appear as the
+            beneficiary on wire and ACH funding instructions.
+      required:
+        - account_id
     AutomationDestinationAddress:
       title: AutomationDestinationAddress
       type: object
