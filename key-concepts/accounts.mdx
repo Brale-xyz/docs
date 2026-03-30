@@ -5,7 +5,7 @@ description: "Accounts represent KYB-verified business entities with `account_id
 
 Accounts are represented by `account_id` values, which are assigned to KYB'd (business) entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients.
 
-Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. An `account_id` may also be linked to a `financial_institution_id` to enable first-party fiat funding for mints and redemptions.
+Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
 
 The `account_id` is used in the request URL across many Brale API endpoints to scope the request to a specific application or client.
 

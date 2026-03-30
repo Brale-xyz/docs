@@ -16,7 +16,7 @@ info:
     **What's new in 2.3.1**
     - Unified **Addresses** model for on-chain and off-chain endpoints
       - `Transfers` now accepts **address_id only** (no financial_institution_id)
-      - Optional `branding` object to control bank statement presentation
+      - Optional `brand` object to control bank statement presentation (`branding` still accepted as legacy alias)
     - Added off-chain rails: `ach_credit`, `same_day_ach_credit`, `ach_debit`, `same_day_ach_debit`, `rtp-credit`
     - Plaid endpoints moved to `/accounts/{account_id}/plaid/*`
     - `Financial Institutions` marked **deprecated** (migration path to **Addresses**)
@@ -228,6 +228,7 @@ components:
             - processing
             - complete
             - canceled
+            - failed
           example: pending
         amount:
           $ref: '#/components/schemas/Amount'
@@ -324,8 +325,11 @@ components:
           $ref: '#/components/schemas/TransferEndpoint'
         destination:
           $ref: '#/components/schemas/TransferEndpoint'
-        branding:
-          $ref: '#/components/schemas/TransferBranding'
+        brand:
+          $ref: '#/components/schemas/BrandData'
+          description: >-
+            Controls which Account name appears on ACH bank statement line items.
+            Legacy alias `branding` is still accepted but deprecated.
       required:
         - amount
         - source
@@ -1274,36 +1278,6 @@ paths:
                     address_id: addr_solana_internal
                     value_type: SBC
                     transfer_type: solana
-              wire_offramp_with_branding:
-                summary: "Burn on Polygon \u2192 Wire out (branding override)"
-                value:
-                  amount:
-                    value: '10000'
-                    currency: USD
-                  source:
-                    address_id: addr_polygon_internal
-                    value_type: SBC
-                    transfer_type: polygon
-                  destination:
-                    address_id: addr_wire_external
-                    value_type: USD
-                    transfer_type: wire
-                  branding:
-                    account_id: acct_company_beta
-              rtp_payout:
-                summary: Stablecoin payout via RTP
-                value:
-                  amount:
-                    value: '150'
-                    currency: USD
-                  source:
-                    address_id: addr_treasury_sbc
-                    value_type: SBC
-                    transfer_type: ethereum
-                  destination:
-                    address_id: addr_rtp_external
-                    value_type: USD
-                    transfer_type: rtp
               wire_offramp_with_brand:
                 summary: "Burn on Polygon \u2192 Wire out (brand override)"
                 value:
@@ -1320,6 +1294,22 @@ paths:
                     transfer_type: wire
                   brand:
                     account_id: acct_company_beta
+              rtp_payout:
+                summary: Stablecoin payout via RTP
+                value:
+                  amount:
+                    value: '150'
+                    currency: USD
+                  source:
+                    address_id: addr_treasury_sbc
+                    value_type: SBC
+                    transfer_type: ethereum
+                  destination:
+                    address_id: addr_rtp_external
+                    value_type: USD
+                    transfer_type: rtp
+                  brand:
+                    account_id: acct_company_beta
       responses:
         '201':
           description: Transfer successfully created
@@ -1329,9 +1319,7 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: string
-                    format: uuid
-                    example: 9f80c1f5-80df-4c5e-9b68-b9f5712d46d4
+                    $ref: '#/components/schemas/Ksuid'
   /accounts/{account_id}/transfers/{id}:
     get:
       tags:
@@ -1350,8 +1338,8 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-          description: The ID of the transfer (UUID)
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the transfer (KSUID)
       responses:
         '200':
           description: A single transfer object
