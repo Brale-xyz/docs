@@ -309,15 +309,20 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?value_type=USDC&tra
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
 | `page[size]` | Results per page (1–100) | 25 |
-| `page[next]` | Cursor from `pagination.next` | — |
+| `page[after]` | Cursor for forward pagination | — |
 | `page[prev]` | Cursor from `pagination.prev` | — |
 
-Only one of `page[next]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging.
+Only one of `page[after]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging.
 
-Use the `pagination.next` cursor from the previous response to page forward:
+Use the `pagination.next` value from the previous response as the `page[after]` query parameter in the next request.
 
 ```bash
-curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[next]=g3QAAAABdw..." \
+# First page
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+
+# Next page
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[after]=${cursor}" \
   -H "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 

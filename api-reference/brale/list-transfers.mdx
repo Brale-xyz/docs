@@ -32,10 +32,10 @@ To locate a transfer by its `transaction_id`, retrieve the full list (optionally
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
 | `page[size]` | Number of transfers per page (1–100) | 25 |
-| `page[next]` | Cursor from `pagination.next` in a previous response | — |
+| `page[after]` | Cursor for forward pagination | — |
 | `page[prev]` | Cursor from `pagination.prev` in a previous response | — |
 
-Only one of `page[next]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging.
+Only one of `page[after]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging. Use the `pagination.next` value from the previous response as the `page[after]` query parameter in the next request.
 
 ## Examples
 
