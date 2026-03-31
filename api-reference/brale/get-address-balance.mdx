@@ -1,6 +1,10 @@
 ---
 title: 'Fetch the balance of an internal (custodial) address for a specific token'
-description: 'Returns balance data for a given address, chain, and token.   Provide `transfer_type` and `value_type` as query parameters.'
+description: 'Returns balance data for a given address, chain, and token. Provide `transfer_type` and `value_type` as query parameters.'
 openapi: 'GET /accounts/{account_id}/addresses/{address_id}/balance'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+<Note>
+  The `transfer_type` parameter accepts any supported chain or rail identifier. See [Transfer Types](/coverage/transfer-types) for the current list of supported values — do not rely on a hardcoded enum.
+</Note>
