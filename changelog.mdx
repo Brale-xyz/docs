@@ -3,6 +3,28 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-04-04" description="Week of March 31" tags={["New", "Update", "Fix"]}>
+  ## Branded automations
+
+  You can now pass a `brand` object when creating an automation to control the beneficiary name on funding instructions. Set `brand.account_id` to your own or a managed account, and that account's business name appears as the beneficiary instead of the default. See [automations](/key-concepts/automations#branded-automations) for details.
+
+  ## Transfer list filters
+
+  The [List Transfers](/api-reference/brale/list-transfers) endpoint now supports `automation_id`, `value_type`, and `transfer_type` query parameters. Combine multiple filters to narrow results — for example, fetch only Solana USDC transfers created by a specific automation. All filters use exact match with AND semantics.
+
+  ## Address list filters
+
+  The [List Addresses](/api-reference/brale/list-addresses) endpoint now supports filtering by `address`, `type`, and `transfer_type`. Use the `address` parameter to resolve an onchain address to its Brale `address_id` without fetching the full list.
+
+  ## Turnkey Wallet integration guide
+
+  A new [Turnkey integration guide](/guides/integrations/turnkey) walks through connecting Turnkey-managed wallets with Brale for stablecoin onramps, offramps, and onchain transfers.
+
+  ## Pagination parameter update
+
+  The `page[next]` pagination parameter on the List Transfers endpoint has been renamed to `page[after]`. Update your integration accordingly — the value is still taken from the `pagination.next` field in the response. See [transfers](/key-concepts/transfers) for usage examples.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
