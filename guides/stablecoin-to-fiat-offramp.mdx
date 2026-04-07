@@ -9,6 +9,11 @@ In order to submit a stablecoin-to-fiat transaction, first you need to:
 - Create an [Address](/key-concepts/addresses) which is your customer's bank account where Brale will deposit USD
 - Deposit stablecoins to a Brale custodial address (address with type `internal`)
 
+<Warning>
+**Important** — Brale can only off-ramp stablecoins that are already held in a Brale internal address.
+If stablecoins are currently in an external or self-custody wallet, they must first be transferred to a Brale internal address before you submit the fiat payout request.
+</Warning>
+
 ## Link an Address to your customer's Account
 
 Destination bank addresses can be created in two ways:
@@ -122,3 +127,60 @@ Once your customer has an address and stablecoins are held in a Brale controlled
 ```
 
 Brale will burn the stablecoins from the Source Address immediately, and then transfer USD to the destination bank account.
+
+## Self-custody redemption
+
+If your customer holds stablecoins in a self-custody or external wallet (for example, Crossmint), the redemption is a two-step process:
+
+1. Transfer the stablecoins from the external wallet to a Brale internal address.
+2. Submit the off-ramp transfer from that internal address to the customer's bank account.
+
+### Step-by-step example
+
+1. Your customer holds USDC in an external wallet.
+2. You retrieve or display the appropriate Brale internal deposit address for the supported chain.
+3. Your customer sends the stablecoins from their external wallet to that Brale internal address.
+4. Wait until the on-chain deposit is confirmed and the funds are held in the Brale internal address.
+5. Submit the stablecoin-to-fiat transfer using that internal address as the source and the customer's bank address as the destination.
+6. Brale burns or converts the stablecoins and sends USD to the destination bank account.
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant W as External Wallet
+    participant B as Brale
+    participant BA as Bank Account
+    C->>W: Initiate redemption
+    W->>B: Transfer stablecoins to Brale internal address
+    B->>B: Receive stablecoins in internal address
+    B->>B: Burn / convert stablecoins
+    B->>BA: Send USD payout
+    B->>C: Redemption complete
+```
+
+Once the stablecoins have arrived in the Brale internal address, submit the off-ramp transfer:
+
+**POST** `https://api.brale.xyz/accounts/account_id/transfers`
+
+```json title="Request"
+{
+  "amount": {
+    "value": "250",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "YSBC",
+    "transfer_type": "Solana"
+  },
+  "destination": {
+    "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
+    "value_type": "USD",
+    "transfer_type": "ach_credit"
+  }
+}
+```
+
+<Note>
+Brale cannot redeem directly from an external wallet it does not control. The stablecoins must first be received into a Brale internal address so Brale can complete the redemption and fiat payout flow.
+</Note>
