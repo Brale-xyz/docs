@@ -29,11 +29,31 @@ When making `POST` requests Brale requires an Idempotency-Key header to be inclu
 ## **Create Plaid link token**
 
 - The following request is an example of how to create a Plaid Token that you will need to use next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
-- **iOS/Android considerations (Plaid Link):**
-  - Your backend should create the `link_token`. Your mobile app uses the `link_token` to initialize Plaid Link.
-  - Configure a **redirect URI** in your Plaid dashboard (and in your mobile app) so Plaid can return the user back to your app after they finish the Link flow.
-  - Use either a **custom URL scheme** (e.g., `myapp://plaid-redirect`) or a **universal/app link** (e.g., `https://example.com/plaid-redirect`) depending on your app’s setup.
-  - Make sure the redirect URI configured in Plaid **exactly matches** what the app is registered to handle, otherwise the Link handoff back to the app can fail.
+- **Native mobile app considerations (Plaid Link):**
+
+  Because Brale manages the Plaid client configuration, mobile Plaid OAuth is **not fully self-serve**. You must submit your platform-specific values to Brale so they can be whitelisted before mobile Plaid OAuth will work.
+
+  Your backend should create the `link_token`. Your mobile app uses the `link_token` to initialize Plaid Link.
+
+  **iOS:**
+  - Provide Brale with your iOS **redirect URI**. This must be an HTTPS universal link (e.g., `https://example.com/plaid-redirect`). Custom URL schemes are not supported for Plaid OAuth on iOS.
+  - Your app must be configured for [Universal Links](https://developer.apple.com/documentation/xcode/allowing-apps-and-websites-to-link-to-your-content) so the redirect returns the user to your app after they complete the bank login.
+
+  **Android:**
+  - Provide Brale with your **Android package name** (`android_package_name`, i.e., the `applicationId` from your app's build configuration).
+  - The package name you submit must exactly match your app's configuration. A mismatch will prevent Plaid from redirecting back to your app.
+
+  <Warning>
+  Brale must whitelist your iOS redirect URI and/or Android package name before mobile Plaid OAuth will function. Contact Brale to submit these values.
+  </Warning>
+
+  **Troubleshooting: user completes bank login but is not returned to the app**
+
+  If the user finishes the Plaid/bank login flow but lands in Safari (iOS) or is not redirected back to your app (Android), check the following:
+  - **Brale whitelist not completed** — confirm Brale has approved your redirect URI or package name.
+  - **iOS Universal Link misconfigured** — verify your app's Associated Domains entitlement and `apple-app-site-association` file are set up correctly.
+  - **Android package name mismatch** — ensure the `android_package_name` submitted to Brale matches your app's `applicationId`.
+  - **App configuration does not match the submitted value** — double-check that the value registered with Brale exactly matches what your app is using at runtime.
 
 ```bash
 curl --request POST \

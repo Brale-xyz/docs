@@ -8,6 +8,8 @@ This endpoint is **step 1** of the **Plaid-linked bank account** flow for creati
 
 The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp`. This is the **only** path that enables `ach_debit`.
 
+**Native mobile apps:** If you are integrating Plaid Link in a native iOS or Android app, you must submit your iOS redirect URI or Android package name to Brale for whitelisting before mobile Plaid OAuth will work. See the [ACH on-ramp guide](/guides/ach-on-ramp#create-plaid-link-token) for platform-specific setup details.
+
 **Next step:** After the user completes the Plaid Link flow, exchange the `public_token` using [Register financial institution account via Plaid](/api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id) to create the `address_id`.
 
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
