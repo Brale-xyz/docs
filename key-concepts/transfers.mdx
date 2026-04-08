@@ -36,6 +36,7 @@ Each source and destination includes:
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `brand` | Body  | object | **ACH only.** `{ "account_id": "<ACCOUNT_ID>" }` to control which Account name appears on **ACH** bank statement line items (ACH debit + ACH credit). Not supported for `wire` or `rtp`. |
+| `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 
 ## Transfer Scenarios: understanding `value_type` and `transfer_type`
 
@@ -152,10 +153,13 @@ Offramp your stablecoin to USD via wire transfer.
   "destination": {
     "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
     "value_type": "USD",
-    "transfer_type": "wire"
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048"
   }
 }
 ```
+
+For outbound wire transfers, you can optionally pass `destination.wire_memo` to include a memo or payment reference for the receiving bank or recipient.
 
 ## Stablecoin to USD (ACH)
 

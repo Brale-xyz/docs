@@ -865,6 +865,11 @@ components:
           type: string
         value_type:
           type: string
+        wire_memo:
+          type: string
+          description: >-
+            Optional memo or payment reference text sent with outbound wire
+            transfers. Only applies when transfer_type is wire.
       required:
         - transfer_type
         - value_type
@@ -1292,6 +1297,7 @@ paths:
                     address_id: addr_wire_external
                     value_type: USD
                     transfer_type: wire
+                    wire_memo: Invoice 1048
                   brand:
                     account_id: acct_company_beta
               rtp_payout:
