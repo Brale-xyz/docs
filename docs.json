@@ -236,6 +236,34 @@
   "openapi": "https://api.brale.xyz/openapi",
   "redirects": [
     {
+      "source": "/docs/accounts",
+      "destination": "/key-concepts/accounts"
+    },
+    {
+      "source": "/docs/transfers",
+      "destination": "/key-concepts/transfers"
+    },
+    {
+      "source": "/docs/addresses",
+      "destination": "/key-concepts/addresses"
+    },
+    {
+      "source": "/docs/stablecoin-to-fiat",
+      "destination": "/guides/stablecoin-to-fiat-offramp"
+    },
+    {
+      "source": "/docs/fiat-to-stablecoin",
+      "destination": "/guides/fiat-to-stablecoin-onramp"
+    },
+    {
+      "source": "/docs/quickstart-create-a-stablecoin-on-testnets",
+      "destination": "/overview/quick-start"
+    },
+    {
+      "source": "/reference/getting-started-1",
+      "destination": "/api-reference/brale-introduction"
+    },
+    {
       "source": "/docs/:slug*",
       "destination": "/documentation/:slug*"
     },
