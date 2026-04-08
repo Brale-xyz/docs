@@ -103,7 +103,7 @@ Offramps via RTP use the `rtp_credit` transfer_type on the destination Address. 
 
 ## Stablecoin to USD via Wire
 
-Once your customer has an address and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address.
+Once your customer has an address and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address. For outbound wire transfers, you can optionally pass `destination.wire_memo` to include a memo or payment reference with the wire.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
@@ -121,7 +121,8 @@ Once your customer has an address and stablecoins are held in a Brale controlled
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
     "value_type": "USD",
-    "transfer_type": "wire"
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048"
   }
 }
 ```
