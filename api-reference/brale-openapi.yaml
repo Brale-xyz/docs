@@ -409,19 +409,10 @@ components:
           $ref: '#/components/schemas/Amount'
         transfer_type:
           type: string
-          description: Blockchain where the balance lives
-          enum:
-            - solana
-            - ethereum
-            - polygon
-            - base
-            - arbitrum
-            - canton
-            - avalanche
-            - base_sepolia
-            - sepolia
-            - solana_devnet
-            - tempo_testnet
+          description: >-
+            Blockchain where the balance lives. See
+            [Transfer Types](/coverage/transfer-types) for the current list of
+            supported values.
           example: solana
         value_type:
           type: string
@@ -535,13 +526,16 @@ components:
         name:
           type: string
           example: XYZ Onramp
-        destination_address:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
+        source:
+          $ref: '#/components/schemas/AutomationSource'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
         brand:
           $ref: '#/components/schemas/AutomationBrand'
       required:
         - name
-        - destination_address
+        - source
+        - destination
     AutomationBrand:
       title: AutomationBrand
       type: object
@@ -557,22 +551,90 @@ components:
             beneficiary on wire and ACH funding instructions.
       required:
         - account_id
-    AutomationDestinationAddress:
-      title: AutomationDestinationAddress
+    AutomationSource:
+      title: AutomationSource
+      type: object
+      description: >-
+        Source funding configuration for the automation. `value_type` is required.
+        `transfer_type` is optional — omit it for standard fiat funding (the API
+        will assign the appropriate rail).
+      properties:
+        value_type:
+          type: string
+          description: >-
+            The stablecoin or currency code. See [Transfer Types](/coverage/transfer-types)
+            for supported values by `value_type`.
+          example: SBC
+        transfer_type:
+          type: string
+          nullable: true
+          description: >-
+            The funding rail. Optional — omit for standard fiat funding. See
+            [Transfer Types](/coverage/transfer-types) for supported values.
+          example: null
+      required:
+        - value_type
+    AutomationDestination:
+      title: AutomationDestination
       type: object
       properties:
         address_id:
           $ref: '#/components/schemas/Ksuid'
         value_type:
           type: string
+          description: >-
+            The stablecoin or currency code. See [Transfer Types](/coverage/transfer-types)
+            for supported values by `value_type`.
           example: SBC
         transfer_type:
           type: string
+          description: >-
+            The chain to mint on. See [Transfer Types](/coverage/transfer-types)
+            for supported values.
           example: solana
       required:
         - address_id
         - value_type
         - transfer_type
+    AutomationFundingInstructions:
+      title: AutomationFundingInstructions
+      type: object
+      description: Bank funding instructions for the automation source.
+      properties:
+        bank_name:
+          type: string
+          example: Example Bank
+        bank_address:
+          type: string
+          example: 456 Commerce St., Des Moines, IA 50309
+        beneficiary_name:
+          type: string
+          example: Jane Business
+        beneficiary_address:
+          type: string
+          example: 612 Commerce St., Des Moines, IA 50309
+        account_number:
+          type: string
+          example: '123456789'
+        routing_number:
+          type: string
+          example: '063108680'
+    AutomationSourceResponse:
+      title: AutomationSourceResponse
+      type: object
+      properties:
+        transfer_type:
+          type: string
+          nullable: true
+          description: >-
+            The funding rail, or null for standard fiat funding. See
+            [Transfer Types](/coverage/transfer-types) for supported values.
+          example: null
+        value_type:
+          type: string
+          example: SBC
+        funding_instructions:
+          $ref: '#/components/schemas/AutomationFundingInstructions'
     Automation:
       title: Automation
       type: object
@@ -584,11 +646,26 @@ components:
           example: Customer Onramp
         status:
           type: string
-          example: complete
-        wire_instructions:
-          $ref: '#/components/schemas/WireInstructions'
-        destinationAddress:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
+          description: >-
+            The current status of the automation (e.g. `active`, `pending`, `archived`).
+          example: active
+        source:
+          $ref: '#/components/schemas/AutomationSourceResponse'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
+        brand:
+          $ref: '#/components/schemas/AutomationBrand'
+          nullable: true
+          description: >-
+            Present when the automation was created with a `brand`. Null otherwise.
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-06-15T14:30:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-06-15T14:30:00Z'
     WireInstructions:
       title: WireInstructions
       type: object
@@ -624,27 +701,10 @@ components:
             $ref: '#/components/schemas/Automation'
     TransferType:
       type: string
-      description: Rail or chain identifier
-      enum:
-        - wire
-        - ach_credit
-        - same_day_ach_credit
-        - ach_debit
-        - same_day_ach_debit
-        - rtp_credit
-        - solana
-        - ethereum
-        - polygon
-        - base
-        - arbitrum
-        - canton
-        - avalanche
-        - base_sepolia
-        - sepolia
-        - solana_devnet
-        - tempo_testnet
-        - stellar
-        - xrp_ledger
+      description: >-
+        Rail or chain identifier. See [Transfer Types](/coverage/transfer-types)
+        for the current list of supported values.
+      example: solana
     ExternalAddressOnchainCreate:
       type: object
       required:
@@ -1646,10 +1706,7 @@ paths:
           content:
             '*/*':
               schema:
-                type: object
-                properties:
-                  id:
-                    $ref: '#/components/schemas/Ksuid'
+                $ref: '#/components/schemas/Automation'
     get:
       tags:
         - Automations

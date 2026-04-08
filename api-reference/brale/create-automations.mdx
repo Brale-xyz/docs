@@ -5,25 +5,50 @@ openapi: 'POST /accounts/{account_id}/automations'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
-## Branded Automations
-
-You can optionally include a `brand` object in the request body to control which business name appears as the beneficiary on funding instructions.
+## Request body
 
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
-| `brand` | object | No | Controls the beneficiary name on the Automation's funding instructions. |
-| `brand.account_id` | string | Yes (if `brand` is provided) | The account whose business name and address appear as the beneficiary. Can be the caller's own account or a managed account. |
+| `name` | string | Yes | A human-readable name for the automation. |
+| `source` | object | Yes | Funding source configuration. |
+| `source.value_type` | string | Yes | The stablecoin or currency code (e.g. `SBC`). See [Transfer Types](/coverage/transfer-types) for supported values. |
+| `source.transfer_type` | string | No | The funding rail. Omit for standard fiat funding — the API assigns the appropriate rail automatically. See [Transfer Types](/coverage/transfer-types) for supported values. |
+| `destination` | object | Yes | Where minted tokens are delivered. |
+| `destination.address_id` | string | Yes | The KSUID of the destination wallet address. |
+| `destination.value_type` | string | Yes | The stablecoin or currency code (e.g. `SBC`). |
+| `destination.transfer_type` | string | Yes | The chain to mint on (e.g. `solana`). See [Transfer Types](/coverage/transfer-types) for supported values. |
+| `brand` | object | No | Controls the beneficiary name on the automation's funding instructions. |
+| `brand.account_id` | string | Yes (if `brand` provided) | The account whose business name and address appear as the beneficiary on wire and ACH funding instructions. Can be the caller's own account or a managed account. |
 
 <Note>
-  **Default behavior is unchanged.** If you omit `brand`, the beneficiary on funding instructions defaults to Brale. If you include `brand.account_id`, the beneficiary reflects that account's business name instead.
+  **Default behavior:** If you omit `brand`, the beneficiary on funding instructions defaults to Brale. If you include `brand.account_id`, the beneficiary reflects that account's business name instead.
 </Note>
+
+### Example: basic automation request
+
+```json
+{
+  "name": "XYZ Onramp",
+  "source": {
+    "value_type": "SBC"
+  },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  }
+}
+```
 
 ### Example: branded automation request
 
 ```json
 {
   "name": "XYZ Onramp",
-  "destination_address": {
+  "source": {
+    "value_type": "SBC"
+  },
+  "destination": {
     "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
     "value_type": "SBC",
     "transfer_type": "solana"
@@ -32,6 +57,6 @@ You can optionally include a `brand` object in the request body to control which
 }
 ```
 
-Once the Automation becomes active, `source.funding_instructions.beneficiary_name` in the response will reflect the branded account's business name.
+Once the automation becomes active, `source.funding_instructions.beneficiary_name` in the response reflects the branded account's business name.
 
-For more details on how branded Automations work, see the [Automations concept page](/key-concepts/automations#branded-automations).
+For more details on how branded automations work, see the [Automations concept page](/key-concepts/automations#branded-automations).

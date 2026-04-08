@@ -4,3 +4,59 @@ description: 'Returns details for a specific automation.'
 openapi: 'GET /accounts/{account_id}/automations/{id}'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+## Response shape
+
+| Field | Type | Description |
+| :---- | :--- | :---------- |
+| `id` | string | KSUID of the automation. |
+| `name` | string | Human-readable name. |
+| `status` | string | Current status (e.g. `active`, `pending`, `archived`). |
+| `source` | object | Funding source configuration. |
+| `source.transfer_type` | string \| null | Funding rail, or `null` for standard fiat funding. See [Transfer Types](/coverage/transfer-types). |
+| `source.value_type` | string | Stablecoin or currency code. |
+| `source.funding_instructions` | object | Bank funding instructions (present when the automation is active). |
+| `source.funding_instructions.bank_name` | string | Name of the receiving bank. |
+| `source.funding_instructions.bank_address` | string | Address of the receiving bank. |
+| `source.funding_instructions.beneficiary_name` | string | Beneficiary name on the wire/ACH instructions. |
+| `source.funding_instructions.beneficiary_address` | string | Beneficiary address. |
+| `source.funding_instructions.account_number` | string | Bank account number. |
+| `source.funding_instructions.routing_number` | string | Bank routing number. |
+| `destination` | object | Where minted tokens are delivered. |
+| `destination.address_id` | string | KSUID of the destination wallet address. |
+| `destination.transfer_type` | string | Chain the tokens are minted on. See [Transfer Types](/coverage/transfer-types). |
+| `destination.value_type` | string | Stablecoin or currency code. |
+| `brand` | object \| null | Present when the automation was created with a `brand`. |
+| `brand.account_id` | string | Account whose business name appears as the beneficiary. |
+| `created_at` | string | ISO 8601 timestamp. |
+| `updated_at` | string | ISO 8601 timestamp. |
+
+### Example 200 response
+
+```json
+{
+  "id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+  "name": "XYZ Onramp",
+  "status": "active",
+  "source": {
+    "transfer_type": null,
+    "value_type": "SBC",
+    "funding_instructions": {
+      "bank_name": "Example Bank",
+      "bank_address": "456 Commerce St., Des Moines, IA 50309",
+      "beneficiary_name": "Jane Business",
+      "beneficiary_address": "612 Commerce St., Des Moines, IA 50309",
+      "account_number": "123456789",
+      "routing_number": "063108680"
+    }
+  },
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "brand": null,
+  "created_at": "2024-06-15T14:30:00Z",
+  "updated_at": "2024-06-15T14:30:00Z"
+}
+```
