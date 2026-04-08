@@ -38,7 +38,28 @@ Each source and destination includes:
 | `brand` | Body  | object | **ACH only.** `{ "account_id": "<ACCOUNT_ID>" }` to control which Account name appears on **ACH** bank statement line items (ACH debit + ACH credit). Not supported for `wire` or `rtp`. |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 
-## Transfer Scenarios: understanding `value_type` and `transfer_type`
+## Response-only fields
+
+### `source.payment_details`
+
+`source.payment_details` appears when Brale has underlying payment metadata to expose for the source leg of a transfer. This is primarily relevant for inbound fiat-funded transfers (e.g., wire or ACH on-ramps, automation-triggered mints).
+
+The object is optional and may not be present on every transfer. Wire transfers typically include the fuller set of fields, while ACH transfers may include only a subset — fields may be `null` or omitted depending on available rail metadata.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `received_at` | string (ISO 8601) | When the underlying payment was received or posted |
+| `sender_name` | string \| null | Name of the originating sender, when available |
+| `sender_bank_name` | string \| null | Originating bank name, when available |
+| `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
+| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
+| `imad` | string \| null | Wire IMAD / tracking identifier, when available |
+
+<Note>
+  `source.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which is a request field for outbound wire transfers.
+</Note>
+
+## Transfer scenarios: understanding `value_type` and `transfer_type`
 
 | Flow                               | Source         | Destination                         | Description                                |
 | ---------------------------------- | -------------- | ----------------------------------- | ------------------------------------------ |
@@ -240,6 +261,8 @@ Process stablecoin payouts to one or many external addresses (EOAs).
 
 **GET** `https://api.brale.xyz/accounts/{account_id}/transfers/{transfer_id}`
 
+### On-chain transfer response
+
 ```json title="Response"
 {
   "id": "30NoY6R1Ns2tRBcx1Kb16SnuXOW",
@@ -263,6 +286,66 @@ Process stablecoin payouts to one or many external addresses (EOAs).
     "transaction_id": "0xdd5646ea…"
   },
   "note": null
+}
+```
+
+### Wire-funded transfer response (with `payment_details`)
+
+For inbound wire-funded transfers, the response includes `source.payment_details` with metadata about the underlying payment. This helps you identify the sender and reconcile inbound fiat payments.
+
+```json title="Response"
+{
+  "id": "3C0QcbwVywOGyU2HBSenljm5dhU",
+  "status": "complete",
+  "failure": null,
+  "source": {
+    "transfer_type": "wire",
+    "financial_institution_id": "3AjRnbvj9Mq6crkviJv08d0KLB2",
+    "value_type": "USD",
+    "payment_details": {
+      "received_at": "2026-04-07T00:01:24.514000Z",
+      "sender_name": "Originator Name",
+      "sender_bank_name": "JPMorgan Chase Bank",
+      "sender_bank_routing_number": "000000123",
+      "payment_reference": "Simulated Wire",
+      "imad": "20260406XOIZJDPP953495"
+    }
+  },
+  "destination": {
+    "transaction_id": "0x41c66f1d059dad7a55a854e157a1b5b938780c77ba5296e434a02dfb1727fe5e",
+    "transfer_type": "base",
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "ARB"
+  },
+  "updated_at": "2026-04-07T00:01:44.824834Z",
+  "created_at": "2026-04-07T00:01:27.756775Z",
+  "note": null,
+  "amount": {
+    "value": "102.0",
+    "currency": "USD"
+  },
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
+}
+```
+
+### ACH-funded transfer response (with `payment_details`)
+
+ACH transfers may include only a subset of `payment_details` fields. Fields may be `null` or omitted depending on available rail metadata.
+
+```json title="Response (source excerpt)"
+{
+  "source": {
+    "transfer_type": "ach_debit",
+    "value_type": "USD",
+    "payment_details": {
+      "received_at": "2026-04-07T02:10:06.921000Z",
+      "sender_name": "Test ACH Sender",
+      "sender_bank_name": null,
+      "sender_bank_routing_number": "721160232",
+      "payment_reference": null,
+      "imad": null
+    }
+  }
 }
 ```
 
@@ -333,6 +416,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 ## Reconciliation best practices
 
 - Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
+- For inbound fiat-funded transfers, check `source.payment_details` to identify the sender and match payments. Wire transfers typically include `sender_name`, `sender_bank_name`, and `imad`; ACH transfers may include only a subset of these fields.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 
