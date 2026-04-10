@@ -112,24 +112,42 @@ Query a transfer that has been created.
 
 ```json Response
 {
-  "status": "pending",
+  "id": "3C0QcbwVywOGyU2HBSenljm5dhU",
+  "status": "complete",
+  "failure": null,
   "amount": {
-    "value": "1",
+    "value": "102.0",
     "currency": "USD"
   },
-  "created_at": "2025-02-05T19:39:14.316Z",
-  "updated_at": "2025-02-05T19:39:14.316Z",
+  "created_at": "2026-04-07T00:01:27.756775Z",
+  "updated_at": "2026-04-07T00:01:44.824834Z",
   "source": {
-    "value_type": "usd",
-    "transfer_type": "wire"
+    "transfer_type": "wire",
+    "financial_institution_id": "3AjRnbvj9Mq6crkviJv08d0KLB2",
+    "value_type": "USD",
+    "payment_details": {
+      "received_at": "2026-04-07T00:01:24.514000Z",
+      "sender_name": "Originator Name",
+      "sender_bank_name": "JPMorgan Chase Bank",
+      "sender_bank_routing_number": "000000123",
+      "payment_reference": "Simulated Wire",
+      "imad": "20260406XOIZJDPP953495"
+    }
   },
   "destination": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
-    "value_type": "SBC",
-    "transfer_type": "polygon"
-  }
+    "transaction_id": "0x41c66f1d059dad7a55a854e157a1b5b938780c77ba5296e434a02dfb1727fe5e",
+    "transfer_type": "base",
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "ARB"
+  },
+  "note": null,
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
 }
 ```
+
+<Note>
+  `source.payment_details` appears when Brale has underlying payment metadata to expose for the source leg of a transfer. Wire transfers typically include the full set of fields (`sender_name`, `sender_bank_name`, `imad`, etc.). ACH transfers may include only a subset — fields may be `null` or omitted depending on available rail metadata. See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for the full field reference.
+</Note>
 
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 

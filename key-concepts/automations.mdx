@@ -28,8 +28,9 @@ Here’s what happens end-to-end when you use an onramp automation:
 4. **Stablecoins are minted automatically**\
    When funds arrive, Brale automatically creates a `Transfer` (USD → stablecoin), mints the stablecoin, and sends it to the `destination.address_id` configured on the automation.
 5. **Track activity via Transfers**\
-   You can reconcile and monitor all onramp activity by querying Transfers for the account:\
-   `GET /accounts/{account_id}/transfers`.
+    You can reconcile and monitor all onramp activity by querying Transfers for the account:\
+   `GET /accounts/{account_id}/transfers`.\
+   Transfers created by automations include `source.payment_details` when Brale has underlying payment metadata to expose. Use this to identify the sender and reconcile inbound fiat payments. See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for details.
 
 ## Creating an Automation
 
