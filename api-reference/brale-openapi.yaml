@@ -220,6 +220,8 @@ components:
       title: Transfer
       type: object
       properties:
+        id:
+          $ref: '#/components/schemas/Ksuid'
         status:
           type: string
           description: Lifecycle stage of the transfer
@@ -230,6 +232,11 @@ components:
             - canceled
             - failed
           example: pending
+        failure:
+          type: string
+          nullable: true
+          description: Failure reason when status is `failed`. Null otherwise.
+          example: null
         amount:
           $ref: '#/components/schemas/Amount'
         created_at:
@@ -244,6 +251,18 @@ components:
           $ref: '#/components/schemas/TransferEndpoint'
         destination:
           $ref: '#/components/schemas/TransferEndpoint'
+        note:
+          type: string
+          nullable: true
+          description: Optional note associated with the transfer.
+          example: null
+        automation_id:
+          type: string
+          nullable: true
+          description: >-
+            The ID of the automation that created this transfer, if applicable.
+            Present only on transfers created by automations.
+          example: null
     TransferEndpoint:
       title: TransferEndpoint
       type: object
@@ -256,6 +275,11 @@ components:
           example: wire
         address_id:
           $ref: '#/components/schemas/Ksuid'
+        financial_institution_id:
+          $ref: '#/components/schemas/Ksuid'
+          description: >-
+            Present in responses for transfers involving a financial institution.
+            Not included in create requests when using address_id.
         transaction_id:
           type: string
           description: >-
@@ -263,10 +287,50 @@ components:
             responses once the leg has been submitted to the network. Not included
             in create requests.
           example: '0xdd5646ea…'
+        payment_details:
+          $ref: '#/components/schemas/SourcePaymentDetails'
       required:
-        - address_id
         - value_type
         - transfer_type
+    SourcePaymentDetails:
+      title: SourcePaymentDetails
+      type: object
+      description: >-
+        Optional payment metadata for the source leg of a transfer. Present on
+        inbound fiat-funded transfers (wire, ACH) when Brale has underlying
+        payment metadata to expose. Response-only — not accepted in create
+        requests.
+      properties:
+        received_at:
+          type: string
+          format: date-time
+          description: When the underlying payment was received or posted
+          example: '2026-04-07T00:01:24.514000Z'
+        sender_name:
+          type: string
+          nullable: true
+          description: Name of the originating sender, when available
+          example: Originator Name
+        sender_bank_name:
+          type: string
+          nullable: true
+          description: Originating bank name, when available
+          example: JPMorgan Chase Bank
+        sender_bank_routing_number:
+          type: string
+          nullable: true
+          description: Originating bank routing number, when available
+          example: '000000123'
+        payment_reference:
+          type: string
+          nullable: true
+          description: Sender-provided payment reference or memo, when available
+          example: Simulated Wire
+        imad:
+          type: string
+          nullable: true
+          description: Wire IMAD / tracking identifier, when available
+          example: 20260406XOIZJDPP953495
     TransfersList:
       title: TransfersList
       description: List of transfers plus pagination cursors
@@ -289,6 +353,7 @@ components:
         transfers:
           - id: 30NoY6R1Ns2tRBcx1Kb16SnuXOW
             status: complete
+            failure: null
             source:
               transaction_id: "0xdd5646ea\u2026"
               address_id: "2MhCCIHu\u2026"
@@ -305,6 +370,33 @@ components:
               value: '0.10'
               currency: USD
             note: null
+            automation_id: null
+          - id: 3C0QcbwVywOGyU2HBSenljm5dhU
+            status: complete
+            failure: null
+            source:
+              transfer_type: wire
+              financial_institution_id: 3AjRnbvj9Mq6crkviJv08d0KLB2
+              value_type: USD
+              payment_details:
+                received_at: '2026-04-07T00:01:24.514000Z'
+                sender_name: Originator Name
+                sender_bank_name: JPMorgan Chase Bank
+                sender_bank_routing_number: '000000123'
+                payment_reference: Simulated Wire
+                imad: 20260406XOIZJDPP953495
+            destination:
+              transaction_id: '0x41c66f1d059dad7a55a854e157a1b5b938780c77ba5296e434a02dfb1727fe5e'
+              transfer_type: base
+              address_id: 3ARaM0I93ObWOIFDIztsTx4TAsp
+              value_type: ARB
+            updated_at: '2026-04-07T00:01:44.824834Z'
+            created_at: '2026-04-07T00:01:27.756775Z'
+            amount:
+              value: '102.0'
+              currency: USD
+            note: null
+            automation_id: 3AjRnDClEzwuCKlRioG3OXMS4pH
     TransferCreateRequest:
       title: TransferCreateRequest
       type: object
