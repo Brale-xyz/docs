@@ -3,6 +3,32 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-04-11" description="Week of April 7" tags={["New", "Update"]}>
+  ## PYUSD support
+
+  **PYUSD** (PayPal USD) is now available as a value type on Ethereum. You can use it in transfers alongside USDC, USDT, and RLUSD. See [transfer types](/coverage/transfer-types) for the full list of supported chains per stablecoin.
+
+  ## Payment details on transfer responses
+
+  Transfer responses now include `source.payment_details` for inbound fiat-funded transfers. This gives you metadata about the underlying payment — including sender name, bank name, routing number, payment reference, and IMAD (for wires). Use it to identify senders and reconcile inbound payments. See [transfers](/key-concepts/transfers) for field details and example responses.
+
+  ## Wire memo for outbound transfers
+
+  You can now pass `destination.wire_memo` when creating an outbound wire transfer to include a memo or payment reference for the receiving bank. See the [stablecoin-to-fiat offramp guide](/guides/stablecoin-to-fiat-offramp) for an example.
+
+  ## Branded automations
+
+  Automations now support an optional `brand` parameter. Pass `brand.account_id` to control which business name appears as the beneficiary on funding instructions — useful for white-label flows. See [automations](/key-concepts/automations) for details.
+
+  ## Transfer and address list filters
+
+  The [List Transfers](/api-reference/brale/list-transfers) endpoint now supports `automation_id`, `value_type`, and `transfer_type` query parameters so you can narrow results server-side. The [List Addresses](/api-reference/brale/list-addresses) endpoint now supports `address`, `type`, and `transfer_type` filters — including exact onchain address lookup to resolve an address to its Brale `address_id`.
+
+  ## Plaid Link for native mobile apps
+
+  If you're integrating Plaid Link in an iOS or Android app, you now need to submit your redirect URI (iOS) or package name (Android) to Brale for whitelisting before mobile Plaid OAuth will work. See the [ACH on-ramp guide](/guides/ach-on-ramp) for platform-specific setup.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
