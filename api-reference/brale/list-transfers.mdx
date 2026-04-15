@@ -16,16 +16,17 @@ If no transfers match the filters, the API returns `200` with an empty `transfer
 | `automation_id` | Automation that created the transfer | KSUID (26-char string) | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
 | `value_type` | Currency / token on source **or** destination | Canonical API id (case-sensitive) | `USDC`, `SBC`, `usd` |
 | `transfer_type` | Payment rail / chain on source **or** destination | Canonical API id (case-sensitive) | `polygon`, `wire`, `solana` |
+| `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match, case-sensitive) | `0xdd5646ea…` |
 
 <Info>
   `value_type` and `transfer_type` use canonical API identifiers. See [Value types](/coverage/value-types) and [Transfer types](/coverage/transfer-types) for the full list of valid values.
 </Info>
 
-### `transaction_id` — not a list filter
+### Filtering by `transaction_id`
 
-`transaction_id` is a response-only field on each transfer's `source` and `destination` objects. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted.
+Pass the full on-chain transaction hash or off-chain payment reference to find transfers that match on either the `source` or `destination` leg. The filter is exact match and case-sensitive. If no transfer matches, the API returns `200` with an empty `transfers` array.
 
-To locate a transfer by its `transaction_id`, retrieve the full list (optionally filtered by `transfer_type` or `value_type`) and match client-side, or use [Get transfer](/api-reference/brale/get-transfer) if you already know the transfer `id`.
+You can combine `transaction_id` with other filters — multiple filters use **AND** semantics.
 
 ## Pagination
 
@@ -38,6 +39,13 @@ To locate a transfer by its `transaction_id`, retrieve the full list (optionally
 Only one of `page[after]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging. Use the `pagination.next` value from the previous response as the `page[after]` query parameter in the next request.
 
 ## Examples
+
+### Filter by `transaction_id`
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?transaction_id=0xdd5646ea..." \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
 
 ### Filter by `automation_id`
 

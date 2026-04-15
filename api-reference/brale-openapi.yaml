@@ -1205,6 +1205,16 @@ paths:
             where the source **or** destination `transfer_type` equals this value.
             Case-sensitive. Use canonical API ids from the Coverage page.
           example: polygon
+        - name: transaction_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter transfers by on-chain transaction hash or off-chain payment
+            reference. Exact match against the `transaction_id` field on either
+            the source or destination leg.
+          example: '0xdd5646ea…'
         - name: page[size]
           in: query
           required: false
