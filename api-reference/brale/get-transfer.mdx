@@ -77,3 +77,9 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 ```
 
 See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for full details.
+
+## `transaction_id`
+
+The `transaction_id` field appears on the `source` and `destination` objects in the response. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network.
+
+You can also use `transaction_id` as a query-parameter filter on the [List transfers](/api-reference/brale/list-transfers) endpoint to find transfers by their on-chain hash without needing to know the transfer `id` first.

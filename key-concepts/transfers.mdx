@@ -350,7 +350,7 @@ ACH transfers may include only a subset of `payment_details` fields. Fields may 
 ```
 
 <Note>
-  `transaction_id` is a response-only field on `source` and `destination`. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network. It is not present in create requests.
+  `transaction_id` is a response-only field on `source` and `destination`. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network. It is not present in create requests. You can use `transaction_id` as a [query-parameter filter](#filtering-by-transaction_id) on the list transfers endpoint.
 </Note>
 
 ## Listing transfers
@@ -368,6 +368,7 @@ All filters are **exact match** and **case-sensitive**. When you combine multipl
 | `automation_id` | Automation that created the transfer | KSUID | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
 | `value_type` | Currency / token on source or destination | Canonical API id | `USDC`, `SBC`, `usd` |
 | `transfer_type` | Payment rail / chain on source or destination | Canonical API id | `polygon`, `wire`, `solana` |
+| `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match) | `0xdd5646ea…` |
 
 <Info>
   `value_type` and `transfer_type` use canonical identifiers listed on the [Value types](/coverage/value-types) and [Transfer types](/coverage/transfer-types) coverage pages.
@@ -375,7 +376,18 @@ All filters are **exact match** and **case-sensitive**. When you combine multipl
 
 If no transfers match, the API returns `200` with an empty `transfers` array.
 
-**`transaction_id` is not a list filter.** It appears only in transfer responses. To locate a transfer by its on-chain hash, filter by `transfer_type` and match `transaction_id` client-side.
+#### Filtering by `transaction_id`
+
+`transaction_id` is an exact-match filter. Pass the full on-chain transaction hash or off-chain payment reference as the value. The filter matches against the `transaction_id` field on either the `source` or `destination` leg of each transfer.
+
+- The value must match exactly (case-sensitive, no partial matches).
+- If no transfer matches, the API returns `200` with an empty `transfers` array.
+- You can combine `transaction_id` with other filters (`transfer_type`, `value_type`, `automation_id`). Multiple filters use **AND** semantics — only transfers matching every filter are returned.
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?transaction_id=<onchain_hash>" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
 
 ### Example: filter by automation
 
