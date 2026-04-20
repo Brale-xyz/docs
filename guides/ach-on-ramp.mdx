@@ -1,11 +1,16 @@
 ---
-title: "ach_debit to end user wallet "
-description: "Create an ach_debit funded transaction to a custodial, or self custody wallet."
+title: "Onramp to end-user wallet"
+seo:
+  title: "Onramp to end-user wallet via ACH debit"
+  keywords: "onramp, on-ramp, fund wallet, deposit USD, ACH debit, end user wallet, fiat to stablecoin"
+description: "Fund an end-user custodial or self-custody wallet by pulling USD via ACH debit and minting stablecoins."
 ---
 
 ## Introduction
 
-This document is a guide to help your team evaluate and implement the ach_debit transfer type. It covers what the ach_debit functionalities are, how to get set up, and the key steps to go from initial testing to production. Use it as a reference while you integrate.
+<Info>**Rail:** ACH debit — Brale pulls funds from a Plaid-linked bank account and mints stablecoins to the destination wallet.</Info>
+
+This guide helps your team evaluate and implement ACH debit onramps. It covers what the ACH debit functionalities are, how to get set up, and the key steps to go from initial testing to production. Use it as a reference while you integrate.
 
 When making `POST` requests Brale requires an Idempotency-Key header to be included and used on retries. Read more about [idempotency keys in Brale](https://brale.mintlify.app/key-concepts/idempotency#what-is-an-idempotency-key). Using ach-debits required your business to be fully onboarded, and branded ach_debits are a premium feature.
 

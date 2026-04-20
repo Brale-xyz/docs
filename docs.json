@@ -144,19 +144,44 @@
             ]
           },
           {
-            "group": "Workflows",
+            "group": "Onramp (deposit USD)",
             "pages": [
-              "guides/ach-on-ramp",
               "guides/fiat-to-stablecoin-onramp",
+              "guides/ach-on-ramp"
+            ]
+          },
+          {
+            "group": "Offramp & payouts",
+            "pages": [
               "guides/stablecoin-to-fiat-offramp",
-              "guides/stablecoin-to-stablecoin-swap",
+              "guides/stablecoin-payouts"
+            ]
+          },
+          {
+            "group": "Swap & move",
+            "pages": [
+              "guides/stablecoin-to-stablecoin-swap"
+            ]
+          },
+          {
+            "group": "Issuance & tokenization",
+            "pages": [
               "guides/stablecoin-issuance",
-              "guides/stablecoin-payouts",
-              "guides/2nd-and-3rd-party-transfers",
+              "guides/tokenization"
+            ]
+          },
+          {
+            "group": "Accounts & wallets",
+            "pages": [
               "guides/managed-accounts",
               "guides/self-custody-wallets",
+              "guides/2nd-and-3rd-party-transfers"
+            ]
+          },
+          {
+            "group": "Canton network",
+            "pages": [
               "guides/canton-token-standard",
-              "guides/tokenization",
               "guides/canton-token-transfers-to-eoas"
             ]
           },
