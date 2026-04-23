@@ -19,6 +19,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
 | `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
+| `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
 ### Example: wire-funded transfer
 
@@ -70,7 +71,8 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
       "sender_bank_name": null,
       "sender_bank_routing_number": "721160232",
       "payment_reference": null,
-      "imad": null
+      "imad": null,
+      "trace_number": "021000029876543"
     }
   }
 }

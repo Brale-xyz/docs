@@ -161,5 +161,6 @@ Wire transfers typically include the full set of fields. ACH transfers may inclu
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
 | `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
+| `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
 See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for full details.
