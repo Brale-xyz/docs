@@ -54,6 +54,7 @@ The object is optional and may not be present on every transfer. Wire transfers 
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
 | `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
+| `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
 <Note>
   `source.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which is a request field for outbound wire transfers.
@@ -343,7 +344,8 @@ ACH transfers may include only a subset of `payment_details` fields. Fields may 
       "sender_bank_name": null,
       "sender_bank_routing_number": "721160232",
       "payment_reference": null,
-      "imad": null
+      "imad": null,
+      "trace_number": "021000029876543"
     }
   }
 }

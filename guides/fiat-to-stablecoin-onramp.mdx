@@ -146,7 +146,7 @@ Query a transfer that has been created.
 ```
 
 <Note>
-  `source.payment_details` appears when Brale has underlying payment metadata to expose for the source leg of a transfer. Wire transfers typically include the full set of fields (`sender_name`, `sender_bank_name`, `imad`, etc.). ACH transfers may include only a subset — fields may be `null` or omitted depending on available rail metadata. See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for the full field reference.
+  `source.payment_details` appears when Brale has underlying payment metadata to expose for the source leg of a transfer. Wire transfers typically include the full set of fields (`sender_name`, `sender_bank_name`, `imad`, etc.). ACH transfers may include only a subset — fields may be `null` or omitted depending on available rail metadata, and may include `trace_number` as the ACH trace identifier. See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for the full field reference.
 </Note>
 
 ## Fiat to Stablecoin Automation (Automatic Onramp)
