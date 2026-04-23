@@ -47,3 +47,12 @@ Submit bank account details directly using the Addresses API:
 - [Create a new external address](/api-reference/brale/create-address) — Provide account number, routing number, and bank details to create an `address_id` supporting `wire`, `ach_credit`, and `rtp`.
 
 For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).
+
+## Archive and unarchive
+
+If you need to stop using a previously linked external bank address without deleting the record, use the [PATCH address endpoint](/api-reference/brale/update-address) to archive it. If the customer later wants to restore the same external address, unarchive it.
+
+- Archive: `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "archived" }`
+- Unarchive: `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "active" }`
+
+Archive and unarchive apply only to external addresses. See [Address lifecycle](/key-concepts/addresses#address-lifecycle) for details.

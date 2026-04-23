@@ -18,6 +18,32 @@ Whether internal or external, all addresses possess:
 
 - `name`: A human readable label
 - `transfer_types`: The `transfer_types` the address supports.
+- `status`: The lifecycle state of the address. See [Address lifecycle](#address-lifecycle).
+
+## Address lifecycle
+
+Every address has a `status` that represents its lifecycle state:
+
+| Status     | Description                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| `pending`  | Address is being provisioned (e.g., a custodial wallet is being created on-chain).               |
+| `active`   | Address is ready to be used as a source or destination in transfers.                             |
+| `archived` | Address is disabled. It cannot be used in new transfers; existing pending transfers may complete. |
+
+### Archive and unarchive (external addresses only)
+
+You can change the lifecycle state of an **external** address by sending a `status` update to the [PATCH address endpoint](/api-reference/brale/update-address):
+
+- **Archive:** `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "archived" }` disables the address for new transfers while preserving the historical record.
+- **Unarchive:** `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "active" }` restores the address.
+
+<Warning>
+Archive and unarchive are supported only for addresses with `type=external`. Internal (custodial) addresses are not archived or unarchived through this endpoint.
+</Warning>
+
+Archived addresses remain visible in `GET /accounts/{account_id}/addresses` responses with `status: "archived"` but cannot be used as a source or destination in new transfers.
+
+See the [PATCH address endpoint reference](/api-reference/brale/update-address) for request and response examples.
 
 ## Supported Transfer Types
 
@@ -170,7 +196,7 @@ Sometimes you'll want an address to gain new capabilities over time. For example
 - You want an EVM onchain address to start supporting an additional chain (e.g., `ethereum` in addition to `base`).
 - A bank account that initially only supports `wire` is upgraded to also support `ach_credit`.
 
-Instead of creating a new Address, you can add new `transfer_types` to an existing Address (and optionally update its `name`):
+Instead of creating a new Address, you can add new `transfer_types` to an existing Address (and optionally update its `name`). The same [PATCH endpoint](/api-reference/brale/update-address) also supports [archiving or unarchiving](#archive-and-unarchive-external-addresses-only) external addresses.
 
 Onchain Address Example - add a new EVM chain
 

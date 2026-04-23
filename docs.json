@@ -189,6 +189,7 @@
               "api-reference/brale/get-transfer",
               "api-reference/brale/list-addresses",
               "api-reference/brale/create-address",
+              "api-reference/brale/update-address",
               "api-reference/brale/get-address-balance",
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
