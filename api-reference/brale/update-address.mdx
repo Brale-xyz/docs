@@ -1,0 +1,150 @@
+---
+title: 'Update an address'
+description: 'Update an existing address. Supports transfer-type configuration changes and archive / unarchive lifecycle updates for external addresses.'
+---
+
+**PATCH** `/accounts/{account_id}/addresses/{address_id}`
+
+Use this endpoint to update an existing address. It supports multiple kinds of updates:
+
+- Update address configuration, such as adding supported `transfer_types` or changing the `name`.
+- **Archive** an external address to disable it for new transfers.
+- **Unarchive** a previously archived external address to restore it.
+
+<Warning>
+**Archive / unarchive is supported only for `type=external` addresses.** Internal (custodial) addresses cannot be archived or unarchived through this endpoint.
+</Warning>
+
+## Sections
+
+- [Update transfer-type configuration](#update-transfer-type-configuration)
+- [Archive or unarchive an external address](#archive-or-unarchive-an-external-address)
+- [Rules and constraints](#rules-and-constraints)
+- [When should I use this?](#when-should-i-use-this)
+
+## Update transfer-type configuration
+
+Add new `transfer_types` to an existing address, or update the human-readable `name`. Existing `transfer_types` are preserved; the values in `additional_transfer_types` are merged into the existing list.
+
+### Add an EVM chain to an onchain address
+
+```bash cURL
+curl --request PATCH \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "additional_transfer_types": ["ethereum"]
+  }'
+```
+
+```json Response
+{
+  "id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+  "type": "external",
+  "name": "EVM Wallet",
+  "status": "active",
+  "wallet_address": "0x123456789",
+  "transfer_types": ["base", "ethereum"]
+}
+```
+
+### Add ACH credit to a wire-only bank address
+
+```bash cURL
+curl --request PATCH \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "additional_transfer_types": ["ach_credit", "same_day_ach_credit"]
+  }'
+```
+
+### Update the address name
+
+You can send `name` on its own, or together with `additional_transfer_types`:
+
+```json Request
+{
+  "name": "My EVM Wallet",
+  "additional_transfer_types": ["base"]
+}
+```
+
+<Info>
+All onchain `transfer_types` on a single address must belong to the same blockchain environment (for example, all EVM mainnets). You cannot mix incompatible environments on the same address.
+</Info>
+
+## Archive or unarchive an external address
+
+Archive or unarchive lifecycle changes are performed by setting the address `status`. This updates the status of the existing address record in place; it does **not** create a new address.
+
+### Archive an external address
+
+Set `status` to `archived`:
+
+```bash cURL
+curl --request PATCH \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "status": "archived"
+  }'
+```
+
+```json Response
+{
+  "id": "34yxvqP90NfeeYkQGriO6bSfn1K",
+  "type": "external",
+  "name": "THE BANK OF TAMPA",
+  "status": "archived",
+  "transfer_types": ["ach_credit", "same_day_ach_credit"]
+}
+```
+
+### Unarchive an external address
+
+Set `status` back to `active`:
+
+```bash cURL
+curl --request PATCH \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "status": "active"
+  }'
+```
+
+```json Response
+{
+  "id": "34yxvqP90NfeeYkQGriO6bSfn1K",
+  "type": "external",
+  "name": "THE BANK OF TAMPA",
+  "status": "active",
+  "transfer_types": ["ach_credit", "same_day_ach_credit"]
+}
+```
+
+## Rules and constraints
+
+- **Archive / unarchive is external-only.** Only addresses with `type=external` are eligible for status changes through this endpoint.
+- Internal / custodial addresses **cannot** be archived or unarchived through this endpoint.
+- Archiving changes the status of the existing address record. It does **not** delete the address or create a new one; the `address_id` and historical record are preserved.
+- Archived addresses remain visible in `GET /accounts/{account_id}/addresses` and `GET /accounts/{account_id}/addresses/{address_id}` responses with `status: "archived"`.
+- Archived addresses **cannot be used** as a source or destination in new transfers. Existing pending transfers may still complete.
+- Unarchiving (`status: "active"`) restores the address for use in new transfers.
+- `additional_transfer_types` is merged into the existing `transfer_types`. Sending a transfer type that is already enabled is idempotent and has no effect.
+
+## When should I use this?
+
+This endpoint is the primary tool for address lifecycle management. Typical scenarios:
+
+- **Bank-address link / unlink workflows.** Stop using a previously linked external bank address without deleting the historical record by archiving it. Restore it later by unarchiving.
+- **Plaid relinking or reauthorization.** If a Plaid-linked bank address is replaced or no longer usable, archive it to prevent new transfers against the old record.
+- **Customer-initiated removal.** A customer wants to stop using a previously linked external bank account but you need to keep the historical address record for reporting or reconciliation.
+- **Adding new capabilities.** An existing external address needs an additional `transfer_type` (for example, adding `ach_credit` to a wire-only bank address, or adding `ethereum` to an EVM wallet that only supported `base`).
+
+See also: [Key concepts → Addresses → Address lifecycle](/key-concepts/addresses#address-lifecycle).
