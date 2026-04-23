@@ -80,6 +80,53 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 
 See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for full details.
 
+## `destination.payment_details`
+
+Transfer responses may include an optional `destination.payment_details` object when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire transfers (stablecoin-to-fiat offramps and wire payouts).
+
+The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted; Brale populates this field later when the underlying bank metadata arrives.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+
+<Note>
+  `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
+</Note>
+
+### Example: outbound wire transfer
+
+```json title="Response"
+{
+  "id": "3D1RcbwVywOGyU2HBSenljm5dhV",
+  "status": "complete",
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "solana",
+    "transaction_id": "5K8…"
+  },
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048",
+    "payment_details": {
+      "imad": "20260406XOIZJDPP953495"
+    }
+  },
+  "updated_at": "2026-04-07T00:05:12.102000Z",
+  "created_at": "2026-04-07T00:01:27.756775Z",
+  "amount": {
+    "value": "100.00",
+    "currency": "USD"
+  },
+  "note": null
+}
+```
+
+See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for full details.
+
 ## `transaction_id`
 
 The `transaction_id` field appears on the `source` and `destination` objects in the response. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network.

@@ -60,6 +60,20 @@ The object is optional and may not be present on every transfer. Wire transfers 
   `source.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which is a request field for outbound wire transfers.
 </Note>
 
+### `destination.payment_details`
+
+`destination.payment_details` appears when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire transfers (stablecoin-to-fiat offramps and wire payouts).
+
+The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted — Brale populates `destination.payment_details` later when the underlying bank metadata arrives.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+
+<Note>
+  `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
+</Note>
+
 ## Transfer scenarios: understanding `value_type` and `transfer_type`
 
 | Flow                               | Source         | Destination                         | Description                                |
@@ -329,6 +343,39 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 }
 ```
 
+### Outbound wire transfer response (with `destination.payment_details`)
+
+For outbound wire transfers (e.g., stablecoin-to-fiat offramps via wire), the response may include `destination.payment_details` with the wire IMAD once Brale has received the underlying bank metadata. The object may be absent immediately after the transfer is created and appear later when the wire is submitted.
+
+```json title="Response"
+{
+  "id": "3D1RcbwVywOGyU2HBSenljm5dhV",
+  "status": "complete",
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "solana",
+    "transaction_id": "5K8…"
+  },
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048",
+    "payment_details": {
+      "imad": "20260406XOIZJDPP953495"
+    }
+  },
+  "updated_at": "2026-04-07T00:05:12.102000Z",
+  "created_at": "2026-04-07T00:01:27.756775Z",
+  "amount": {
+    "value": "100.00",
+    "currency": "USD"
+  },
+  "note": null
+}
+```
+
 ### ACH-funded transfer response (with `payment_details`)
 
 ACH transfers may include only a subset of `payment_details` fields. Fields may be `null` or omitted depending on available rail metadata.
@@ -431,6 +478,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 
 - Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
 - For inbound fiat-funded transfers, check `source.payment_details` to identify the sender and match payments. Wire transfers typically include `sender_name`, `sender_bank_name`, and `imad`; ACH transfers may include only a subset of these fields.
+- For outbound wire transfers, check `destination.payment_details.imad` to record the wire's IMAD for reconciliation and tracing. It may be absent immediately after the transfer is created and populated later once Brale has the underlying bank metadata.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 
