@@ -1092,7 +1092,7 @@ paths:
                     city: New York
                     state: NY
                     zip: '10001'
-                    country: USA
+                    country: US
                   phone_number: '2125550182'
                   email: ops@abc.example
                   website: https://abc.example
@@ -1108,7 +1108,7 @@ paths:
                         city: New York
                         state: NY
                         zip: '10001'
-                        country: USA
+                        country: US
                   business_controller:
                     first_name: Alicia
                     last_name: Ng
@@ -1121,7 +1121,7 @@ paths:
                       city: New York
                       state: NY
                       zip: '10002'
-                      country: USA
+                      country: US
                   tos_attestation:
                     accepted_at: '2025-05-13T20:45:15Z'
                     version: '2025-04-01'
