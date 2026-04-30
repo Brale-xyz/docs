@@ -79,8 +79,10 @@ Before you start: you need a Brale account ([sign up](https://app.brale.xyz/sign
 
     > **Testnet?** Use testnet transfer_types instead: `base_sepolia`, `solana_devnet`, `sepolia`, etc. 
   </Step>
-  <Step title="Poll for status">
-    Poll `GET /accounts/{account_id}/transfers` with pagination. Store `id`, idempotency key, timestamps, status, and references for reconciliation. On 401, refresh the token and retry with the same `Idempotency-Key`.
+  <Step title="Track transfer status">
+    Transfers may complete asynchronously. For real-time production updates, subscribe to [`transfer.completed`](/webhooks/webhook-events) [webhooks](/webhooks/overview) so Brale can send your application a signed event when the transfer reaches `complete`.
+
+    You can also poll or retrieve transfers with the Transfers API for development, fallback handling, and reconciliation: poll `GET /accounts/{account_id}/transfers` with pagination. Store `id`, idempotency key, timestamps, status, and references for reconciliation. On 401, refresh the token and retry with the same `Idempotency-Key`.
   </Step>
 </Steps>
 
