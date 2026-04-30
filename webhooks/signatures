@@ -1,0 +1,134 @@
+# Verify Webhook Signatures
+
+## Signature header
+
+Brale signs webhook deliveries with HMAC-SHA256.
+
+Each request includes:
+
+```
+x-request-signature-sha-256: <lowercase hex HMAC-SHA256>
+```
+
+The signature is computed over the exact raw request body bytes.
+
+Signature verification details:
+
+- The header value is the lowercase hex-encoded HMAC-SHA256 digest (no prefix like `v1=`, no version, no timestamp).
+- The HMAC is computed over the exact raw request body bytes (no canonicalization).
+- The HMAC key is the Base64URL-decoded `sharedSecret` value returned when creating the subscription.
+
+## Shared secret
+
+When you create a webhook subscription, Brale returns a `sharedSecret`.
+
+```json
+{
+  "sharedSecret": "base64url-encoded-secret"
+}
+```
+
+This value is Base64URL encoded. Decode it before using it as the HMAC key.
+
+Do not use the encoded string directly as the HMAC key.
+
+## Node.js / TypeScript example
+
+```tsx
+import crypto from "node:crypto";
+
+export function verifyBraleWebhookSignature({
+  rawBody,
+  sharedSecret,
+  signatureHeader,
+}: {
+  rawBody: Buffer;
+  sharedSecret: string;
+  signatureHeader: string | undefined;
+}): boolean {
+  if (!signatureHeader) return false;
+
+  const key = Buffer.from(sharedSecret, "base64url");
+
+  const expectedHex = crypto
+    .createHmac("sha256", key)
+    .update(rawBody)
+    .digest("hex");
+
+  const expected = Buffer.from(expectedHex, "hex");
+  const received = Buffer.from(signatureHeader, "hex");
+
+  if (expected.length !== received.length) return false;
+
+  return crypto.timingSafeEqual(expected, received);
+}
+```
+
+### Express example
+
+Mount the webhook route with `express.raw()` before `express.json()`.
+
+```tsx
+import express from "express";
+import { verifyBraleWebhookSignature } from "./verify";
+
+const app = express();
+
+app.post(
+  "/webhooks/brale",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const rawBody = req.body as Buffer;
+    const signature = req.header("x-request-signature-sha-256");
+
+    const verified = verifyBraleWebhookSignature({
+      rawBody,
+      sharedSecret: process.env.BRALE_WEBHOOK_SHARED_SECRET!,
+      signatureHeader: signature,
+    });
+
+    if (!verified) {
+      return res.status(401).json({ error: "invalid_signature" });
+    }
+
+    const event = JSON.parse(rawBody.toString("utf8"));
+
+    // Deduplicate before applying side effects.
+    // await ensureNotProcessed(event.id);
+
+    // Process event...
+    return res.status(200).json({ ok: true });
+  }
+);
+
+// Mount JSON middleware after the webhook route.
+app.use(express.json());
+```
+
+## Python example
+
+```python
+import base64
+import hashlib
+import hmac
+
+def base64url_decode(value: str) -> bytes:
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode(value + padding)
+
+def verify_brale_signature(raw_body: bytes, shared_secret: str, signature_header: str) -> bool:
+    key = base64url_decode(shared_secret)
+    expected = hmac.new(key, raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
+```
+
+## Common signature verification failures
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| `401 invalid_signature` | Using the wrong secret | Confirm you copied the `sharedSecret` from the same subscription receiving the event |
+| `401 invalid_signature` after updating `.env` | Server still running with old env | Restart your server |
+| `401 invalid_signature` in Express | You verified after JSON parsing | Capture raw body with `express.raw()` before `express.json()` |
+| `401 invalid_signature` in tests | Signed one serialized body but sent another | Sign the exact bytes you send |
+| Signature length mismatch | Header is missing or malformed | Validate header exists before comparing |
+| Works locally but not in production | Different env var or subscription secret | Confirm production env uses the correct `sharedSecret` |

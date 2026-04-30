@@ -1,0 +1,160 @@
+# Webhook subscription API reference
+
+## List event types
+
+```
+GET /accounts/{account_id}/webhooks/event_types
+```
+
+Requires `webhooks:read`.
+
+Example:
+
+```bash
+curl https://api.brale.xyz/accounts/{account_id}/webhooks/event_types \
+  -H "Authorization: Bearer {access_token}"
+```
+
+Response:
+
+```json
+{
+  "event_types": [
+    {
+      "event_type": "transfer.completed",
+      "summary": "Emitted when a transfer (token order) reaches complete status."
+    },
+    {
+      "event_type": "payment.completed",
+      "summary": "Emitted when a payment reaches complete status."
+    }
+  ]
+}
+```
+
+## Create subscription
+
+```
+POST /accounts/{account_id}/webhooks
+```
+
+Requires `webhooks:write`.
+
+Use an `Idempotency-Key` header.
+
+Request:
+
+```json
+{
+  "url": "https://your-app.example.com/webhooks/brale",
+  "events": ["transfer.completed"]
+}
+```
+
+Response:
+
+```json
+{
+  "id": "3D3jNzs2r7Sf78qtYpRe1biscLG",
+  "sharedSecret": "base64url-encoded-secret",
+  "events": ["transfer.completed"],
+  "url": "https://your-app.example.com/webhooks/brale",
+  "status": "active"
+}
+```
+
+## List subscriptions
+
+```
+GET /accounts/{account_id}/webhooks
+```
+
+Requires `webhooks:read`.
+
+Response:
+
+```json
+{
+  "subscriptions": [
+    {
+      "id": "3D3jNzs2r7Sf78qtYpRe1biscLG",
+      "events": ["transfer.completed"],
+      "url": "https://your-app.example.com/webhooks/brale",
+      "status": "active"
+    }
+  ]
+}
+```
+
+## Get subscription
+
+```
+GET /accounts/{account_id}/webhooks/{subscription_id}
+```
+
+Requires `webhooks:read`.
+
+The `sharedSecret` is not returned.
+
+## Update subscription
+
+```
+PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}
+```
+
+Requires `webhooks:write`.
+
+Use an `Idempotency-Key` header.
+
+Request:
+
+```json
+{
+  "url": "https://new-url.example.com/webhooks/brale",
+  "events": ["transfer.completed"]
+}
+```
+
+Important: if `events` is included, it replaces the entire event set. It does not merge with existing events.
+
+Note: the subscription API has an intentional path-shape inconsistency:
+
+- `GET /accounts/{account_id}/webhooks/{subscription_id}` (get one)
+- `PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}` (update)
+- `DELETE /accounts/{account_id}/webhooks/subscriptions/{subscription_id}` (archive)
+
+## Archive subscription
+
+```
+DELETE /accounts/{account_id}/webhooks/subscriptions/{subscription_id}
+```
+
+Requires `webhooks:write`.
+
+Archiving stops future deliveries. Delivery history is retained.
+
+## List delivery attempts
+
+```
+GET /accounts/{account_id}/webhooks/deliveries
+```
+
+Requires `webhooks:read`.
+
+Optional pagination:
+
+```
+page[size]=25
+page[after]=cursor
+page[before]=cursor
+```
+
+Do not send both `page[after]` and `page[before]`.
+
+Delivery logs are useful for debugging:
+
+- Whether Brale attempted delivery
+- What HTTP status your endpoint returned
+- Whether a delivery was retried
+- Failure messages
+- Attempt numbers

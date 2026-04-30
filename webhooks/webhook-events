@@ -1,0 +1,110 @@
+# Webhook Events
+
+## Event envelope
+
+All webhook events use a JSON envelope:
+
+```json
+{
+  "id": "event-id",
+  "type": "transfer.completed",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "resource-id",
+    "status": "complete"
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | string | Stable event identifier (the event ID). Use this for deduplication. This is not the same as `data.id`. |
+| `type` | string | Event type, such as `transfer.completed`. |
+| `created` | string | UTC timestamp when the event was created. |
+| `data` | object | Event-specific payload. `data.id` is the resource ID (e.g., transfer ID or payment ID), which may differ from the event `id`. |
+
+Your handler should branch on `type`.
+
+```tsx
+switch (event.type) {
+  case "transfer.completed":
+    await handleTransferCompleted(event.data);
+    break;
+  case "payment.completed":
+    await handlePaymentCompleted(event.data);
+    break;
+  default:
+    // Unknown future event type.
+    // Store and acknowledge safely.
+    break;
+}
+```
+
+## `transfer.completed`
+
+Emitted when a Brale transfer reaches `complete` status.
+
+Use this event to replace polling transfer status.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "transfer.completed",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleTransferId",
+    "status": "complete",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    }
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the transfer ID.
+- Treat `data.status` as the completed transfer state.
+- Additional fields may be present as the transfer schema evolves.
+- Your integration should ignore unknown fields.
+
+## `payment.completed`
+
+Emitted when a payment reaches `complete` status.
+
+Example:
+
+```json
+{
+  "id": "3D4ExamplePaymentId",
+  "type": "payment.completed",
+  "created": "2026-04-28T21:30:00.000000Z",
+  "data": {
+    "id": "3D4ExamplePaymentId",
+    "status": "complete",
+    "amount": {
+      "value": "1000.00",
+      "currency": "USD"
+    },
+    "direction": "inbound",
+    "type": "wire",
+    "inserted_at": "2026-04-28T20:00:00.000000Z",
+    "updated_at": "2026-04-28T21:30:00.000000Z"
+  }
+}
+```
+
+## Handling future event types
+
+Brale may add new event types over time.
+
+Best practices:
+
+- Use `GET /webhooks/event_types` to discover supported events.
+- Branch on `event.type`.
+- Acknowledge unknown event types safely.
+- Ignore unknown fields in `data`.
+- Do not assume event ordering.

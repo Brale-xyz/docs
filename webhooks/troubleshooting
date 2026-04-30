@@ -1,0 +1,128 @@
+# Reliability, retries, and troubleshooting
+
+## Acknowledge quickly
+
+Your endpoint should return a `2xx` response quickly after verifying and safely recording the event.
+
+Recommended pattern:
+
+1. Verify signature.
+2. Parse event.
+3. Check idempotency / dedupe.
+4. Record event receipt.
+5. Return `200`.
+6. Process side effects asynchronously.
+
+Avoid doing long-running work before returning a response.
+
+## Delivery success
+
+Brale treats `2xx` responses as successful delivery acknowledgements.
+
+If your endpoint returns a non-`2xx` response or times out, Brale may retry delivery.
+
+## Idempotency
+
+Webhook delivery is at-least-once.
+
+Your application must handle duplicate deliveries.
+
+Recommended database pattern:
+
+```sql
+CREATE TABLE webhook_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  received_at TIMESTAMP NOT NULL,
+  processed_at TIMESTAMP
+);
+```
+
+Pseudo-code:
+
+```tsx
+async function handleWebhook(event) {
+  const inserted = await insertWebhookEventIfNotExists(event.id);
+
+  if (!inserted) {
+    // Duplicate delivery. Acknowledge without reprocessing.
+    return;
+  }
+
+  await processEvent(event);
+}
+```
+
+## Local development
+
+Use a public tunnel:
+
+```bash
+ngrok http 4000
+```
+
+Create or update your subscription URL:
+
+```
+https://<your-ngrok-host>/webhooks/brale
+```
+
+When the tunnel URL changes, update the subscription URL with the PATCH endpoint.
+
+## Testing checklist
+
+Before testing a real event:
+
+- Your server is running.
+- Your public tunnel reaches your local server.
+- Your subscription URL ends with your webhook path.
+- Your application has the correct `sharedSecret`.
+- Your server was restarted after updating environment variables.
+- Your endpoint reads the raw body.
+- Your handler returns `2xx` for valid events.
+- Your handler returns `401` for invalid signatures.
+- Your handler deduplicates repeated event IDs / idempotency keys.
+
+## Troubleshooting
+
+### `401 invalid_signature`
+
+Likely causes:
+
+- Wrong `sharedSecret`
+- Server not restarted after secret change
+- Using a secret from another subscription
+- Verifying parsed JSON instead of raw request body
+- Request body mutated by middleware
+- Test script signing different bytes than it sends
+
+### No webhook received
+
+Check:
+
+- Is the subscription active?
+- Does the subscription URL match your current tunnel URL?
+- Is the event type subscribed?
+- Did the transfer/payment actually reach the state that emits the event?
+- Do delivery logs show an attempt?
+- Did your endpoint return non-`2xx`?
+- Did your tunnel expire or restart?
+
+### Duplicate delivery received
+
+This can happen. Deduplicate by event `id` and/or `idempotency-key`.
+
+Return `2xx` for duplicates after confirming you already processed the event.
+
+### `sharedSecret` lost
+
+Archive the old subscription and create a new subscription. Brale does not return the secret again after creation.
+
+### Old API key does not work with webhook endpoints
+
+Create a new API credential or OAuth application with webhook scopes:
+
+- `webhooks:read`
+- `webhooks:write`
+
+Existing credentials may not include newly added scopes.
