@@ -1,4 +1,6 @@
-## Verify Webhook Signatures
+# Verify Webhook Signatures
+
+## Signature header
 
 Brale signs webhook deliveries with HMAC-SHA256.
 
