@@ -481,6 +481,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - For outbound wire transfers, check `destination.payment_details.imad` to record the wire's IMAD for reconciliation and tracing. It may be absent immediately after the transfer is created and populated later once Brale has the underlying bank metadata.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
+- Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events) [webhooks](/webhooks/overview) to receive a signed event when a transfer reaches `complete`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.
 
 ## Transfer Statuses
 
