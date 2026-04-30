@@ -1,0 +1,417 @@
+---
+title: "Backend Setup"
+description: "The /api/token endpoint pattern: why a backend is required, the getAccessToken contract, and a reference implementation you can copy."
+---
+
+The Brale IO SDK requires a small partner-side backend. This page explains why, defines the contract, and walks through a reference Next.js implementation that mirrors the SDK demo line-for-line. Framework alternatives (NextAuth.js / Clerk / Auth0 / Express + Passport) and a generic non-Node section follow.
+
+## Why a backend is required
+
+Brale issues OAuth2 access tokens via the `client_credentials` grant. To mint one you need a `client_id` and `client_secret`. Those credentials **must never reach the browser** — anyone who reads them can act on the partner's full Brale account.
+
+The SDK was designed around this constraint. Instead of accepting `client_id` / `client_secret`, it accepts a `getAccessToken` callback. The SDK asks **your backend** for a token whenever it needs one; the credentials never leave your server.
+
+```ts
+const onramp = await BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+```
+
+## The `getAccessToken` contract
+
+`BraleOnrampConfig.getAccessToken` has the signature:
+
+```ts
+getAccessToken: () => Promise<string>;
+```
+
+Rules:
+
+- **Resolve with a valid Brale Bearer token** (the raw `access_token` string — no `Bearer ` prefix).
+- **Reject** when the user's session is invalid; the SDK surfaces this as a `BraleAuthError` to the partner so the page can fall back to a sign-in flow.
+- **Always include credentials** when fetching from the browser (`credentials: 'include'`) so the partner session cookie is sent with the request.
+- **Return quickly.** The SDK calls this on every API call and caches nothing; cache the token on **your backend** if call volume becomes a concern.
+
+<Warning>
+**Your `/api/token` endpoint MUST be authenticated by your existing session layer. This is required, not optional.**
+
+If `/api/token` is publicly callable, anyone who can hit your domain can mint a Brale access token, and that token can act over your **entire** Brale account — list and create transfers for any of your end users, register external addresses, drain custodial balances. This is the single most important rule on this page.
+
+The reference implementation below uses a signed-cookie session for clarity; in production, drop your existing auth middleware (NextAuth.js, Clerk, Auth0, Express + Passport, etc.) in front of the route. See [Security & Threat Model](/sdk/security) for the full risk profile.
+</Warning>
+
+## Reference implementation — Next.js 15 (App Router)
+
+The SDK demo at `packages/demo/` ships an auth-gated Route Handler with a hand-rolled signed-cookie session. The two files below match the demo exactly.
+
+### Step 1 — Session helper
+
+`src/lib/session.ts` defines a signed-cookie session: HMAC-SHA256 over the email payload, signed with `SESSION_SECRET`. Each call to `requireSession()` validates the cookie and returns `{ email }` or `null`.
+
+```ts
+// src/lib/session.ts
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import { cookies } from 'next/headers';
+
+export const COOKIE_NAME = 'brale_demo_session';
+
+function getSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error(
+      'SESSION_SECRET is not set. Generate one with `openssl rand -hex 32` and add it to .env.local.',
+    );
+  }
+  return secret;
+}
+
+export function signCookie(email: string): string {
+  const secret = getSecret();
+  const payload = Buffer.from(email, 'utf8').toString('base64url');
+  const hmac = createHmac('sha256', secret).update(payload).digest('base64url');
+  return `${payload}.${hmac}`;
+}
+
+export function verifyCookie(value: string): string | null {
+  if (!value) return null;
+  const dot = value.lastIndexOf('.');
+  if (dot <= 0 || dot === value.length - 1) return null;
+
+  const payload = value.slice(0, dot);
+  const provided = value.slice(dot + 1);
+
+  const secret = getSecret();
+  const expected = createHmac('sha256', secret).update(payload).digest('base64url');
+
+  let providedBuf: Buffer;
+  let expectedBuf: Buffer;
+  try {
+    providedBuf = Buffer.from(provided, 'base64url');
+    expectedBuf = Buffer.from(expected, 'base64url');
+  } catch {
+    return null;
+  }
+  if (providedBuf.length === 0 || providedBuf.length !== expectedBuf.length) return null;
+  if (!timingSafeEqual(providedBuf, expectedBuf)) return null;
+
+  let email: string;
+  try {
+    email = Buffer.from(payload, 'base64url').toString('utf8');
+  } catch {
+    return null;
+  }
+  return email || null;
+}
+
+export function cookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    path: '/',
+    // Only set Secure in production — localhost (http) can't accept Secure cookies.
+    secure: process.env.NODE_ENV === 'production',
+  };
+}
+
+export async function requireSession(): Promise<{ email: string } | null> {
+  // Fail loudly on misconfiguration before reading any cookie — a missing
+  // SESSION_SECRET must never silently grant or deny access.
+  getSecret();
+
+  const store = await cookies();
+  const value = store.get(COOKIE_NAME)?.value;
+  if (!value) return null;
+
+  const email = verifyCookie(value);
+  if (!email) {
+    try {
+      store.delete(COOKIE_NAME);
+    } catch {
+      // Server Component context — mutation not allowed; ignore.
+    }
+    return null;
+  }
+
+  return { email };
+}
+```
+
+Generate a strong `SESSION_SECRET`:
+
+```bash
+openssl rand -hex 32
+```
+
+### Step 2 — The auth-gated `/api/token` Route Handler
+
+`src/app/api/token/route.ts` runs `requireSession()` first. Without a valid cookie it returns 401 immediately — Brale credentials never load.
+
+```ts
+// src/app/api/token/route.ts
+import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const session = await requireSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  }
+
+  const clientId = process.env.BRALE_CLIENT_ID;
+  const clientSecret = process.env.BRALE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    return NextResponse.json(
+      { error: 'Missing BRALE_CLIENT_ID or BRALE_CLIENT_SECRET' },
+      { status: 500 },
+    );
+  }
+
+  const authUrl = process.env.BRALE_AUTH_URL || 'https://auth.brale.xyz';
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+  const upstream = await fetch(`${authUrl}/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  if (!upstream.ok) {
+    const body = await upstream.text().catch(() => '');
+    const status = upstream.status === 401 ? 401 : upstream.status >= 500 ? 502 : upstream.status;
+    return NextResponse.json(
+      { error: body || 'Failed to obtain Brale access token' },
+      { status },
+    );
+  }
+
+  const { access_token } = (await upstream.json()) as { access_token: string };
+  return NextResponse.json({ access_token });
+}
+```
+
+### Step 3 — Login / logout / me endpoints
+
+The session is minted by a `POST /api/login` route and cleared by `POST /api/logout`. `GET /api/me` is a convenience read for the React shell.
+
+```ts
+// src/app/api/login/route.ts
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { COOKIE_NAME, cookieOptions, signCookie } from '@/lib/session';
+
+export async function POST(req: Request) {
+  const body = (await req.json().catch(() => ({}))) as { email?: string };
+  const email = (body.email ?? '').trim();
+  if (!email) {
+    return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
+  }
+
+  const store = await cookies();
+  store.set(COOKIE_NAME, signCookie(email), cookieOptions());
+  return NextResponse.json({ ok: true });
+}
+```
+
+```ts
+// src/app/api/logout/route.ts
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { COOKIE_NAME } from '@/lib/session';
+
+export async function POST() {
+  const store = await cookies();
+  store.delete(COOKIE_NAME);
+  return NextResponse.json({ ok: true });
+}
+```
+
+```ts
+// src/app/api/me/route.ts
+import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const session = await requireSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  }
+  return NextResponse.json({ email: session.email });
+}
+```
+
+### Environment variables
+
+```bash
+# .env.local
+BRALE_CLIENT_ID=your_brale_client_id
+BRALE_CLIENT_SECRET=your_brale_client_secret
+BRALE_AUTH_URL=https://auth.brale.xyz   # optional override
+SESSION_SECRET=<openssl rand -hex 32>
+```
+
+## Framework alternatives
+
+The signed-cookie example above is intentionally minimal so partners can read every line. In production, replace it with whatever auth solution you already use.
+
+### NextAuth.js (Auth.js)
+
+```ts
+// src/app/api/token/route.ts
+import { NextResponse } from 'next/server';
+import { auth } from '@/auth'; // your NextAuth config
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  }
+  // ...same Brale OAuth proxy as the reference implementation.
+}
+```
+
+### Clerk
+
+```ts
+// src/app/api/token/route.ts
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  }
+  // ...same Brale OAuth proxy as the reference implementation.
+}
+```
+
+### Auth0 (Next.js SDK)
+
+```ts
+// src/app/api/token/route.ts
+import { NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
+
+export async function GET() {
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  }
+  // ...same Brale OAuth proxy as the reference implementation.
+}
+```
+
+### Plain JWT (any framework)
+
+```ts
+import jwt from 'jsonwebtoken';
+
+function requireJwt(authHeader: string | null): { sub: string } | null {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  try {
+    return jwt.verify(authHeader.slice(7), process.env.JWT_PUBLIC_KEY!) as { sub: string };
+  } catch {
+    return null;
+  }
+}
+```
+
+### Express + Passport
+
+```js
+// server.js
+import express from 'express';
+import passport from 'passport';
+
+const app = express();
+
+app.get(
+  '/api/token',
+  passport.authenticate('session'),
+  async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
+    // ...same Brale OAuth proxy as the reference implementation.
+  },
+);
+```
+
+## Non-Node backends
+
+The SDK does not care what language your backend speaks. Your `/api/token` endpoint must do exactly three things:
+
+1. **Authenticate the request.** Reject with `401` if the partner's user session is missing or invalid. The auth mechanism is yours — session cookie, signed JWT, mTLS, whatever you already run.
+2. **Mint a Brale token.** POST to `https://auth.brale.xyz/oauth2/token` with `grant_type=client_credentials` and `Basic` auth using your `BRALE_CLIENT_ID:BRALE_CLIENT_SECRET`. Cache server-side if you want; tokens currently live ~60 minutes.
+3. **Return JSON.** Respond `200 { "access_token": "<token>" }` on success, `401 { "error": "Unauthenticated" }` if the session is invalid, `502 { "error": "<message>" }` if Brale is unreachable.
+
+A minimal Python (FastAPI) version:
+
+```python
+# main.py
+import base64, os, httpx
+from fastapi import FastAPI, HTTPException, Depends, Request
+
+app = FastAPI()
+
+def require_session(request: Request) -> str:
+    user = your_session_layer(request)  # raises or returns user id
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthenticated")
+    return user
+
+@app.get("/api/token")
+async def token(_: str = Depends(require_session)):
+    cid, csec = os.environ["BRALE_CLIENT_ID"], os.environ["BRALE_CLIENT_SECRET"]
+    auth = base64.b64encode(f"{cid}:{csec}".encode()).decode()
+    async with httpx.AsyncClient() as c:
+        r = await c.post(
+            f"{os.environ.get('BRALE_AUTH_URL', 'https://auth.brale.xyz')}/oauth2/token",
+            headers={
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            content="grant_type=client_credentials",
+        )
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="Brale auth unreachable")
+    return {"access_token": r.json()["access_token"]}
+```
+
+## Deploy considerations
+
+- **Vercel / serverless.** Route Handlers run as serverless functions; in-memory caches do not persist between invocations. The session cookie carries the user, and the Brale token is fetched per request. If you want to cache the upstream token, do it in a shared store (Redis, Upstash) or an HTTP cache layer — not in module-level memory.
+- **`Secure` cookies.** Only set the `Secure` flag in production (`NODE_ENV === 'production'`). Local development over `http://localhost` cannot accept `Secure` cookies.
+- **Token TTL.** Brale tokens currently live ~60 minutes. If your `/api/token` endpoint is hot, server-side caching is straightforward; if it's cold (typical for serverless), the per-request fetch is fine.
+
+## Next steps
+
+<Columns cols={2}>
+  <Card icon="shield" href="/sdk/security" title="Security & Threat Model">
+    What a leaked token can do, the platform limits Brale ships today, and the mitigations available.
+  </Card>
+  <Card icon="puzzle-piece" href="/sdk/widget" title="Widget Guide">
+    Mount the prebuilt UI once your backend is ready.
+  </Card>
+  <Card icon="code" href="/sdk/headless" title="Headless Guide">
+    Build your own UI on top of the auth-gated backend.
+  </Card>
+  <Card icon="book" href="/sdk/quickstart" title="Quickstart">
+    Back to the five-minute overview.
+  </Card>
+</Columns>

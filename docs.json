@@ -96,6 +96,18 @@
             ]
           },
           {
+            "group": "SDK",
+            "pages": [
+              "sdk/quickstart",
+              "sdk/backend",
+              "sdk/headless",
+              "sdk/widget",
+              "sdk/theming",
+              "sdk/api-reference",
+              "sdk/security"
+            ]
+          },
+          {
             "group": "MCP",
             "pages": [
               "mcp/api",

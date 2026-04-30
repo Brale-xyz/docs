@@ -1,0 +1,102 @@
+---
+title: "Quickstart"
+description: "Get from zero to a working Brale onramp in five minutes."
+---
+
+The Brale IO SDK lets you embed a fiat or on-chain stablecoin onramp inside your own product. Two ways to use it:
+
+- **Widget mode** — drop the prebuilt `<brale-onramp>` Web Component into any page. Five-minute integration. See the [Widget Guide](/sdk/widget).
+- **Headless mode** — call `BraleOnramp` from your own UI. Bring your own components and styling. See the [Headless Guide](/sdk/headless).
+
+Both modes share the same authentication contract and the same backend pattern.
+
+<Note>
+**Coming soon to npm.** The package is not yet published. Until release, install from the workspace via the `feat/phase-06-nextjs-demo-docs` branch or wait for the v1.0 announcement. The snippets on this page reflect the public 1.0 API surface and will work unchanged once the package ships.
+</Note>
+
+## Install
+
+```bash
+npm install @brale-xyz/io-sdk
+```
+
+The package exports two entry points:
+
+- `@brale-xyz/io-sdk` — `BraleOnramp` (headless orchestrator).
+- `@brale-xyz/io-sdk/widget` — `mountWidget` (drop-in Web Component host).
+
+## Minimal headless example
+
+```ts
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+
+const onramp = await BraleOnramp.create({
+  // Fetched from your backend on every refresh — never embed Brale client
+  // credentials in the browser.
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  // Where stablecoins land. Use testnet chains while integrating.
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+```
+
+That single call validates your config, resolves the partner account, and pre-loads every internal address and registered bank. After it resolves, you have a fully wired `BraleOnramp` instance ready to fund transfers.
+
+## Minimal widget example
+
+```ts
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+import { mountWidget } from '@brale-xyz/io-sdk/widget';
+
+const onramp = await BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+
+// Pass a CSS selector — the widget creates a <brale-onramp> Web Component inside it.
+const unmount = mountWidget(onramp, '#onramp');
+
+// Later, when you tear down the page:
+// unmount();
+// onramp.destroy();
+```
+
+## You'll need a backend
+
+The SDK never talks to Brale's auth endpoint directly. Instead it asks **your backend** for a short-lived access token via the `getAccessToken` callback. That endpoint must:
+
+1. Authenticate the partner's end user (your existing session layer).
+2. Mint a Brale OAuth2 token via `client_credentials`.
+3. Return `{ access_token: string }` to the SDK.
+
+This is non-negotiable. The full pattern, the reference Next.js implementation, and framework alternatives (NextAuth.js / Clerk / Auth0 / Express) are documented in [Backend Setup](/sdk/backend).
+
+<Warning>
+Before going to production, read the [Security & Threat Model](/sdk/security) page. The current Brale platform issues partner-account-wide tokens with no per-end-user scoping — understanding the blast radius and mitigations (Managed Accounts, short TTL, server-side controls) is required, not optional.
+</Warning>
+
+## Next steps
+
+<Columns cols={2}>
+  <Card icon="server" href="/sdk/backend" title="Backend Setup">
+    The auth-gated `/api/token` pattern, with a reference Next.js Route Handler and framework alternatives.
+  </Card>
+  <Card icon="puzzle-piece" href="/sdk/widget" title="Widget Guide">
+    Mount the prebuilt UI in vanilla JS, React 18, React 19, Vue, or Svelte.
+  </Card>
+  <Card icon="code" href="/sdk/headless" title="Headless Guide">
+    Build the on-ramp UX yourself with full control over the lifecycle.
+  </Card>
+  <Card icon="shield" href="/sdk/security" title="Security & Threat Model">
+    Token blast radius, mitigations, and the platform limits you need to know.
+  </Card>
+</Columns>

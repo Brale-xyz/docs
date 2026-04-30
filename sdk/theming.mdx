@@ -1,0 +1,161 @@
+---
+title: "Theming"
+description: "Every CSS custom property and ::part() selector exposed by the Brale onramp widget."
+---
+
+The widget renders inside a Shadow DOM, so partner-page CSS doesn't bleed in (and the widget's CSS doesn't bleed out). Two surfaces let you customize what shows up:
+
+- **CSS custom properties** flow into the Shadow DOM via `:host` — change a color, font, radius, or spacing token from outside and the widget picks it up live.
+- **`::part()` selectors** expose specific internal elements for structural overrides (positioning, custom drop shadows, replacing built-in spacing).
+
+For more invasive changes, switch to [Headless Mode](/sdk/headless) and bring your own UI.
+
+## How theming flows
+
+Every `--brale-*` variable inherits from the host element into the Shadow DOM. Set them anywhere up the cascade — on `:root`, on the wrapper container, even inline on the `<brale-onramp>` element itself — and the widget picks up the new value without any JS.
+
+```html
+<div id="onramp"
+     style="--brale-bg: #0f172a; --brale-primary: #6366f1; --brale-radius: 8px;">
+</div>
+
+<script type="module">
+  import { mountWidget } from '@brale-xyz/io-sdk/widget';
+  mountWidget(onramp, '#onramp');
+</script>
+```
+
+The same approach applies to React, Vue, Svelte — set the variables as inline styles on the host container, and the Shadow DOM inherits them. The [Widget Guide → React 18 mount snippet](/sdk/widget#react-18--ref--useeffect) demonstrates this with a `Map<string, string>` of theme overrides.
+
+## CSS custom properties
+
+The 13 variables below are the entire surface. Each entry shows the canonical name, default value, category, and visual effect. Defaults reflect the dark-theme baseline — to ship a light theme, override every Color token and (optionally) the Radius/Spacing tokens.
+
+### Colors
+
+| Variable | Default | Effect |
+|---|---|---|
+| `--brale-bg` | `#18181b` | Card background and modal surfaces |
+| `--brale-border` | `#27272a` | Card borders, dividers, input borders, dropdown chrome |
+| `--brale-text` | `#e4e4e7` | Primary text — headings, body, values |
+| `--brale-text-secondary` | `#a1a1aa` | Labels, descriptions, placeholders, dropdown secondary lines |
+| `--brale-primary` | `#7c3aed` | Primary buttons, focus rings, active dropdown options, explorer link, spinner accent |
+| `--brale-primary-text` | `#ffffff` | Text inside primary buttons |
+
+<Note>
+Status colors (success/error/info/warning) are intentionally **not** themeable. Greens stay green; reds stay red. This protects accessibility — partners can't accidentally make a "transfer failed" message look successful.
+</Note>
+
+### Typography
+
+| Variable | Default | Effect |
+|---|---|---|
+| `--brale-font` | `system-ui, -apple-system, sans-serif` | Primary font family — applied at `:host` and inherited everywhere |
+| `--brale-font-mono` | `ui-monospace, SFMono-Regular, Menlo, monospace` | Monospace stack for the wallet-option secondary line (truncated address) |
+| `--brale-font-size-base` | `14px` (medium) | Base font size — also overridden by `:host([data-size="…"])` to `13px` (small) and `16px` (large) |
+
+### Radius
+
+| Variable | Default | Effect |
+|---|---|---|
+| `--brale-radius` | `16px` | Card and modal-dialog border-radius |
+| `--brale-btn-radius` | `10px` | Button, input, dropdown trigger, dropdown menu, address display, status pill, explorer link border-radius |
+
+### Spacing
+
+| Variable | Default | Effect |
+|---|---|---|
+| `--brale-padding` | `24px` | Card and modal interior padding (overridden by `data-size`: 16px small / 24px medium / 32px large) |
+
+### Layout
+
+| Variable | Default | Effect |
+|---|---|---|
+| `--brale-icon-size` | `24px` | Asset-icon dimensions (chain logo + token logo). 24px works for medium; bump to 32px on `data-size="large"` if you want bigger icons |
+
+## `::part()` selectors
+
+For overrides that go beyond color/typography — repositioning a button, adding a shadow to the card, hiding a section — the widget exposes six named parts. They're addressable from outside the Shadow DOM with the standard `::part()` selector.
+
+| Part | Element it targets |
+|---|---|
+| `card` | The main `.card` container — wraps every screen of the widget |
+| `title` | Screen titles (`<h2>` inside `.card-header`) |
+| `button` | Every `<button>` — primary and secondary variants |
+| `input` | Every `<input>` — amount entry, address entry, dropdown search |
+| `status` | Status pills (`.status` — info / success / error variants) |
+| `address` | Address-display blocks (the deposit instructions and the on-chain destination) |
+
+Example — round the corners less aggressively and add a soft drop shadow to the card:
+
+```css
+brale-onramp::part(card) {
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+brale-onramp::part(button) {
+  letter-spacing: 0.025em;
+}
+```
+
+`::part()` only matches elements that the widget tagged with the `part` attribute. To request a part that isn't on this list, file an issue — exposing a part is a deliberate API choice, not a default.
+
+## Sizing — `data-size`
+
+The widget ships three preset sizes. Set `data-size` on the `<brale-onramp>` host element (or pass `size` to `mountWidget`); the Shadow DOM keys off `:host([data-size="…"])` to swap base font size, max width, and padding without remounting.
+
+| `data-size` | `max-width` | Base font | `--brale-padding` |
+|---|---|---|---|
+| `small` | 320px | 13px | 16px |
+| `medium` (default) | 384px | 14px | 24px |
+| `large` | 480px | 16px | 32px |
+
+To switch sizes at runtime — e.g. responding to a parent container resize — set the attribute on the live host:
+
+```ts
+const host = document.querySelector('brale-onramp');
+host?.setAttribute('data-size', 'large');
+```
+
+The Shadow DOM rules respond instantly. Do not call `mountWidget` again for size changes — it would tear down any in-progress flow. See the [Widget Guide → Resizing without remounting](/sdk/widget#resizing-without-remounting).
+
+## Asset icons
+
+Asset icons (chain logos, token logos) come from the `logoUrl` field on each `ChainMeta` and `TokenMeta` you pass through `BraleOnramp.create({ destinationAssets, sourceAssets })`. The widget caps icon dimensions to `--brale-icon-size`; the icon container has a circular mask and a 8% white fallback background, so transparent SVGs render cleanly on dark themes.
+
+When `logoUrl` is missing, the widget falls back to a single-letter placeholder using the ticker's initial. The placeholder uses `--brale-text` for the letter and the same 8% white fallback for the background.
+
+There is no separate `stablecoinOverrides` / `chainOverrides` prop on `mountWidget` — partner-specific assets (e.g. a Brale-issued testnet token like JARD with a custom icon) are configured through the same `destinationAssets` / `sourceAssets` shape regardless of widget vs headless mode. See [Widget Guide → Custom logos and chain/token metadata](/sdk/widget#custom-logos-and-chaintoken-metadata) for the full example.
+
+## Live playground
+
+The SDK demo at [`packages/demo/`](https://github.com/Brale-xyz/onramp-sdk/tree/main/packages/demo) ships a theme editor that iterates over `WIDGET_CSS_VARS` and renders a control per variable (color picker for color tokens, text input otherwise). Run it locally:
+
+```bash
+git clone https://github.com/Brale-xyz/onramp-sdk
+cd onramp-sdk
+pnpm install
+pnpm --filter @brale-xyz/io-sdk-demo dev
+```
+
+Then sign in (any email) and edit colors/typography/spacing/radii in real time against a live widget. Useful for previewing a theme before committing it to your app.
+
+## Adding a new variable
+
+For SDK contributors only — partners can skip this section.
+
+The widget reads variables exclusively via `var(--brale-x, default)` calls inside `WIDGET_STYLES` in [`packages/sdk/src/widget/styles.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/widget/styles.ts). To add a new variable:
+
+1. Reference it in the CSS via `var(--brale-x, default-value)` — the placeholder name above is illustrative; pick a real name in the `--brale-…` namespace.
+2. Add the matching entry to the `WIDGET_CSS_VARS` array in the same file (name, label, defaultValue, category, type).
+3. Update this table.
+
+The `styles.test.ts` test enforces that every variable referenced in `WIDGET_STYLES` has a matching entry in `WIDGET_CSS_VARS` — adding one without the other fails CI.
+
+## Reference
+
+- [Widget Guide](/sdk/widget) — mount patterns for vanilla / React 18 / React 19 / Vue / Svelte.
+- [API Reference → `MountWidgetOptions`](/sdk/api-reference#MountWidgetOptions) — full options shape.
+- [API Reference → `Assets` / `ChainMeta` / `TokenMeta`](/sdk/api-reference#Assets) — `logoUrl` lives here.
+- [Quickstart](/sdk/quickstart) — back to the five-minute overview.
