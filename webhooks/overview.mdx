@@ -1,0 +1,93 @@
+---
+title: "Webhooks"
+description: "Receive signed webhook events from Brale when transfers and payments complete."
+---
+
+## Brale webhooks
+
+Brale webhooks let your application receive real-time notifications when important events happen in Brale.
+
+Instead of polling Brale APIs to check whether a transfer or payment has completed, you can register an HTTPS endpoint and Brale will `POST` a signed event to your application as soon as the event occurs.
+
+Use webhooks to:
+
+- Update your internal ledger when a transfer completes
+- Notify your users when money movement settles
+- Reconcile completed transfers or payments
+- Trigger downstream workflows without polling
+- Build real-time dashboards for operations and treasury teams
+
+## How webhooks work
+
+At a high level:
+
+1. You create a webhook subscription for your Brale account.
+2. Brale returns a `sharedSecret` one time.
+3. You store the `sharedSecret` securely.
+4. When a subscribed event occurs, Brale sends an HTTPS `POST` to your endpoint.
+5. Your application verifies the HMAC signature using the exact raw request body.
+6. Your application processes the event idempotently.
+7. Your endpoint returns a `2xx` response to acknowledge delivery.
+
+```
+Brale transfer completes
+        ↓
+Brale builds event payload
+        ↓
+Brale signs raw JSON body with your shared secret
+        ↓
+Brale POSTs the event to your webhook URL
+        ↓
+Your app verifies, deduplicates, and updates state
+```
+
+## Supported events
+
+Use the event type discovery endpoint to see currently available events:
+
+```
+GET /accounts/{account_id}/webhooks/event_types
+```
+
+Current supported events:
+
+| Event type | When it fires | Recommended use |
+| --- | --- | --- |
+| `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
+| `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
+
+Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed.
+
+## Requirements
+
+Your webhook endpoint must:
+
+- Be publicly reachable over HTTPS
+- Accept `POST` requests
+- Accept `Content-Type: application/json`
+- Read the raw request body before parsing JSON
+- Verify the `x-request-signature-sha-256` header
+- Return a `2xx` response quickly
+- Deduplicate events by event `id` and/or `idempotency-key`
+
+## Local development
+
+For local development, expose your local server with a tool like ngrok or Cloudflare Tunnel.
+
+Example local tunnel:
+
+```bash
+ngrok http 4000
+```
+
+If ngrok gives you:
+
+```
+https://example.ngrok-free.app -> http://localhost:4000
+```
+
+your webhook URL might be:
+
+```
+https://example.ngrok-free.app/webhooks/brale
+```
