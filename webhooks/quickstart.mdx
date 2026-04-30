@@ -1,0 +1,141 @@
+---
+title: "Quickstart"
+description: "Create a webhook subscription, store the shared secret, verify signatures, and deduplicate events."
+---
+
+## 1. Create an HTTPS webhook endpoint
+
+Create a route in your application that can receive Brale webhook deliveries.
+
+Example endpoint:
+
+```
+POST https://your-app.example.com/webhooks/brale
+```
+
+For local development:
+
+```bash
+ngrok http 4000
+```
+
+Then use:
+
+```
+https://<your-ngrok-host>/webhooks/brale
+```
+
+## 2. Get an access token with webhook scopes
+
+Your OAuth application or API credential needs webhook scopes (these are provisioned by default when you make a credential set).
+
+| Scope | Required for |
+| --- | --- |
+| `webhooks:read` | List event types, list subscriptions, inspect delivery logs |
+| `webhooks:write` | Create, update, and archive webhook subscriptions |
+
+For subscription creation, use a credential with both `webhooks:read` and `webhooks:write`.
+
+## 3. Discover available event types
+
+```bash
+curl https://api.brale.xyz/accounts/{account_id}/webhooks/event_types \
+  -H "Authorization: Bearer {access_token}"
+```
+
+Example response:
+
+```json
+{
+  "event_types": [
+    {
+      "event_type": "payment.completed",
+      "summary": "Emitted when a payment reaches complete status."
+    },
+    {
+      "event_type": "transfer.completed",
+      "summary": "Emitted when a transfer (token order) reaches complete status."
+    }
+  ]
+}
+```
+
+## 4. Create a webhook subscription
+
+Create a subscription for your endpoint and event types.
+
+```bash
+curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "url": "https://your-app.example.com/webhooks/brale",
+    "events": ["transfer.completed"]
+  }'
+```
+
+Example response:
+
+```json
+{
+  "id": "3D3jNzs2r7Sf78qtYpRe1biscLG",
+  "sharedSecret": "base64url-encoded-secret",
+  "events": ["transfer.completed"],
+  "url": "https://your-app.example.com/webhooks/brale",
+  "status": "active"
+}
+```
+
+Important:
+
+- `sharedSecret` is returned only once.
+- Store it immediately in a secrets manager or encrypted environment variable.
+- Do not log it.
+- Do not expose it to browsers or client-side code.
+- If you lose it, archive the subscription and create a new one.
+
+## 5. Verify incoming webhooks
+
+Every webhook includes:
+
+```
+x-request-signature-sha-256: <lowercase hex HMAC-SHA256>
+idempotency-key: <deterministic UUID derived from event id>
+content-type: application/json
+```
+
+Notes:
+
+- Header names may appear with different capitalization depending on your framework/server. Treat them as case-insensitive.
+- The `Idempotency-Key` you send to the management API is **not** the same concept as the `idempotency-key` header Brale sends with each webhook delivery. Use the webhook event `id` and/or the webhook `idempotency-key` header for deduplication.
+
+Verification steps:
+
+1. Read the exact raw request body bytes.
+2. Decode `sharedSecret` from Base64URL to raw bytes.
+3. Compute HMAC-SHA256 over the raw request body.
+4. Encode the digest as lowercase hex.
+5. Compare to `x-request-signature-sha-256` using constant-time comparison.
+6. Only then parse and process the JSON payload.
+
+## 6. Return 2xx quickly
+
+Return any `2xx` response after verification and safe receipt.
+
+If processing takes longer, acknowledge quickly and process asynchronously.
+
+```
+Verify signature → record event id → acknowledge 200 → process async
+```
+
+## 7. Deduplicate events
+
+Webhook deliveries are at-least-once. Your endpoint may receive the same event more than once.
+
+Deduplicate using:
+
+- The envelope `id`
+- The `idempotency-key` header
+
+Process each logical event once.
