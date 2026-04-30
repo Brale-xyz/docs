@@ -42,6 +42,7 @@ Use this checklist when integrating and operating at volume.
 
 - List transfers with pagination tokens; store transfer id, idempotency key, timestamps, status, and provider references.
 - Poll with backoff; avoid tight loops.
+- If you are waiting for transfer completion in production, consider using [`transfer.completed`](/webhooks/webhook-events) [webhooks](/webhooks/overview) and use polling as a fallback or reconciliation mechanism. See [webhook troubleshooting](/webhooks/troubleshooting) for delivery diagnostics.
 
 ## Headers
 

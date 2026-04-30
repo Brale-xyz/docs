@@ -220,6 +220,10 @@ The response includes a `status` field with one of the values described above, a
 
 ### Polling Recommendations
 
+<Info>
+  Where available, use [`transfer.completed`](/webhooks/webhook-events) [webhooks](/webhooks/overview) for real-time production completion notifications. Polling remains useful for fallback handling, reconciliation, and retrieving the latest transfer state.
+</Info>
+
 - **Poll interval** — Start at 25% of the anticipated transfer time. If the transfer is still in `pending` or `processing`, apply exponential backoff up to a reasonable maximum (for example, 60 seconds).
 - **Terminal check** — Stop polling once the status is `complete` or `canceled`.
 - **Onchain transfers** — Most onchain transfers complete within 30 seconds. If a transfer is still `processing` after several minutes, it is likely being retried automatically.
