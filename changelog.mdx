@@ -3,6 +3,50 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-05-04" description="Week of April 28" tags={["New", "Update", "Fix"]}>
+  ## Webhooks
+
+  Subscribe to platform events and receive HTTP callbacks when transfers, automations, and addresses change state. Includes signed payloads for verification, retry handling, and a managed subscription API. See the [webhooks overview](/webhooks/overview) and [quickstart](/webhooks/quickstart) to get started.
+
+  ## Branded automations
+
+  You can now create branded automations through the API. Use them to issue stablecoins under your own brand on top of Brale's automation flows. See [create automations](/api-reference/brale/create-automations).
+
+  ## Update addresses via API
+
+  A new `PATCH` endpoint lets you archive, unarchive, and update configuration on existing addresses without recreating them. See [update address](/api-reference/brale/update-address) and [addresses](/key-concepts/addresses).
+
+  ## Turnkey Wallet integration
+
+  A step-by-step guide for pairing Brale-managed addresses with [Turnkey](https://www.turnkey.com/) wallet infrastructure is now available. See the [Turnkey integration guide](/guides/integrations/turnkey).
+
+  ## More chains and value types
+
+  - **Starknet** — `starknet` and `starknet_testnet` are available as `transfer_type` values.
+  - **PulseChain** — added as a supported `transfer_type`.
+  - **PYUSD on Ethereum** — added to the supported value type registry.
+
+  See [transfer types](/coverage/transfer-types) and [value types](/coverage/value-types).
+
+  ## Richer transfer responses
+
+  Transfer responses now expose more detail for fiat rails:
+
+  - **`source.payment_details`** on inbound transfers, including `trace_number` for ACH.
+  - **Outbound wire IMAD** on completed wire transfers for end-to-end reconciliation.
+  - **`destination.wire_memo`** for outbound wire transfers.
+
+  See [transfers](/key-concepts/transfers) and the [Get Transfer](/api-reference/brale/get-transfer) reference.
+
+  ## New transfer list filters
+
+  [List Transfers](/api-reference/brale/list-transfers) now supports filtering by `transaction_id`, plus additional documented query parameters for narrowing results. [List Addresses](/api-reference/brale/list-addresses) now accepts an `address` query parameter.
+
+  ## Bug fixes
+
+  - **Pagination on List Transfers** — fixed cursor parameter to use `page[after]` instead of `page[next]`. Update any clients that relied on the previous parameter name.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
