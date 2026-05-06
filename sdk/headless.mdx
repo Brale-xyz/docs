@@ -1,0 +1,622 @@
+---
+title: "Headless Mode"
+description: "Build your own onramp UI with BraleOnramp. Complete walkthroughs for ACH and on-chain flows in TypeScript, JavaScript, and React."
+---
+
+Headless mode gives you the full `BraleOnramp` orchestrator without any prebuilt UI. You drive every step yourself: when to show a Plaid Link button, how to render the amount entry, how the success screen looks, what the error states look like. The SDK handles the API calls, validation, idempotency, retries, and polling — you handle the pixels.
+
+If you want a drop-in UI instead, see the [Widget Guide](/sdk/widget).
+
+## When to use headless mode
+
+Use it when:
+
+- **You already have a design system** and the prebuilt widget doesn't match it. Theming via CSS variables only goes so far.
+- **You need flow customizations** the widget doesn't expose.
+- **You're not building a web product.** React Native, Electron, an Expo app, server-side ledger automation — anywhere the widget's Web Component target doesn't fit, the headless API does.
+- **You want to compose the SDK with your existing state management** (Redux, Zustand, server actions) rather than letting the widget own its lifecycle.
+
+Use the [widget](/sdk/widget) instead when you want production-grade UX for free and your branding fits within the exposed CSS variables.
+
+## Prerequisites
+
+Before any code on this page runs, you need:
+
+1. A Brale account with `client_id` / `client_secret` (mainnet or testnet).
+2. An auth-gated `/api/token` endpoint on your backend. The SDK never sees your Brale credentials — see [Backend Setup](/sdk/backend) for the reference implementation.
+3. (For ACH flows) the [Plaid Link JS SDK](https://plaid.com/docs/link/) loaded on the page. Brale issues the link token; Plaid Link handles the bank-selection UI and returns a `public_token`.
+
+## Creating an instance
+
+`BraleOnramp.create()` is async — it validates your config, fetches the partner account, and pre-loads internal addresses and registered banks. After it resolves, every other call on the instance is synchronous *or* returns a promise scoped to a single API operation.
+
+<CodeGroup>
+```ts TypeScript
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+
+const onramp = await BraleOnramp.create({
+  // Required — the only field with no default. Called by the SDK whenever it
+  // needs a Brale Bearer token. Resolve with the raw access_token string.
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+
+  // Optional. When omitted, you must call setDestination() before fund() or
+  // fundOnchain(). When provided, the chain must match an internal custodial
+  // address on the account.
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+
+  // Optional. Provide for on-chain flows only — when omitted, the instance runs
+  // in ACH mode (fund() over bank rails). When provided, fundOnchain() is the
+  // entry point.
+  // source: { chain: 'solana', token: 'USDC' },
+
+  // Observability callbacks — fire on every transfer status transition.
+  onStatusChange: (transfer, previous) => {
+    console.log('[brale]', previous, '→', transfer.status);
+  },
+  onSuccess: (transfer) => {
+    console.log('[brale] success:', transfer.id);
+  },
+  onError: (err) => {
+    console.error('[brale] error:', err.code, err.message);
+  },
+});
+```
+
+```js JavaScript
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+
+const onramp = await BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = await res.json();
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+  onStatusChange: (transfer, previous) => {
+    console.log('[brale]', previous, '→', transfer.status);
+  },
+});
+```
+
+```tsx React 18
+import { useEffect, useRef, useState } from 'react';
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+
+export function useBraleOnramp() {
+  const [onramp, setOnramp] = useState<BraleOnramp | null>(null);
+  const created = useRef(false);
+
+  useEffect(() => {
+    if (created.current) return; // StrictMode-safe
+    created.current = true;
+
+    let active = true;
+    let instance: BraleOnramp | null = null;
+
+    BraleOnramp.create({
+      getAccessToken: async () => {
+        const res = await fetch('/api/token', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch access token');
+        const { access_token } = (await res.json()) as { access_token: string };
+        return access_token;
+      },
+      destination: { chain: 'base_sepolia', token: 'SBC' },
+    }).then((created) => {
+      if (!active) {
+        created.destroy();
+        return;
+      }
+      instance = created;
+      setOnramp(created);
+    });
+
+    return () => {
+      active = false;
+      instance?.destroy();
+    };
+  }, []);
+
+  return onramp;
+}
+```
+
+```tsx React 19
+import { use } from 'react';
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+
+// Module-scoped promise — React 19's `use()` hook reads it once per render
+// without triggering recreations. Pair with an Error Boundary + Suspense.
+const onrampPromise = BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch access token');
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+
+export function OnrampProvider({ children }: { children: React.ReactNode }) {
+  const onramp = use(onrampPromise);
+  return <OnrampContext.Provider value={onramp}>{children}</OnrampContext.Provider>;
+}
+```
+</CodeGroup>
+
+<Warning>
+Always call `onramp.destroy()` when you're done with the instance — on component unmount, page navigation, or sign-out. It aborts any in-flight polling and clears flow-progress listeners. After `destroy()`, every method throws `BraleFlowError`.
+</Warning>
+
+## Configuring destination and source
+
+You can hard-code the destination at create time (shown above) or configure it dynamically. Dynamic mode is what the widget uses internally, and it's the right pattern when the user picks a chain/token from a UI.
+
+### Required at create time when omitting `destination`
+
+When `config.destination` is omitted you must provide `config.destinationAssets` — the partner-declared catalog of where stablecoins can land. Brale does not currently expose a public coverage endpoint, so this list is partner-specific (your onboarding artifacts have it).
+
+```ts
+const onramp = await BraleOnramp.create({
+  getAccessToken: /* ... */,
+  destinationAssets: [
+    {
+      chain: 'base_sepolia',
+      fullName: 'Base Sepolia',
+      nativeSymbol: 'ETH',
+      explorerBase: 'https://sepolia.basescan.org',
+      tokens: [{ symbol: 'SBC', fullName: 'Brale SBC' }],
+    },
+    {
+      chain: 'solana_devnet',
+      fullName: 'Solana Devnet',
+      nativeSymbol: 'SOL',
+      explorerBase: 'https://solscan.io',
+      tokens: [{ symbol: 'SBC' }],
+    },
+  ],
+});
+
+// Later, when the user picks a destination from your UI:
+onramp.setDestination({ chain: 'base_sepolia', token: 'SBC' });
+```
+
+### Source configuration (on-chain mode only)
+
+Source is the chain/token the **user deposits from**. For ACH mode, leave it unset. For on-chain mode, either hard-code at create time or call `setSource()` later. The platform-supported sources (USDC across major chains plus a few others) come from `getSourceAssets()`.
+
+```ts
+// Dynamic flow (matches widget behavior):
+const sources = onramp.getSourceAssets();           // catalog
+const internal = onramp.listInternalAddresses();    // chains your account covers
+const reachable = sources.filter((chain) =>
+  internal.some((addr) => addr.transfer_types.includes(chain.chain)),
+);
+
+onramp.setSource({ chain: reachable[0].chain, token: 'USDC' });
+```
+
+### Registering external destination wallets
+
+When your user wants stablecoins delivered to a wallet **they** control (rather than the partner's custodial address), register that wallet first via `addExternalAddress()`. The SDK reuses an existing registration if the address is already on the account (case-insensitive match).
+
+```ts
+const wallet = await onramp.addExternalAddress(
+  '0xUserWalletAddressHere',
+  ['base_sepolia'],
+  'User primary wallet',
+);
+
+onramp.setDestination({
+  chain: 'base_sepolia',
+  token: 'SBC',
+  address: wallet.address,
+});
+```
+
+## ACH walkthrough — complete runnable example
+
+The ACH onramp moves USD from the user's bank → the partner's custodial wallet → a stablecoin on the destination chain. End-to-end runnable:
+
+<CodeGroup>
+```ts TypeScript
+import { BraleOnramp, BraleFlowError, BraleAuthError } from '@brale-xyz/io-sdk';
+
+declare const Plaid: typeof import('plaid-link-types').Plaid; // npm: react-plaid-link or similar
+
+async function runAchOnramp(amountUsd: string) {
+  // 1. Create the instance.
+  const onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      if (!res.ok) throw new BraleAuthError('Token fetch failed');
+      const { access_token } = (await res.json()) as { access_token: string };
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+    onStatusChange: (transfer, previous) => {
+      // pending → processing → complete (or failed/canceled)
+      updateUiStatus(previous, transfer.status);
+    },
+  });
+
+  try {
+    // 2. Mint a Plaid link token. Brale calls Plaid; the SDK only handles the token.
+    const { link_token } = await onramp.createPlaidLink();
+
+    // 3. Open Plaid Link externally. Plaid returns a public_token on success.
+    const publicToken = await new Promise<string>((resolve, reject) => {
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: (publicToken) => resolve(publicToken),
+        onExit: (err) => err && reject(err),
+      });
+      handler.open();
+    });
+
+    // 4. Exchange the public_token for a Brale bank address_id.
+    await onramp.registerBank(publicToken, {
+      customer_webhook_url: 'https://example.com/plaid/webhook',
+      transfer_types: ['ach_debit'],
+    });
+
+    // 5. Run the funding flow. Resolves with the terminal Transfer.
+    const transfer = await onramp.fund({
+      amount: amountUsd,            // e.g. '100.00'
+      currency: 'USD',
+      note: 'ACH onramp from demo',
+    });
+
+    return transfer;                // status === 'complete'
+  } catch (err) {
+    if (err instanceof BraleFlowError) {
+      // BraleFlowError.step tells you which phase failed (e.g. 'poll-ach-transfer').
+      console.error('Flow failed at', err.step, ':', err.message);
+    }
+    throw err;
+  } finally {
+    onramp.destroy();
+  }
+}
+
+function updateUiStatus(previous: string, current: string) {
+  // Render your own progress indicator. The SDK fires this on every transfer
+  // status transition during fund().
+}
+```
+
+```js JavaScript
+import { BraleOnramp, BraleFlowError } from '@brale-xyz/io-sdk';
+
+async function runAchOnramp(amountUsd) {
+  const onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      if (!res.ok) throw new Error('Token fetch failed');
+      const { access_token } = await res.json();
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+    onStatusChange: (transfer, previous) => updateUiStatus(previous, transfer.status),
+  });
+
+  try {
+    const { link_token } = await onramp.createPlaidLink();
+
+    const publicToken = await new Promise((resolve, reject) => {
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: (token) => resolve(token),
+        onExit: (err) => err && reject(err),
+      });
+      handler.open();
+    });
+
+    await onramp.registerBank(publicToken, {
+      customer_webhook_url: 'https://example.com/plaid/webhook',
+      transfer_types: ['ach_debit'],
+    });
+
+    const transfer = await onramp.fund({ amount: amountUsd, currency: 'USD' });
+    return transfer;
+  } catch (err) {
+    if (err instanceof BraleFlowError) {
+      console.error('Flow failed at', err.step, ':', err.message);
+    }
+    throw err;
+  } finally {
+    onramp.destroy();
+  }
+}
+```
+
+```tsx React 18
+import { useState } from 'react';
+import { usePlaidLink } from 'react-plaid-link';
+import type { BraleOnramp } from '@brale-xyz/io-sdk';
+
+interface AchOnrampProps {
+  onramp: BraleOnramp;
+}
+
+type Phase = 'idle' | 'minting' | 'plaid' | 'funding' | 'done' | 'error';
+
+export function AchOnramp({ onramp }: AchOnrampProps) {
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (publicToken) => {
+      try {
+        setPhase('funding');
+        await onramp.registerBank(publicToken, {
+          customer_webhook_url: 'https://example.com/plaid/webhook',
+        });
+        await onramp.fund({ amount: '100.00', currency: 'USD' });
+        setPhase('done');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setPhase('error');
+      }
+    },
+  });
+
+  async function start() {
+    try {
+      setPhase('minting');
+      const { link_token } = await onramp.createPlaidLink();
+      setLinkToken(link_token);
+      setPhase('plaid');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      setPhase('error');
+    }
+  }
+
+  return (
+    <div>
+      {phase === 'plaid' && ready && <button onClick={() => open()}>Connect bank</button>}
+      {phase !== 'plaid' && <button disabled={phase !== 'idle'} onClick={start}>Start ACH onramp</button>}
+      {phase === 'done' && <p>Funded.</p>}
+      {phase === 'error' && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+### What `fund()` does internally
+
+You don't need to know to call it, but the order matters when you're rendering progress UI:
+
+1. **Validate inputs** — amount/currency parse, bank linked, destination set, no other flow in flight.
+2. **Create transfer** — `POST /accounts/{id}/transfers` with idempotency key.
+3. **Poll transfer** — `GET /transfers/{id}` until status is terminal (`complete`, `failed`, `canceled`).
+4. **Resolve** with the terminal Transfer. `onStatusChange` fires on every status transition during the poll.
+
+Each phase emits a `FlowProgress` event you can subscribe to via `_subscribeFlowProgress` (see [Step-level progress](#step-level-progress) below).
+
+## On-chain walkthrough — complete runnable example
+
+The on-chain onramp moves stablecoins from the user's wallet (or the source-chain custodial address) → swap on Brale's side → destination stablecoin/chain.
+
+<CodeGroup>
+```ts TypeScript
+import { BraleOnramp, BraleFlowError } from '@brale-xyz/io-sdk';
+
+async function runOnchainOnramp(amountUsd: string) {
+  const onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      if (!res.ok) throw new Error('Token fetch failed');
+      const { access_token } = (await res.json()) as { access_token: string };
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+    source: { chain: 'solana_devnet', token: 'USDC' },
+    onStatusChange: (transfer, previous) => {
+      updateUiStatus(previous, transfer.status);
+    },
+  });
+
+  // Step-level visibility on the multi-step flow (deposit detect, transfer
+  // create, transfer poll). Useful for "Waiting for your deposit…" UI.
+  const unsubscribe = onramp._subscribeFlowProgress((progress) => {
+    console.log('[flow]', progress.step, progress.status, `(${progress.index + 1}/${progress.total})`);
+  });
+
+  try {
+    // 1. Tell the user where to deposit. Until they actually send, no API
+    //    state changes — getDepositInfo() is a pure read.
+    const deposit = onramp.getDepositInfo();
+    showDepositInstructions(deposit.address, deposit.chain, deposit.token);
+
+    // 2. Wait for the user to send the deposit through their own wallet UI.
+    //    fundOnchain() polls Brale for the incoming deposit and continues.
+    const transfer = await onramp.fundOnchain({
+      amount: amountUsd,            // e.g. '10' on testnet
+      currency: 'USD',
+      note: 'On-chain demo',
+    });
+
+    return transfer;                // status === 'complete'
+  } catch (err) {
+    if (err instanceof BraleFlowError) {
+      console.error('Flow failed at', err.step, ':', err.message);
+    }
+    throw err;
+  } finally {
+    unsubscribe();
+    onramp.destroy();
+  }
+}
+
+function showDepositInstructions(address: string, chain: string, token: string) {
+  // Render a QR code or copy-button. The SDK only tells you what to display.
+}
+```
+
+```js JavaScript
+import { BraleOnramp, BraleFlowError } from '@brale-xyz/io-sdk';
+
+async function runOnchainOnramp(amountUsd) {
+  const onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      if (!res.ok) throw new Error('Token fetch failed');
+      const { access_token } = await res.json();
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+    source: { chain: 'solana_devnet', token: 'USDC' },
+  });
+
+  const unsubscribe = onramp._subscribeFlowProgress((p) => {
+    console.log('[flow]', p.step, p.status, `(${p.index + 1}/${p.total})`);
+  });
+
+  try {
+    const deposit = onramp.getDepositInfo();
+    showDepositInstructions(deposit.address, deposit.chain, deposit.token);
+
+    const transfer = await onramp.fundOnchain({ amount: amountUsd, currency: 'USD' });
+    return transfer;
+  } finally {
+    unsubscribe();
+    onramp.destroy();
+  }
+}
+```
+
+```tsx React 18
+import { useEffect, useState } from 'react';
+import type { BraleOnramp, FlowProgress } from '@brale-xyz/io-sdk';
+
+interface OnchainOnrampProps {
+  onramp: BraleOnramp;
+  amount: string;
+}
+
+export function OnchainOnramp({ onramp, amount }: OnchainOnrampProps) {
+  const [deposit, setDeposit] = useState<{ address: string; chain: string; token: string } | null>(null);
+  const [progress, setProgress] = useState<FlowProgress | null>(null);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    setDeposit(onramp.getDepositInfo());
+    const unsubscribe = onramp._subscribeFlowProgress(setProgress);
+
+    onramp
+      .fundOnchain({ amount, currency: 'USD' })
+      .then(() => setDone(true))
+      .catch(console.error);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [onramp, amount]);
+
+  if (done) return <p>Onramp complete.</p>;
+  if (!deposit) return <p>Loading…</p>;
+
+  return (
+    <div>
+      <p>
+        Send <strong>{amount} {deposit.token}</strong> on <strong>{deposit.chain}</strong> to:
+      </p>
+      <code>{deposit.address}</code>
+      {progress && (
+        <p>
+          {progress.step} — {progress.status} ({progress.index + 1}/{progress.total})
+        </p>
+      )}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+### Step-level progress
+
+The on-chain flow has more steps than the ACH flow (deposit detection → transfer create → transfer poll). For a polished UX, subscribe to `_subscribeFlowProgress` to render a per-step indicator. The event includes a `transferId` once the transfer is created — useful for displaying the in-flight ID before the flow resolves.
+
+```ts
+const unsubscribe = onramp._subscribeFlowProgress((progress) => {
+  // progress = { step: 'detect-deposit' | 'create-transfer' | 'poll-transfer' | …,
+  //              status: 'skipped' | 'executing' | 'completed' | 'failed',
+  //              index, total, transferId? }
+});
+```
+
+<Note>
+`_subscribeFlowProgress` is intentionally underscore-prefixed because it's the contract between the headless and widget bundles, not a stable public API. It's safe to use, but treat its event shape as semver-minor: new fields may be added across releases.
+</Note>
+
+## Error handling
+
+Every error thrown by the SDK is a subclass of `BraleError`. Catch the base class and switch on `instanceof` for typed handling:
+
+```ts
+import {
+  BraleError,
+  BraleAuthError,
+  BraleApiError,
+  BraleFlowError,
+  BraleNetworkError,
+  BraleNotFoundError,
+  BraleTimeoutError,
+  BraleValidationError,
+} from '@brale-xyz/io-sdk';
+
+try {
+  await onramp.fund({ amount: '100.00' });
+} catch (err) {
+  if (err instanceof BraleAuthError) {
+    // Token rejected. Log out the user, send them back to sign-in.
+  } else if (err instanceof BraleValidationError) {
+    // Client-side validation (status === 0) or 4xx server validation.
+    // err.details often contains the upstream payload.
+  } else if (err instanceof BraleNotFoundError) {
+    // Resource missing (account/address/transfer). Usually unrecoverable.
+  } else if (err instanceof BraleFlowError) {
+    // Multi-step flow aborted. err.step names the failing phase.
+    // The Transfer object (if any) is on err.details.
+  } else if (err instanceof BraleTimeoutError) {
+    // Long-poll exceeded its budget. Retry safely with the same idempotency.
+  } else if (err instanceof BraleNetworkError) {
+    // Couldn't reach Brale. Likely transient; the SDK already retried 5xx.
+  } else if (err instanceof BraleApiError) {
+    // Brale returned an unhandled HTTP error. err.status + err.details have it.
+  } else if (err instanceof BraleError) {
+    // Any other SDK-thrown error.
+  }
+}
+```
+
+Notes on the dual error channel: `fund()` and `fundOnchain()` reject AND fire `onError` (when configured) for the same failure. Use `onError` for telemetry, `try/catch` for control flow. The promise rejection is authoritative — `onError` is fire-and-forget and swallows callback exceptions.
+
+## Lifecycle & cleanup
+
+```ts
+// On unmount, sign-out, navigation:
+onramp.destroy();
+
+// After destroy(), every method throws BraleFlowError with step === 'destroy'.
+// Calling destroy() multiple times is safe (idempotent).
+```
+
+`destroy()` cancels in-flight polls (via `AbortController`), clears flow-progress listeners, and detaches the in-flight context. It does **not** reverse a transfer — once a transfer is on Brale's books, it follows its own status lifecycle independent of the SDK.
+
+## Reference
+
+- [API Reference](/sdk/api-reference) — every method, type, and error class on the public surface.
+- [Backend Setup](/sdk/backend) — the auth-gated `/api/token` pattern.
+- [Security & Threat Model](/sdk/security) — what you need to know before going to production.
+- [Quickstart](/sdk/quickstart) — back to the five-minute overview.

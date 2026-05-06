@@ -1,0 +1,736 @@
+---
+title: "API Reference"
+description: "Method-by-method reference for BraleOnramp and mountWidget. Source of truth: packages/sdk/src/headless/types.ts and packages/sdk/src/headless/BraleOnramp.ts."
+---
+
+This page is the canonical reference for every public method, type, and error class exported from `@brale-xyz/io-sdk`. For narrative guidance, see the [Headless Guide](/sdk/headless) and [Widget Guide](/sdk/widget).
+
+The SDK is generated from the Brale OpenAPI spec and the source files in [`packages/sdk/src/headless/`](https://github.com/Brale-xyz/onramp-sdk/tree/main/packages/sdk/src/headless). When this page and the source diverge, the source wins — file an issue.
+
+---
+
+## `BraleOnramp.create(config)` <a id="create"></a>
+
+Static async factory. Validates the config, fetches the partner account, and pre-loads internal addresses and registered banks. Every `BraleOnramp` instance is created through this method.
+
+**Signature:**
+
+```ts
+static create(config: BraleOnrampConfig): Promise<BraleOnramp>
+```
+
+**Params:**
+
+- `config: BraleOnrampConfig` — see [`BraleOnrampConfig`](#BraleOnrampConfig).
+
+**Returns:** A resolved `BraleOnramp` ready to use.
+
+**Throws:**
+
+- `BraleValidationError` — `getAccessToken` missing, `destination.chain` / `destination.token` empty, no internal address for the chain, `accountId` not on the authenticated account, external address not registered.
+- `BraleApiError` — `GET /accounts` failure (5xx) or other unexpected upstream error.
+- `BraleAuthError` — invalid token returned by `getAccessToken`.
+
+**Example:**
+
+```ts
+const onramp = await BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+```
+
+---
+
+## `setDestination(dest)` <a id="setDestination"></a>
+
+Sets or updates the destination chain/token (and optional external wallet address). The destination chain must match an internal custodial address. When `destinationAssets` was provided at create time, the token must also exist in that catalog.
+
+**Signature:**
+
+```ts
+setDestination(dest: { chain: string; token: string; address?: string }): void
+```
+
+**Params:**
+
+- `dest.chain: string` — Brale `transfer_type`, e.g. `'base_sepolia'`. Required.
+- `dest.token: string` — Brale `value_type`, e.g. `'SBC'`. Case-sensitive. Required.
+- `dest.address?: string` — registered external wallet address. Must already be on the account (call [`addExternalAddress()`](#addExternalAddress) first).
+
+**Returns:** `void`.
+
+**Throws:**
+
+- `BraleValidationError` — chain/token missing, chain not in account's internal addresses, token not in `destinationAssets`.
+- `BraleFlowError` — funding flow currently in progress, or instance has been destroyed.
+
+---
+
+## `getDestination()` <a id="getDestination"></a>
+
+Returns the current destination (a fresh shallow copy) or `undefined` when none has been set.
+
+**Signature:**
+
+```ts
+getDestination(): { chain: string; token: string; address?: string } | undefined
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `setSource(src)` <a id="setSource"></a>
+
+Sets the source chain/token for on-chain mode. Source can match destination (degenerate same-chain) or differ (cross-stablecoin).
+
+**Signature:**
+
+```ts
+setSource(src: { chain: string; token: string }): void
+```
+
+**Throws:**
+
+- `BraleValidationError` — chain not in account's internal addresses.
+- `BraleFlowError` — funding flow in progress, or instance destroyed.
+
+---
+
+## `getSource()` <a id="getSource"></a>
+
+Returns the current source (shallow copy) or `undefined`.
+
+**Signature:**
+
+```ts
+getSource(): { chain: string; token: string } | undefined
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `addExternalAddress(address, transferTypes, alias?)` <a id="addExternalAddress"></a>
+
+Registers an external blockchain address with Brale. Idempotent: if the address is already registered (case-insensitive match), returns the existing record without creating a duplicate.
+
+**Signature:**
+
+```ts
+addExternalAddress(
+  address: string,
+  transferTypes: string[],
+  alias?: string,
+): Promise<ExternalAddress>
+```
+
+**Params:**
+
+- `address: string` — the on-chain address. Format depends on `transferTypes` (EVM hex, Solana base58, etc.).
+- `transferTypes: string[]` — chains to register against, e.g. `['base_sepolia']`.
+- `alias?: string` — human-readable label.
+
+**Returns:** [`ExternalAddress`](#ExternalAddress).
+
+**Throws:** `BraleValidationError` (bad input), `BraleApiError` (Brale rejection), `BraleFlowError` (destroyed).
+
+---
+
+## `listExternalAddresses()` <a id="listExternalAddresses"></a>
+
+Returns every registered external address on the account, snapshotted at create time and updated after each `addExternalAddress()` call.
+
+**Signature:**
+
+```ts
+listExternalAddresses(): ExternalAddress[]
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `listInternalAddresses()` <a id="listInternalAddresses"></a>
+
+Returns every internal custodial address on the account. Used by the widget to compute reachability against `getSourceAssets()`.
+
+**Signature:**
+
+```ts
+listInternalAddresses(): DestinationAddress[]
+```
+
+**Returns:** [`DestinationAddress[]`](#DestinationAddress) — each entry has `kind: 'custodial'`.
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `listDestinationAddressesByChain(chain)` <a id="listDestinationAddressesByChain"></a>
+
+Returns every selectable destination for a given chain — internal custodials first, registered external addresses second. Per-token coverage isn't modeled by Brale, so the result is chain-narrowed but not token-narrowed.
+
+**Signature:**
+
+```ts
+listDestinationAddressesByChain(chain: string): DestinationAddress[]
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `getDestinationAssets()` <a id="getDestinationAssets"></a>
+
+Returns the partner-declared catalog of destination chains/tokens (the same value passed as `config.destinationAssets`). Empty array when no catalog was provided.
+
+**Signature:**
+
+```ts
+getDestinationAssets(): Assets
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `getSourceAssets()` <a id="getSourceAssets"></a>
+
+Returns the catalog of third-party stablecoins supported as deposit sources for cross-stablecoin onramp. Defaults to `BRALE_SUPPORTED_SOURCES` (USDC across Arbitrum, Avalanche, Base, Celo, Ethereum, Hedera, Optimism, Polygon, Solana, Tron USDT, XRP Ledger RLUSD); partners can override via `config.sourceAssets` to extend (e.g. add a Brale-issued testnet token) or restrict.
+
+**Signature:**
+
+```ts
+getSourceAssets(): Assets
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `getMode()` <a id="getMode"></a>
+
+Returns which flow this instance will run.
+
+**Signature:**
+
+```ts
+getMode(): OnrampMode  // 'ach' | 'onchain'
+```
+
+**Returns:** `'ach'` when no source is configured (use `fund()`); `'onchain'` when source is configured (use `fundOnchain()`).
+
+**Throws:** `BraleFlowError` when no destination is set or instance is destroyed.
+
+---
+
+## `getDepositInfo()` <a id="getDepositInfo"></a>
+
+Returns the source custodial address where the user should deposit to start an on-chain onramp. Pure read — no API state changes.
+
+**Signature:**
+
+```ts
+getDepositInfo(): DepositInfo
+```
+
+**Returns:** [`DepositInfo`](#DepositInfo).
+
+**Throws:** `BraleFlowError` when no source is configured (configure with `config.source` or `setSource()`) or instance is destroyed.
+
+---
+
+## `createPlaidLink(userInfo?)` <a id="createPlaidLink"></a>
+
+Mints a Plaid Link token via `POST /plaid/link_token`. Open Plaid Link with the returned `link_token`; Plaid Link returns a `public_token` you pass to [`registerBank()`](#registerBank).
+
+**Signature:**
+
+```ts
+createPlaidLink(
+  userInfo?: CreateLinkTokenRequest,
+): Promise<{ link_token: string; expiration: string }>
+```
+
+**Params:**
+
+- `userInfo?` — optional Plaid metadata about the end user. Fields match Brale's `CreateLinkTokenRequest` schema.
+
+**Returns:** Plaid link token + ISO 8601 expiration.
+
+**Throws:** `BraleApiError`, `BraleAuthError`, `BraleFlowError` (destroyed).
+
+---
+
+## `registerBank(publicToken, options)` <a id="registerBank"></a>
+
+Exchanges a Plaid `public_token` for a Brale bank `address_id`. Stores the result internally — `fund()` uses it as the ACH source. Last-write-wins: a second `registerBank()` replaces the previously linked bank.
+
+**Signature:**
+
+```ts
+registerBank(
+  publicToken: string,
+  options: RegisterBankOptions,
+): Promise<string>
+```
+
+**Params:** see [`RegisterBankOptions`](#RegisterBankOptions).
+
+**Returns:** the new bank `address_id`.
+
+**Throws:**
+
+- `BraleFlowError` — funding flow already in progress, or instance destroyed.
+- `BraleApiError` — Plaid exchange or Brale registration failure.
+
+---
+
+## `selectBank(financialInstitutionId)` <a id="selectBank"></a>
+
+Selects an already-registered bank without going through Plaid. Use when the user picks a bank from `listBankAccounts()` instead of linking a new one. Last-write-wins: replaces any previous `registerBank()` result.
+
+**Signature:**
+
+```ts
+selectBank(financialInstitutionId: string): void
+```
+
+**Throws:** `BraleValidationError` (id not in `listBankAccounts()`), `BraleFlowError` (destroyed).
+
+---
+
+## `getSelectedBank()` <a id="getSelectedBank"></a>
+
+Returns the currently selected bank — the one set via `selectBank()` or `registerBank()` — or `undefined` when none is set. Used by the Confirm screen to display `{routing} · ··{last4}`.
+
+**Signature:**
+
+```ts
+getSelectedBank(): BankAccount | undefined
+```
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `listBankAccounts()` <a id="listBankAccounts"></a>
+
+Returns every registered bank (financial institution) on the account, snapshotted at create time.
+
+**Signature:**
+
+```ts
+listBankAccounts(): BankAccount[]
+```
+
+**Returns:** [`BankAccount[]`](#BankAccount).
+
+**Throws:** `BraleFlowError` if destroyed.
+
+---
+
+## `fund(params)` <a id="fund"></a>
+
+Runs the ACH onramp flow: creates the transfer, polls until terminal, and resolves with the terminal Transfer object. Only one funding flow at a time per instance.
+
+**Signature:**
+
+```ts
+fund(params: FundParams): Promise<Transfer>
+```
+
+**Params:** see [`FundParams`](#FundParams).
+
+**Returns:** the terminal `Transfer` object (`status === 'complete'`). The same instance is also passed to the optional `onSuccess` callback.
+
+**Throws:**
+
+- `BraleValidationError` — invalid amount/currency, no destination configured.
+- `BraleFlowError` — no bank linked (`registerBank()` or `selectBank()` first), funding flow already in progress, instance destroyed, or transfer reached a non-`complete` terminal status (`failed`/`canceled` — the failed `Transfer` is on `err.details`).
+- Other `BraleError` subclasses for HTTP-layer issues.
+
+**Example:**
+
+```ts
+const transfer = await onramp.fund({ amount: '100.00', currency: 'USD' });
+console.log('Transfer ID:', transfer.id);
+```
+
+---
+
+## `fundOnchain(params)` <a id="fundOnchain"></a>
+
+Runs the on-chain onramp flow: detects the user's deposit, creates the transfer, polls until terminal, and resolves with the terminal Transfer. Only one funding flow at a time per instance (shared with `fund()`).
+
+**Signature:**
+
+```ts
+fundOnchain(params: FundParams): Promise<Transfer>
+```
+
+**Params:** see [`FundParams`](#FundParams).
+
+**Returns:** the terminal `Transfer`. On-chain transfers also expose `transfer.destination?.transaction_id` (on-chain tx hash) when the API returns it — see the [Security page §6](/sdk/security#6-a-note-on-destination-transaction_id) for the graceful-degradation note.
+
+**Throws:**
+
+- `BraleValidationError` — invalid amount/currency.
+- `BraleFlowError` — no destination, no source, funding flow in progress, instance destroyed, or transfer reached a non-`complete` terminal status.
+
+---
+
+## `destroy()` <a id="destroy"></a>
+
+Marks the instance as destroyed and aborts any in-flight polling. After this, every method throws `BraleFlowError` with `step === 'destroy'`. Idempotent — safe to call multiple times.
+
+**Signature:**
+
+```ts
+destroy(): void
+```
+
+Always call this on unmount, sign-out, or page navigation.
+
+---
+
+## `_subscribeFlowProgress(callback)` <a id="_subscribeFlowProgress"></a>
+
+Internal contract between the headless and widget bundles. Registers a listener that fires on every step transition during `fund()` and `fundOnchain()`. Returns an unsubscribe function.
+
+**Signature:**
+
+```ts
+_subscribeFlowProgress(
+  callback: (progress: FlowProgressEnriched) => void,
+): () => void
+```
+
+**Params:** the callback receives [`FlowProgressEnriched`](#FlowProgressEnriched).
+
+**Returns:** an unsubscribe function. Always call it when you tear down the listener.
+
+<Note>
+The underscore prefix marks this as the contract between the headless and widget bundles, not stable public API. It's safe to use in app code, but treat the event shape as semver-minor — new fields may be added across releases.
+</Note>
+
+---
+
+## `BraleOnrampConfig` <a id="BraleOnrampConfig"></a>
+
+Configuration object passed to `BraleOnramp.create()`.
+
+```ts
+interface BraleOnrampConfig {
+  // Required. Called by the SDK whenever it needs a Brale Bearer token.
+  getAccessToken: () => Promise<string>;
+
+  // Optional. Where stablecoins land. When omitted, you must call setDestination()
+  // before fund() or fundOnchain(), and provide destinationAssets.
+  destination?: {
+    chain: string;            // Brale transfer_type, e.g. 'base'
+    token: string;            // Brale value_type, e.g. 'SBC'. Case-sensitive.
+    address?: string;         // External wallet address (must be registered first).
+  };
+
+  // Optional. The chain/token the user deposits from. When set, the instance
+  // runs in on-chain mode (use fundOnchain()). When omitted, ACH mode (use fund()).
+  source?: { chain: string; token: string };
+
+  // Optional. Specific Brale account to operate on. Defaults to the first
+  // account from GET /accounts.
+  accountId?: string;
+
+  // Observability — fires on every transfer status transition during funding.
+  onStatusChange?: (transfer: Transfer, previous_status: string) => void;
+
+  // Observability — fires when fund()/fundOnchain() resolves successfully.
+  // Errors thrown here are swallowed (logged to console) so a flaky callback
+  // never produces a false negative on a completed transfer.
+  onSuccess?: (transfer: Transfer) => void;
+
+  // Observability — fires on BraleError subclasses thrown by funding.
+  // Same swallow-on-throw guarantee as onSuccess.
+  onError?: (error: BraleError) => void;
+
+  // Optional override for the API base URL. Defaults to 'https://api.brale.xyz'.
+  baseUrl?: string;
+
+  // Optional retry config for 429/5xx. Passed through to the HTTP client.
+  retry?: RetryOptions;
+
+  // Required when `destination` is omitted (dynamic mode). Partner-declared
+  // catalog of chains/tokens where stablecoins can be delivered.
+  destinationAssets?: Assets;
+
+  // Optional override for the SDK's built-in third-party source list.
+  // Use to extend (Brale-issued testnet tokens) or restrict.
+  sourceAssets?: Assets;
+}
+```
+
+---
+
+## `RegisterBankOptions` <a id="RegisterBankOptions"></a>
+
+```ts
+interface RegisterBankOptions {
+  customer_webhook_url: string;     // Plaid webhook URL — required by Brale.
+  transfer_types?: string[];        // Defaults to ['ach_debit'] for onramp.
+}
+```
+
+---
+
+## `FundParams` <a id="FundParams"></a>
+
+Shared params for `fund()` and `fundOnchain()`.
+
+```ts
+interface FundParams {
+  amount: string;                   // Decimal string, e.g. '100.00'. Positive only.
+  currency?: string;                // 'USD' (default) or 'EUR' for EURC.
+  note?: string;                    // Optional note attached to the transfer.
+}
+```
+
+---
+
+## `DepositInfo` <a id="DepositInfo"></a>
+
+```ts
+interface DepositInfo {
+  address: string;                  // Custodial deposit address.
+  chain: string;                    // transfer_type, e.g. 'solana_devnet'.
+  token: string;                    // value_type, e.g. 'USDC'.
+}
+```
+
+---
+
+## `Assets`, `ChainMeta`, `TokenMeta` <a id="Assets"></a>
+
+`Assets` is a flat array of `ChainMeta`. The same shape covers `destinationAssets` and `sourceAssets`.
+
+```ts
+type Assets = ChainMeta[];
+
+interface ChainMeta {
+  chain: string;                    // Brale transfer_type, e.g. 'base_sepolia'.
+  fullName?: string;
+  nativeSymbol?: string;            // Gas token symbol — 'ETH' on arbitrum.
+  logoUrl?: string;
+  explorerBase?: string;            // Block explorer URL — used by Success deep-link.
+  tokens: TokenMeta[];
+}
+
+interface TokenMeta {
+  symbol: string;                   // value_type — e.g. 'USDC', 'SBC'. Case-sensitive.
+  fullName?: string;
+  logoUrl?: string;
+}
+```
+
+---
+
+## `ExternalAddress` <a id="ExternalAddress"></a>
+
+```ts
+interface ExternalAddress {
+  id: string;
+  address: string;
+  alias?: string;
+  transfer_types: string[];
+}
+```
+
+---
+
+## `DestinationAddress` <a id="DestinationAddress"></a>
+
+Unified entry for the widget's destination dropdown. `kind` distinguishes internal custodial addresses from registered external wallets.
+
+```ts
+interface DestinationAddress {
+  id: string;
+  address: string;
+  alias?: string;
+  kind: 'custodial' | 'external';
+  transfer_types: string[];
+}
+```
+
+---
+
+## `BankAccount` <a id="BankAccount"></a>
+
+```ts
+interface BankAccount {
+  id: string;
+  name: string | null;
+  account_number: string | null;
+  routingNumber: string;
+  status: string;
+  transfer_types: string[];
+  needs_update?: boolean;
+}
+```
+
+---
+
+## `OnrampMode` <a id="OnrampMode"></a>
+
+```ts
+type OnrampMode = 'ach' | 'onchain';
+```
+
+Discriminant returned by [`getMode()`](#getMode).
+
+---
+
+## `FlowProgress` <a id="FlowProgress"></a>
+
+Event emitted by `_subscribeFlowProgress` (and the underlying flow engine) on every step transition.
+
+```ts
+interface FlowProgress {
+  step: string;                                 // e.g. 'create-transfer'
+  status: 'skipped' | 'executing' | 'completed' | 'failed';
+  index: number;                                // zero-based
+  total: number;
+}
+```
+
+---
+
+## `FlowProgressEnriched` <a id="FlowProgressEnriched"></a>
+
+Extends `FlowProgress` with the in-flight `transferId` (when present). Emitted by `_subscribeFlowProgress`.
+
+```ts
+interface FlowProgressEnriched extends FlowProgress {
+  transferId?: string;
+}
+```
+
+---
+
+## `OnProgress` <a id="OnProgress"></a>
+
+```ts
+type OnProgress = (progress: FlowProgress) => void;
+```
+
+Re-exported from the flow engine for convenience when typing your own listeners.
+
+---
+
+## `Transfer` <a id="Transfer"></a>
+
+The Brale API's transfer object — the resolved value of `fund()` and `fundOnchain()`. The exact schema is generated from Brale's OpenAPI spec; the fields most commonly used are:
+
+```ts
+interface Transfer {
+  id: string;
+  status: 'idle' | 'pending' | 'processing' | 'complete' | 'failed' | 'canceled' | string;
+  amount: { value: string; currency: string };
+  source: { /* address_id or financial_institution_id */ };
+  destination: {
+    address_id?: string;
+    transaction_id?: string;        // On-chain tx hash. NOT in OpenAPI; see security note.
+    /* … */
+  };
+  created_at: string;
+  /* additional fields per Brale OpenAPI spec */
+}
+```
+
+See [Security & Threat Model §6](/sdk/security#6-a-note-on-destination-transaction_id) for the `destination.transaction_id` graceful-degradation note.
+
+---
+
+## `mountWidget(onramp, selector, options?)` <a id="mountWidget"></a>
+
+Entry point of the `@brale-xyz/io-sdk/widget` bundle. Creates a `<brale-onramp>` Web Component, mounts it inside the target container, and returns an idempotent unmount function.
+
+**Signature:**
+
+```ts
+function mountWidget(
+  onramp: WidgetOnramp,
+  selector: string,
+  options?: MountWidgetOptions,
+): () => void
+```
+
+**Params:**
+
+- `onramp: WidgetOnramp` — a `BraleOnramp` instance (the widget uses a structurally-typed subset of the headless API).
+- `selector: string` — CSS selector for the host container, e.g. `'#onramp'`.
+- `options?: MountWidgetOptions` — see below.
+
+**Returns:** an unmount function. Idempotent — safe to call multiple times.
+
+**Throws:**
+
+- `BraleValidationError` — selector matches no element, invalid `size`.
+- `BraleFlowError` — the `BraleOnramp` instance has been destroyed.
+
+For the full integration narrative (vanilla, React 18, React 19, Vue, Svelte), see the [Widget Guide](/sdk/widget). The CSS variables and `::part()` selectors are documented in the [Theming Guide](/sdk/theming).
+
+---
+
+## `MountWidgetOptions` <a id="MountWidgetOptions"></a>
+
+```ts
+interface MountWidgetOptions {
+  webhookUrl?: string;              // Plaid webhook for ACH onboarding.
+  size?: 'small' | 'medium' | 'large';   // Widget dimensions. Defaults to 'medium' (384px).
+}
+```
+
+---
+
+## Error classes
+
+Every error thrown by the SDK is a subclass of `BraleError`. All are exported from `@brale-xyz/io-sdk`.
+
+```ts
+class BraleError extends Error {
+  readonly status: number;          // HTTP status, or 0 for client-side validation.
+  readonly code: string;
+  readonly details?: unknown;
+}
+```
+
+| Class | `status` | `code` | When it's thrown |
+|---|---|---|---|
+| `BraleAuthError` | `401` | `auth_error` | Brale rejected the access token. |
+| `BraleValidationError` | `0` (client) or `4xx` | `validation_error` | Bad input — missing field, malformed amount, unknown chain/token. `status: 0` means the SDK rejected it client-side; non-zero means Brale rejected it. |
+| `BraleNotFoundError` | `404` | `not_found` | Account/address/transfer doesn't exist. |
+| `BraleApiError` | `4xx`/`5xx` | `api_error` | Catch-all for Brale-side HTTP errors not covered above. |
+| `BraleNetworkError` | `0` | `network_error` | Couldn't reach Brale (DNS, TLS, offline). |
+| `BraleFlowError` | `0` | `flow_error` | Multi-step flow aborted. Has `step: string` naming the failing phase. The failing `Transfer` (if any) is on `err.details`. |
+| `BraleTimeoutError` | `0` | `timeout_error` | Long-poll exceeded its budget. |
+
+For idiomatic error-handling code, see the [Headless Guide → Error handling](/sdk/headless#error-handling).
+
+---
+
+## Source files
+
+The reference above is generated from the public types at:
+
+- [`packages/sdk/src/headless/types.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/headless/types.ts)
+- [`packages/sdk/src/headless/BraleOnramp.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/headless/BraleOnramp.ts)
+- [`packages/sdk/src/widget/mount.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/widget/mount.ts)
+- [`packages/sdk/src/errors.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/errors.ts)
+- [`packages/sdk/src/index.ts`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/sdk/src/index.ts) (public surface)
+
+When in doubt, those are authoritative.

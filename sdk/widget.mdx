@@ -1,0 +1,331 @@
+---
+title: "Widget Mode"
+description: "Mount the prebuilt <brale-onramp> Web Component in vanilla JS, React, Vue, or Svelte."
+---
+
+Widget mode is the fastest path to a working onramp: drop a Web Component into your page and the SDK renders the entire flow — destination selection, bank linking via Plaid, amount entry, status polling, success screen — using its built-in UI. Theming flows through CSS custom properties; structural overrides go through `::part()` selectors. No framework lock-in; the widget itself is framework-agnostic.
+
+If you need a custom UI from scratch instead, see the [Headless Guide](/sdk/headless).
+
+## When to use widget mode
+
+Use it when:
+
+- **You want production-grade UX out of the box.** Five minutes of integration vs days of headless wiring.
+- **Your branding fits within the exposed CSS variables.** See [Theming](/sdk/theming) for the full surface — colors, typography, radii, spacing, asset icons.
+- **You're shipping in any of the supported frameworks** — vanilla JS, React 18, React 19, Vue 3, Svelte. The widget is a Web Component, so it's framework-agnostic; the snippets below show the idiomatic mount in each environment.
+
+If the prebuilt UI doesn't fit your design system, or you need to interleave your own steps with the SDK flow, switch to [Headless Mode](/sdk/headless).
+
+## Install
+
+```bash
+npm install @brale-xyz/io-sdk
+```
+
+The widget lives behind a separate entry point so partners using only the headless mode don't pay the bundle cost:
+
+```ts
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+import { mountWidget } from '@brale-xyz/io-sdk/widget';
+```
+
+## Vanilla JS mount
+
+Simplest possible integration. Create the `BraleOnramp` instance, point `mountWidget` at a host element, and call the unmount function when you're done.
+
+```html
+<div id="onramp"></div>
+
+<script type="module">
+  import { BraleOnramp } from 'https://esm.sh/@brale-xyz/io-sdk';
+  import { mountWidget } from 'https://esm.sh/@brale-xyz/io-sdk/widget';
+
+  const onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      const { access_token } = await res.json();
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+  });
+
+  const unmount = mountWidget(onramp, '#onramp', { size: 'medium' });
+
+  // On teardown:
+  // unmount();
+  // onramp.destroy();
+</script>
+```
+
+The widget creates a `<brale-onramp>` element inside the host container. All UI lives behind a Shadow DOM, so the page's global styles don't leak in and the widget's styles don't leak out.
+
+## React 18 — `ref` + `useEffect`
+
+The pattern below matches the SDK demo's [`packages/demo/src/components/WidgetMount.tsx`](https://github.com/Brale-xyz/onramp-sdk/blob/main/packages/demo/src/components/WidgetMount.tsx) — it mounts once per `BraleOnramp` instance, applies size changes via attribute toggling (no remount mid-flow), and propagates theme variables onto the host container so they inherit into the Shadow DOM.
+
+```tsx
+'use client';
+
+import { type CSSProperties, useEffect, useId, useRef } from 'react';
+import type { BraleOnramp } from '@brale-xyz/io-sdk';
+import { mountWidget, type WidgetSize } from '@brale-xyz/io-sdk/widget';
+
+interface WidgetMountProps {
+  onramp: BraleOnramp;
+  size: WidgetSize;
+  themeVars: ReadonlyMap<string, string>;
+  webhookUrl?: string;
+}
+
+export function WidgetMount({ onramp, size, themeVars, webhookUrl }: WidgetMountProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // mountWidget takes a CSS selector — derive a stable, unique id per instance.
+  const reactId = useId();
+  const mountId = `brale-widget${reactId.replace(/:/g, '-')}`;
+
+  // Mount once per onramp instance. Re-mounting on theme/size changes would
+  // tear down any in-progress flow.
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const unmount = mountWidget(onramp, `#${mountId}`, { webhookUrl, size });
+
+    return () => {
+      unmount();
+    };
+    // size is intentionally omitted — applied via the second effect below.
+  }, [onramp, webhookUrl, mountId]);
+
+  // Toggle data-size on the live <brale-onramp> instead of remounting.
+  useEffect(() => {
+    const host = containerRef.current?.querySelector('brale-onramp');
+    if (host) host.setAttribute('data-size', size);
+  }, [size]);
+
+  // Theme CSS vars set on the container inherit into the Shadow DOM via :host.
+  const style = Object.fromEntries(themeVars) as CSSProperties;
+
+  return <div ref={containerRef} id={mountId} className="widget-container" style={style} />;
+}
+```
+
+Three things this pattern gets right and most ad-hoc mounts get wrong:
+
+1. **Stable host id per component instance.** `useId()` returns `':r0:'`, which isn't a valid CSS selector — sanitize the colons.
+2. **No remount on theme/size changes.** Re-mounting the widget mid-flow tears down the in-progress transfer. Theme vars flow as inline styles on the container; size flows via `setAttribute('data-size', …)` on the live host element.
+3. **Cleanup runs the unmount function.** `mountWidget` returns an idempotent unmount; calling it on effect cleanup detaches the Web Component without leaks.
+
+## React 19 — native Web Component support
+
+React 19 supports custom elements as first-class JSX. You can still use the React 18 pattern above (it works in 19), but you can also mount more declaratively if the parent's lifecycle matches the widget's.
+
+```tsx
+'use client';
+
+import { use, useEffect, useId, useRef } from 'react';
+import type { BraleOnramp } from '@brale-xyz/io-sdk';
+import { mountWidget } from '@brale-xyz/io-sdk/widget';
+
+// Module-scoped — paired with <Suspense> at the boundary.
+const onrampPromise = BraleOnramp.create({
+  getAccessToken: async () => {
+    const res = await fetch('/api/token', { credentials: 'include' });
+    const { access_token } = (await res.json()) as { access_token: string };
+    return access_token;
+  },
+  destination: { chain: 'base_sepolia', token: 'SBC' },
+});
+
+export function Onramp() {
+  const onramp = use(onrampPromise);
+  const reactId = useId();
+  const mountId = `brale-widget${reactId.replace(/:/g, '-')}`;
+
+  useEffect(() => {
+    const unmount = mountWidget(onramp, `#${mountId}`, { size: 'medium' });
+    return unmount;
+  }, [onramp, mountId]);
+
+  return <div id={mountId} />;
+}
+```
+
+If the parent unmounts on navigation, also call `onramp.destroy()` in the cleanup (or hoist `BraleOnramp.create` higher so the instance survives across renders).
+
+## Vue 3 — `ref` + `onMounted` / `onUnmounted`
+
+```vue
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue';
+import { BraleOnramp } from '@brale-xyz/io-sdk';
+import { mountWidget } from '@brale-xyz/io-sdk/widget';
+
+const containerRef = ref<HTMLDivElement | null>(null);
+let unmount: (() => void) | null = null;
+let onramp: BraleOnramp | null = null;
+
+onMounted(async () => {
+  if (!containerRef.value) return;
+  containerRef.value.id = 'brale-widget-host';
+
+  onramp = await BraleOnramp.create({
+    getAccessToken: async () => {
+      const res = await fetch('/api/token', { credentials: 'include' });
+      const { access_token } = await res.json();
+      return access_token;
+    },
+    destination: { chain: 'base_sepolia', token: 'SBC' },
+  });
+
+  unmount = mountWidget(onramp, '#brale-widget-host', { size: 'medium' });
+});
+
+onUnmounted(() => {
+  unmount?.();
+  onramp?.destroy();
+});
+</script>
+
+<template>
+  <div ref="containerRef" />
+</template>
+```
+
+## Svelte 4 / 5
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { BraleOnramp } from '@brale-xyz/io-sdk';
+  import { mountWidget } from '@brale-xyz/io-sdk/widget';
+
+  let host: HTMLDivElement;
+
+  onMount(() => {
+    host.id = 'brale-widget-host';
+
+    let unmount: (() => void) | null = null;
+    let onramp: BraleOnramp | null = null;
+
+    (async () => {
+      onramp = await BraleOnramp.create({
+        getAccessToken: async () => {
+          const res = await fetch('/api/token', { credentials: 'include' });
+          const { access_token } = await res.json();
+          return access_token;
+        },
+        destination: { chain: 'base_sepolia', token: 'SBC' },
+      });
+
+      unmount = mountWidget(onramp, '#brale-widget-host', { size: 'medium' });
+    })();
+
+    return () => {
+      unmount?.();
+      onramp?.destroy();
+    };
+  });
+</script>
+
+<div bind:this={host} />
+```
+
+## `mountWidget` options
+
+The full options surface today is two fields. The `data-size` attribute toggle is documented separately because it's set on the live host element, not on the options object.
+
+```ts
+interface MountWidgetOptions {
+  // Plaid webhook URL forwarded into the widget's bank-linking flow.
+  webhookUrl?: string;
+  // Initial widget dimensions. Defaults to 'medium' (384px).
+  size?: 'small' | 'medium' | 'large';
+}
+```
+
+**`webhookUrl`.** When the widget runs the ACH flow, it uses this URL as the Plaid webhook for bank-account events. If omitted, partners using ACH must register their webhook out-of-band on Brale's side. For the on-chain flow it's unused.
+
+**`size`.** Controls the widget's `max-width` and base font size. Passed through to the host element as `data-size`, which the Shadow DOM stylesheet keys off via `:host([data-size="…"])`. After mount, you can change size at runtime without remounting — see below.
+
+For full reference signatures (return type, error throws), see the [API Reference for `mountWidget`](/sdk/api-reference#mountWidget).
+
+### Resizing without remounting
+
+Because re-running `mountWidget` would tear down any in-progress transfer, the widget exposes runtime size changes via the `data-size` attribute on the host element. The R18 mount snippet above already demonstrates this:
+
+```ts
+const host = container.querySelector('brale-onramp');
+host?.setAttribute('data-size', 'large');     // 'small' | 'medium' | 'large'
+```
+
+The Shadow DOM responds via the `:host([data-size="large"])` rule and reflows without touching the React tree, the BraleOnramp instance, or the in-flight flow.
+
+## Custom logos and chain/token metadata
+
+The widget displays asset icons (chain + token) using the `logoUrl` field on each `ChainMeta` and `TokenMeta` you pass through `BraleOnramp.create`. There is no separate "stablecoin override" or "chain override" prop on `mountWidget` itself — partner-specific metadata flows in through the same `destinationAssets` and `sourceAssets` arrays you'd use in headless mode.
+
+```ts
+const onramp = await BraleOnramp.create({
+  getAccessToken: /* … */,
+  destinationAssets: [
+    {
+      chain: 'base_sepolia',
+      fullName: 'Base Sepolia',
+      nativeSymbol: 'ETH',
+      logoUrl: 'https://your-cdn.example.com/base.svg',
+      explorerBase: 'https://sepolia.basescan.org',
+      tokens: [
+        // Brale-issued stablecoins are partner-specific — provide them here
+        // along with the icon you want the widget to render.
+        { symbol: 'SBC', fullName: 'Brale SBC', logoUrl: 'https://your-cdn.example.com/sbc.svg' },
+      ],
+    },
+  ],
+  // sourceAssets follows the same shape — override `getSourceAssets()`'s default
+  // catalog when you want to extend (e.g. add a Brale-issued testnet token like JARD)
+  // or restrict the deposit-source list.
+  sourceAssets: [
+    {
+      chain: 'solana_devnet',
+      fullName: 'Solana Devnet',
+      nativeSymbol: 'SOL',
+      logoUrl: 'https://your-cdn.example.com/solana.svg',
+      explorerBase: 'https://solscan.io',
+      tokens: [{ symbol: 'USDC', fullName: 'USDC', logoUrl: 'https://your-cdn.example.com/usdc.svg' }],
+    },
+  ],
+});
+```
+
+When `logoUrl` is missing on a token or chain, the widget falls back to a single-letter placeholder (the ticker's initial). See [Theming](/sdk/theming#asset-icons) for the placeholder styling and the `--brale-icon-size` variable.
+
+## Testnet limitations
+
+A few things to know when smoke-testing on testnets — the widget surfaces them gracefully, but they're worth understanding before you debug something the SDK is doing on purpose.
+
+- **Explorer link gracefully degrades.** The Brale API returns `destination.transaction_id` (the on-chain tx hash) on completed on-chain transfers, but the field isn't documented in the OpenAPI spec yet. The widget's Success screen reads it defensively: when present, it renders an explorer deep-link (Etherscan, Solscan, etc.); when absent, the link falls back to plain text and the rest of the screen still works. See [Security & Threat Model §6](/sdk/security#6-a-note-on-destination-transaction_id) for the full note.
+- **ACH `fund()` testnet behavior.** Brale's testnet doesn't move real USD; ACH transfers complete deterministically without an actual bank withdrawal. Use this to test the full flow up to and including the success screen, but don't rely on testnet timing as a proxy for production timing.
+- **Plaid sandbox vs production tokens.** Brale's testnet currently returns production Plaid link tokens (sandbox switching is on Brale's roadmap). If your integration tests need true Plaid sandbox tokens, coordinate with Brale support — partner-side workarounds aren't in scope for the widget.
+
+## Lifecycle & cleanup
+
+```ts
+const unmount = mountWidget(onramp, '#onramp', { size: 'medium' });
+
+// Later — order matters: unmount the widget first, then destroy the SDK instance.
+unmount();
+onramp.destroy();
+```
+
+`unmount` removes the `<brale-onramp>` element from the DOM (Preact unmounts inside the Shadow DOM via `disconnectedCallback`). `onramp.destroy()` aborts any in-flight polling. Calling either twice is safe — both are idempotent.
+
+## Reference
+
+- [Theming Guide](/sdk/theming) — every CSS custom property and `::part()` selector.
+- [API Reference → `mountWidget`](/sdk/api-reference#mountWidget) — full signature and throws.
+- [API Reference → `MountWidgetOptions`](/sdk/api-reference#MountWidgetOptions) — option shape.
+- [Backend Setup](/sdk/backend) — the auth-gated `/api/token` pattern.
+- [Quickstart](/sdk/quickstart) — back to the five-minute overview.
