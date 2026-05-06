@@ -10,10 +10,6 @@ The Brale IO SDK lets you embed a fiat or on-chain stablecoin onramp inside your
 
 Both modes share the same authentication contract and the same backend pattern.
 
-<Note>
-**Coming soon to npm.** The package is not yet published. Until release, install from the workspace via the `feat/phase-06-nextjs-demo-docs` branch or wait for the v1.0 announcement. The snippets on this page reflect the public 1.0 API surface and will work unchanged once the package ships.
-</Note>
-
 ## Install
 
 ```bash
@@ -81,7 +77,7 @@ The SDK never talks to Brale's auth endpoint directly. Instead it asks **your ba
 This is non-negotiable. The full pattern, the reference Next.js implementation, and framework alternatives (NextAuth.js / Clerk / Auth0 / Express) are documented in [Backend Setup](/sdk/backend).
 
 <Warning>
-Before going to production, read the [Security & Threat Model](/sdk/security) page. The current Brale platform issues partner-account-wide tokens with no per-end-user scoping — understanding the blast radius and mitigations (Managed Accounts, short TTL, server-side controls) is required, not optional.
+Before going to production, read the [Security & Threat Model](/sdk/security) page.
 </Warning>
 
 ## Next steps
