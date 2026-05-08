@@ -481,8 +481,11 @@ interface BraleOnrampConfig {
 
 ```ts
 interface RegisterBankOptions {
-  customer_webhook_url: string;     // Plaid webhook URL — required by Brale.
-  transfer_types?: string[];        // Defaults to ['ach_debit'] for onramp.
+  // Required. Brale POSTs a normalized payload here when a Plaid item needs
+  // re-authentication. See https://docs.brale.xyz/key-concepts/financial-institutions#handling-re-authentication
+  customer_webhook_url: string;
+  // Fiat rails to enable on the linked bank. Defaults to ['ach_debit'] for onramp.
+  transfer_types?: string[];
 }
 ```
 
@@ -690,7 +693,10 @@ For the full integration narrative (vanilla, React 18, React 19, Vue, Svelte), s
 
 ```ts
 interface MountWidgetOptions {
-  webhookUrl?: string;              // Plaid webhook for ACH onboarding.
+  // Required. Forwarded to `POST .../plaid/register-account` as `customer_webhook_url`.
+  // Brale uses it to deliver Plaid item-update events (e.g. ITEM_LOGIN_REQUIRED) to your
+  // backend. mountWidget rejects empty / whitespace-only / undefined values.
+  webhookUrl: string;
   size?: 'small' | 'medium' | 'large';   // Widget dimensions. Defaults to 'medium' (384px).
 }
 ```

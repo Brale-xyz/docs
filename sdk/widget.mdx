@@ -75,7 +75,7 @@ interface WidgetMountProps {
   onramp: BraleOnramp;
   size: WidgetSize;
   themeVars: ReadonlyMap<string, string>;
-  webhookUrl?: string;
+  webhookUrl: string;
 }
 
 export function WidgetMount({ onramp, size, themeVars, webhookUrl }: WidgetMountProps) {
@@ -239,14 +239,14 @@ The full options surface today is two fields. The `data-size` attribute toggle i
 
 ```ts
 interface MountWidgetOptions {
-  // Plaid webhook URL forwarded into the widget's bank-linking flow.
-  webhookUrl?: string;
+  // Required. Brale POSTs item-update events to this URL after the user links a bank.
+  webhookUrl: string;
   // Initial widget dimensions. Defaults to 'medium' (384px).
   size?: 'small' | 'medium' | 'large';
 }
 ```
 
-**`webhookUrl`.** When the widget runs the ACH flow, it uses this URL as the Plaid webhook for bank-account events. If omitted, partners using ACH must register their webhook out-of-band on Brale's side. For the on-chain flow it's unused.
+**`webhookUrl`.** Required. The widget forwards this URL to Brale's `POST .../plaid/register-account` as `customer_webhook_url`. When Plaid signals a linked bank needs re-authentication, Brale POSTs a normalized payload to this URL — see [Handling Re-Authentication](/key-concepts/financial-institutions#handling-re-authentication) for the payload shape and the recovery flow. Provide a partner-owned HTTPS endpoint; for development you can use a webhook catcher (webhook.site, requestbin) or any reachable URL if you don't process re-auth events yet. The on-chain flow ignores this value, but `mountWidget` still requires it because the widget cannot predict whether the user will pick ACH or on-chain at runtime, and Brale's API rejects ACH bank-linking requests that omit it.
 
 **`size`.** Controls the widget's `max-width` and base font size. Passed through to the host element as `data-size`, which the Shadow DOM stylesheet keys off via `:host([data-size="…"])`. After mount, you can change size at runtime without remounting — see below.
 
