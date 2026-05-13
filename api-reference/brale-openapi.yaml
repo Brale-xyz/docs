@@ -995,8 +995,6 @@ components:
         - owner
         - account_number
         - routing_number
-        - bank_address
-        - beneficiary_address
         - account_type
         - transfer_types
       properties:
@@ -1019,9 +1017,13 @@ components:
             - checking
             - savings
         bank_address:
-          $ref: '#/components/schemas/USStreetAddress'
+          description: Required when `transfer_types` includes `wire`; optional for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+          allOf:
+            - $ref: '#/components/schemas/USStreetAddress'
         beneficiary_address:
-          $ref: '#/components/schemas/USStreetAddress'
+          description: Required when `transfer_types` includes `wire`; optional for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+          allOf:
+            - $ref: '#/components/schemas/USStreetAddress'
         transfer_types:
           type: array
           minItems: 1
@@ -1449,6 +1451,25 @@ paths:
                     city: Springfield
                     state: CA
                     zip: '90001'
+              offchain_ach_credit:
+                summary: Off-chain (ACH Credit) — minimal
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                  account_number: '1234567890'
+                  routing_number: 063108680
+                  account_type: checking
+              offchain_rtp_credit:
+                summary: Off-chain (RTP Credit) — minimal
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                    - rtp_credit
+                  account_number: '1234567890'
+                  routing_number: 063108680
+                  account_type: checking
               offchain_ach_debit:
                 summary: Off-chain (ACH Debit via Plaid)
                 value:

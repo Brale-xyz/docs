@@ -4,13 +4,22 @@ description: 'Creates a non-custodial address (EOA) for the specified account us
 openapi: 'POST /accounts/{account_id}/addresses/external'
 ---
 
-This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, or `rtp`.
+This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, or `rtp_credit`.
 
 <Note>
 This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [Plaid-linked bank account flow](/api-reference/brale/create-plaid-link-token) instead.
 </Note>
 
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
+
+### Field requirements
+
+For Direct bank entry, `bank_address` and `beneficiary_address` are optional when `transfer_types` only includes `ach_credit`, `same_day_ach_credit`, or `rtp_credit`. They are required when `transfer_types` includes `wire`.
+
+| Requested transfer types | `bank_address` / `beneficiary_address` |
+| --- | --- |
+| `ach_credit`, `same_day_ach_credit`, `rtp_credit` | Optional |
+| Any request including `wire` | Required |
 
 ### Direct bank entry examples
 
@@ -19,24 +28,9 @@ For a full comparison of both external bank address creation paths, see [Externa
 ```json Request
 {
   "owner": "Jane Doe",
-  "transfer_types": ["ach_credit", "same_day_ach_credit"],
+  "transfer_types": ["ach_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
-  "name": "Example Bank",
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
   "account_type": "checking"
 }
 ```
@@ -73,24 +67,9 @@ For a full comparison of both external bank address creation paths, see [Externa
 ```json Request
 {
   "owner": "Jane Doe",
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
+  "transfer_types": ["ach_credit", "rtp_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
-  "name": "Example Bank",
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
   "account_type": "checking"
 }
 ```
