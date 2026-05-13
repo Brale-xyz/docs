@@ -39,27 +39,16 @@ Here is an example of adding an offchain address via Direct bank entry using [Cr
 ```json title="Request"
 {
   "owner": "Jane Doe",
+  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
   "account_number": "1234567890",
-  "routing_number": "987654321",
-  "name": "Example Bank",
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"]
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
+  "routing_number": "063108680",
   "account_type": "checking"
 }
 ```
+
+<Note>
+For Direct bank entry, `bank_address` and `beneficiary_address` are optional when `transfer_types` only includes `ach_credit`, `same_day_ach_credit`, or `rtp_credit`. They are required when `transfer_types` includes `wire`.
+</Note>
 
 ```json title="Response"
 {
