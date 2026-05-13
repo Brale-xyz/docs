@@ -100,6 +100,12 @@ With Branded Automations, you can control which business name appears on funding
 
 When the automation becomes active, `beneficiary_name` in `source.funding_instructions` will reflect that account’s business name.
 
+## Testnet Behavior
+
+<Note>
+  Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. Deposits sent to these coordinates will not be processed, and no actual funds movement occurs.
+</Note>
+
 ## Listing Automations for a Customer
 
 Retrieve all automations associated with a customer Account.
