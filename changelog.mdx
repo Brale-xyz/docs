@@ -3,6 +3,28 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-03-27" description="Week of March 24" tags={["New", "Update"]}>
+  ## Transfer list filters
+
+  The [List Transfers](/api-reference/brale/list-transfers) endpoint now supports query parameters for filtering results by `automation_id`, `value_type`, and `transfer_type`. Filters use exact match, are case-sensitive, and combine with AND semantics — making it easier to find specific transfers without client-side filtering.
+
+  ## `transaction_id` in transfer responses
+
+  Transfer responses now include a `transaction_id` field on `source` and `destination` objects. This contains the on-chain transaction hash or off-chain payment reference once a leg has been submitted, so you can correlate Brale transfers with network-level transactions directly from the API.
+
+  ## Filter addresses by onchain address
+
+  The [List Addresses](/api-reference/brale/list-addresses) endpoint now accepts an `address` query parameter to look up an address by its exact onchain value. This is useful when you have a wallet address and need to find the corresponding Brale `address_id`.
+
+  ## Turnkey wallet integration
+
+  Brale now has a documented integration path with [Turnkey](https://turnkey.com), a key management platform with hardware-backed secure enclaves. Register Turnkey-provisioned wallets as external addresses in Brale, then use them as transfer sources or destinations. See the [Turnkey integration guide](/guides/integrations/turnkey) for the full walkthrough.
+
+  ## External bank address paths
+
+  A new [external bank addresses](/key-concepts/external-bank-addresses) reference clarifies the two ways to create off-chain bank addresses — **Plaid-linked bank account** and **Direct bank entry** — and which transfer types each path supports. Use it to pick the right flow for ACH debit, ACH credit, wire, or RTP.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
