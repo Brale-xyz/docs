@@ -3,6 +3,50 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-05-18" description="Week of May 18" tags={["New", "Update", "Fix"]}>
+  ## Webhooks
+
+  Subscribe to real-time event notifications instead of polling. The initial release covers `transfer.completed` and `payment.completed`, with HMAC signatures for verification and a managed subscription API. See the [webhooks overview](/webhooks/overview) and [quickstart](/webhooks/quickstart) to get your first delivery.
+
+  ## Starknet and PulseChain support
+
+  Two new networks are available as transfer types:
+
+  - **Starknet** — use `starknet` and `starknet_testnet`
+  - **PulseChain** — use `pulsechain`
+
+  See [transfer types](/coverage/transfer-types) for the full list.
+
+  ## Main USD (USDM)
+
+  **USDM** (Main USD) is now available as a Brale-issued value type for use in transfers. See [value types](/coverage/value-types).
+
+  ## Archive and unarchive external addresses
+
+  External addresses now have a lifecycle (`pending`, `active`, `archived`). Use `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "archived" }` to retire an address you no longer need, and `{ "status": "active" }` to bring it back. Archived addresses stay visible on GET but can't be used in new transfers. Internal and custodial addresses aren't eligible. See the [update address reference](/api-reference/brale/update-address) and [address lifecycle](/key-concepts/addresses).
+
+  ## New transfer response fields
+
+  Transfer responses now include additional reconciliation metadata:
+
+  - **`destination.payment_details.imad`** — IMAD for outbound wires, populated once Brale has the underlying bank metadata.
+  - **`source.payment_details.trace_number`** — ACH trace number on inbound, ACH-funded transfers (including automation-created transfers).
+
+  Both fields are response-only and optional. See [transfers](/key-concepts/transfers) and [get transfer](/api-reference/brale/get-transfer).
+
+  ## Filter transfers by `transaction_id`
+
+  `GET /accounts/{account_id}/transfers` now accepts `transaction_id` as a query parameter, making it easier to look up a transfer when you only have the chain transaction hash. See [list transfers](/api-reference/brale/list-transfers).
+
+  ## Testnet automations
+
+  Automations on testnet now return placeholder funding instructions and do not process real deposits, so you can develop against the full Automations flow without funding live rails. See [automations](/key-concepts/automations).
+
+  ## Fixes
+
+  - Removed **MXN** from the offchain value types table — MXN is not supported as a fiat currency. See [value types](/coverage/value-types).
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
