@@ -256,6 +256,14 @@ components:
           example: wire
         address_id:
           $ref: '#/components/schemas/Ksuid'
+        financial_institution_id:
+          allOf:
+            - $ref: '#/components/schemas/Ksuid'
+          description: >-
+            Deprecated legacy identifier for a bank endpoint. Present on some
+            responses for transfers that used the pre-Addresses model. New
+            integrations should use `address_id`.
+          deprecated: true
         transaction_id:
           type: string
           description: >-
@@ -263,10 +271,84 @@ components:
             responses once the leg has been submitted to the network. Not included
             in create requests.
           example: '0xdd5646ea…'
+        wire_memo:
+          type: string
+          nullable: true
+          description: >-
+            Optional memo to include on outbound wire transfers. Request-only
+            field on `destination` for `wire` transfers. Not returned for
+            inbound transfers and not accepted on the `source` endpoint.
+          example: 'Invoice 1048'
+        payment_details:
+          $ref: '#/components/schemas/TransferPaymentDetails'
       required:
-        - address_id
         - value_type
         - transfer_type
+    TransferPaymentDetails:
+      title: TransferPaymentDetails
+      type: object
+      description: >-
+        Optional response-only object containing underlying payment metadata for
+        a transfer leg.
+
+
+        On `source`, primarily populated for inbound fiat-funded transfers (wire,
+        ACH). Wire transfers typically include the fuller set of fields; ACH
+        transfers may include only a subset — fields may be `null` or omitted
+        depending on available rail metadata.
+
+
+        On `destination`, primarily populated for outbound wire transfers. The
+        `imad` is assigned by the sending bank and may not be available until
+        after the wire has been submitted; Brale populates it later when the
+        underlying bank metadata arrives.
+
+
+        This object is never accepted as input when creating a transfer.
+        Do not confuse `destination.payment_details.imad` with
+        `destination.wire_memo`, which remains a request field for outbound
+        wire transfers.
+      properties:
+        received_at:
+          type: string
+          format: date-time
+          description: When the underlying payment was received or posted. Present on `source` for inbound fiat-funded transfers.
+          example: '2026-04-07T00:01:24.514000Z'
+        sender_name:
+          type: string
+          nullable: true
+          description: Name of the originating sender, when available. Present on `source` for inbound fiat-funded transfers.
+          example: 'Originator Name'
+        sender_bank_name:
+          type: string
+          nullable: true
+          description: Originating bank name, when available. Present on `source` for inbound fiat-funded transfers.
+          example: 'JPMorgan Chase Bank'
+        sender_bank_routing_number:
+          type: string
+          nullable: true
+          description: Originating bank routing number, when available. Present on `source` for inbound fiat-funded transfers.
+          example: '000000123'
+        payment_reference:
+          type: string
+          nullable: true
+          description: Sender-provided payment reference or memo, when available. Present on `source` for inbound fiat-funded transfers.
+          example: 'Simulated Wire'
+        imad:
+          type: string
+          nullable: true
+          description: >-
+            Wire IMAD / tracking identifier. On `source`, returned for inbound
+            wire-funded transfers when available. On `destination`, returned for
+            outbound wire transfers when available. May be absent immediately
+            after an outbound wire is created and populated later once Brale has
+            the underlying bank metadata.
+          example: '20260406XOIZJDPP953495'
+        trace_number:
+          type: string
+          nullable: true
+          description: ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers on `source`.
+          example: '021000029876543'
     TransfersList:
       title: TransfersList
       description: List of transfers plus pagination cursors
