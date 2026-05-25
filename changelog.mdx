@@ -3,6 +3,70 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-05-25" description="Week of May 25" tags={["New", "Update", "Fix"]}>
+  ## Webhooks
+
+  Webhooks are now available for receiving real-time event notifications instead of polling. The initial events are `transfer.completed` and `payment.completed`, with HMAC signature verification and managed subscriptions. See [webhooks overview](/webhooks/overview), [quickstart](/webhooks/quickstart), [events](/webhooks/webhook-events), [signatures](/webhooks/signatures), [subscription API](/webhooks/subscription-api-reference), and [troubleshooting](/webhooks/troubleshooting).
+
+  ## Archive and unarchive external addresses
+
+  A new `PATCH /accounts/{account_id}/addresses/{address_id}` endpoint lets you archive and unarchive external addresses, and update transfer-type configuration on existing addresses. Archived addresses remain visible in `GET` responses but cannot be used in new transfers. See [Update Address](/api-reference/brale/update-address) and [Address lifecycle](/key-concepts/addresses).
+
+  ## Branded automations
+
+  Automation creation now accepts an optional `brand` object so the resulting `beneficiary_name` and funding instructions reflect a branded account. Default behavior is unchanged when `brand` is omitted. See [automations](/key-concepts/automations).
+
+  ## New Transfer response fields
+
+  Inbound and outbound transfers now expose richer payment metadata for reconciliation:
+
+  - `source.payment_details` — underlying wire/ACH metadata on inbound, fiat-funded transfers
+  - `source.payment_details.trace_number` — ACH trace number (response-only, may populate after creation)
+  - `destination.payment_details.imad` — IMAD reference on outbound wires (response-only)
+
+  See [transfers](/key-concepts/transfers), [Get Transfer](/api-reference/brale/get-transfer), and [List Transfers](/api-reference/brale/list-transfers).
+
+  ## Outbound wire memo
+
+  Outbound wire transfers accept a new optional `destination.wire_memo` field for memo or reference text required by recipients or receiving banks. See [transfers](/key-concepts/transfers) and the [stablecoin-to-fiat offramp guide](/guides/stablecoin-to-fiat-offramp).
+
+  ## New filters on List endpoints
+
+  - **List Transfers** now supports `transaction_id` as a query-parameter filter — useful for finding the transfer associated with an onchain transaction hash. See [List Transfers](/api-reference/brale/list-transfers).
+  - **List Addresses** now supports an `address` query parameter for looking up addresses by their onchain value.
+
+  ## Coverage updates
+
+  **New blockchains:**
+
+  - **Starknet** — `starknet` and `starknet_testnet` are now valid transfer types.
+  - **PulseChain** — added as a supported onchain transfer type.
+
+  **New value types:**
+
+  - **USDM** (Main USD) — Brale-issued stablecoin, now available onchain.
+  - **PYUSD** (PayPal USD) — supported on Ethereum.
+
+  **Removed:** MXN is no longer listed as an offchain value type.
+
+  See [transfer types](/coverage/transfer-types) and [value types](/coverage/value-types) for the full registries.
+
+  ## Transfer status: `failed`
+
+  The Transfer `status` enum now includes `failed`. Update polling and reconciliation logic to handle this terminal state alongside `complete` and `cancelled`. See [transfers](/key-concepts/transfers).
+
+  ## Automations roadmap
+
+  The **Stablecoin to Fiat (Offramp)** and **Stablecoin to Stablecoin (Swap)** automation flows are now expected in Q3 2026. Testnet automations behavior is also documented — testnet automations return placeholder funding instructions and do not process real deposits. See [automations](/key-concepts/automations).
+
+  ## Fixes
+
+  - **List Transfers pagination** — forward pagination uses `page[after]` (with the `pagination.next` value from the previous response), not `page[next]`. See [List Transfers](/api-reference/brale/list-transfers).
+  - **Transfer IDs** are KSUIDs, not UUIDs. Existing IDs are unchanged; treat them as opaque strings.
+  - **Onchain external address creation** uses `address` as the field name on `CreateExternalBlockchainAddressRequest` (not `wallet_address`). See [addresses](/key-concepts/addresses).
+  - **Branded transfers** — `brand` is now the canonical field on Transfer creation; `branding` is retained as a deprecated alias.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
