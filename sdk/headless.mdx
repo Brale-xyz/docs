@@ -182,8 +182,9 @@ const onramp = await BraleOnramp.create({
   ],
 });
 
-// Later, when the user picks a destination from your UI:
-onramp.setDestination({ chain: 'base_sepolia', token: 'SBC' });
+// Later, when the user picks a destination from your UI. setDestination() is
+// async — it may register / update / unarchive the address behind the scenes.
+await onramp.setDestination({ chain: 'base_sepolia', token: 'SBC' });
 ```
 
 ### Source configuration (on-chain mode only)
@@ -201,9 +202,19 @@ const reachable = sources.filter((chain) =>
 onramp.setSource({ chain: reachable[0].chain, token: 'USDC' });
 ```
 
-### Registering external destination wallets
+### Destination external wallets
 
-When your user wants stablecoins delivered to a wallet **they** control (rather than the partner's custodial address), register that wallet first via `addExternalAddress()`. The SDK reuses an existing registration if the address is already on the account (case-insensitive match).
+When your user wants stablecoins delivered to a wallet **they** control (rather than the partner's custodial address), just pass the address to `setDestination()` — the SDK validates its shape and registers / updates / unarchives it on the account as needed (idempotent, case-insensitive match). This is the recommended path for the omnibus / guest-checkout model.
+
+```ts
+await onramp.setDestination({
+  chain: 'base_sepolia',
+  token: 'SBC',
+  address: '0xUserWalletAddressHere',
+});
+```
+
+If you'd rather register explicitly first — for example to attach an alias, or from a server-side flow — `addExternalAddress()` is still available as a lower-level primitive:
 
 ```ts
 const wallet = await onramp.addExternalAddress(
@@ -212,11 +223,7 @@ const wallet = await onramp.addExternalAddress(
   'User primary wallet',
 );
 
-onramp.setDestination({
-  chain: 'base_sepolia',
-  token: 'SBC',
-  address: wallet.address,
-});
+await onramp.setDestination({ chain: 'base_sepolia', token: 'SBC', address: wallet.address });
 ```
 
 ## ACH walkthrough — complete runnable example
@@ -260,7 +267,8 @@ async function runAchOnramp(amountUsd: string) {
     });
 
     // 4. Exchange the public_token for a Brale bank address_id.
-    await onramp.registerBank(publicToken, {
+    await onramp.linkBank({
+      public_token: publicToken,
       customer_webhook_url: 'https://example.com/plaid/webhook',
       transfer_types: ['ach_debit'],
     });
@@ -317,7 +325,8 @@ async function runAchOnramp(amountUsd) {
       handler.open();
     });
 
-    await onramp.registerBank(publicToken, {
+    await onramp.linkBank({
+      public_token: publicToken,
       customer_webhook_url: 'https://example.com/plaid/webhook',
       transfer_types: ['ach_debit'],
     });
@@ -356,7 +365,8 @@ export function AchOnramp({ onramp }: AchOnrampProps) {
     onSuccess: async (publicToken) => {
       try {
         setPhase('funding');
-        await onramp.registerBank(publicToken, {
+        await onramp.linkBank({
+          public_token: publicToken,
           customer_webhook_url: 'https://example.com/plaid/webhook',
         });
         await onramp.fund({ amount: '100.00', currency: 'USD' });
@@ -405,11 +415,28 @@ Each phase emits a `FlowProgress` event you can subscribe to via `_subscribeFlow
 
 ## On-chain walkthrough — complete runnable example
 
-The on-chain onramp moves stablecoins from the user's wallet (or the source-chain custodial address) → swap on Brale's side → destination stablecoin/chain.
+The on-chain onramp moves stablecoins from the user's wallet → swap on Brale's side → destination stablecoin/chain. The deposit is **broadcast from the user's connected wallet** (no copy-the-address handoff, no Brale balance polling). You supply a `walletProvider` built from a [wagmi](https://wagmi.sh) config; `fundOnchain()` drives the connect → sign → broadcast → confirm → swap sequence. EVM chains only today — a non-EVM source chain throws `BraleNotSupportedError`.
 
 <CodeGroup>
 ```ts TypeScript
-import { BraleOnramp, BraleFlowError } from '@brale-xyz/io-sdk';
+import {
+  BraleOnramp,
+  createWalletProvider,
+  BraleFlowError,
+  BraleWalletError,
+} from '@brale-xyz/io-sdk';
+import { createConfig, http } from '@wagmi/core';
+import { arbitrum, base } from '@wagmi/core/chains';
+import { injected } from '@wagmi/connectors';
+
+// 1. Build a wagmi config for the EVM chains you support and wrap it. Partners
+//    own this config; the SDK only consumes the resulting WalletProvider.
+const wagmiConfig = createConfig({
+  chains: [arbitrum, base],
+  connectors: [injected()],
+  transports: { [arbitrum.id]: http(), [base.id]: http() },
+});
+const walletProvider = createWalletProvider({ wagmiConfig });
 
 async function runOnchainOnramp(amountUsd: string) {
   const onramp = await BraleOnramp.create({
@@ -419,36 +446,39 @@ async function runOnchainOnramp(amountUsd: string) {
       const { access_token } = (await res.json()) as { access_token: string };
       return access_token;
     },
-    destination: { chain: 'base_sepolia', token: 'SBC' },
-    source: { chain: 'solana_devnet', token: 'USDC' },
+    destination: { chain: 'base', token: 'SBC' },
+    source: { chain: 'arbitrum', token: 'USDC' },   // EVM source — broadcast via wallet
+    walletProvider,                                 // required for the on-chain branch
     onStatusChange: (transfer, previous) => {
       updateUiStatus(previous, transfer.status);
     },
   });
 
-  // Step-level visibility on the multi-step flow (deposit detect, transfer
-  // create, transfer poll). Useful for "Waiting for your deposit…" UI.
+  // Step-level visibility on the multi-step flow (broadcast + wait receipt,
+  // create transfer with retry, poll transfer).
   const unsubscribe = onramp._subscribeFlowProgress((progress) => {
     console.log('[flow]', progress.step, progress.status, `(${progress.index + 1}/${progress.total})`);
   });
 
   try {
-    // 1. Tell the user where to deposit. Until they actually send, no API
-    //    state changes — getDepositInfo() is a pure read.
-    const deposit = onramp.getDepositInfo();
-    showDepositInstructions(deposit.address, deposit.chain, deposit.token);
+    // 2. Connect the user's wallet (opens their injected wallet on the source chain).
+    await walletProvider.connect({ chain: 'arbitrum' });
 
-    // 2. Wait for the user to send the deposit through their own wallet UI.
-    //    fundOnchain() polls Brale for the incoming deposit and continues.
+    // 3. Broadcast + swap. fundOnchain() builds the USDC deposit tx to the source
+    //    custodial, asks the wallet to sign + broadcast, waits for the source-chain
+    //    receipt, then POSTs /transfers (retrying while Brale credits the custodial)
+    //    and polls until terminal.
     const transfer = await onramp.fundOnchain({
-      amount: amountUsd,            // e.g. '10' on testnet
+      amount: amountUsd,            // e.g. '10'
       currency: 'USD',
       note: 'On-chain demo',
     });
 
     return transfer;                // status === 'complete'
   } catch (err) {
-    if (err instanceof BraleFlowError) {
+    if (err instanceof BraleWalletError) {
+      // User rejected the transaction, or the wallet disconnected mid-flight.
+    } else if (err instanceof BraleFlowError) {
       console.error('Flow failed at', err.step, ':', err.message);
     }
     throw err;
@@ -457,14 +487,20 @@ async function runOnchainOnramp(amountUsd: string) {
     onramp.destroy();
   }
 }
-
-function showDepositInstructions(address: string, chain: string, token: string) {
-  // Render a QR code or copy-button. The SDK only tells you what to display.
-}
 ```
 
 ```js JavaScript
-import { BraleOnramp, BraleFlowError } from '@brale-xyz/io-sdk';
+import { BraleOnramp, createWalletProvider } from '@brale-xyz/io-sdk';
+import { createConfig, http } from '@wagmi/core';
+import { arbitrum, base } from '@wagmi/core/chains';
+import { injected } from '@wagmi/connectors';
+
+const wagmiConfig = createConfig({
+  chains: [arbitrum, base],
+  connectors: [injected()],
+  transports: { [arbitrum.id]: http(), [base.id]: http() },
+});
+const walletProvider = createWalletProvider({ wagmiConfig });
 
 async function runOnchainOnramp(amountUsd) {
   const onramp = await BraleOnramp.create({
@@ -474,8 +510,9 @@ async function runOnchainOnramp(amountUsd) {
       const { access_token } = await res.json();
       return access_token;
     },
-    destination: { chain: 'base_sepolia', token: 'SBC' },
-    source: { chain: 'solana_devnet', token: 'USDC' },
+    destination: { chain: 'base', token: 'SBC' },
+    source: { chain: 'arbitrum', token: 'USDC' },
+    walletProvider,
   });
 
   const unsubscribe = onramp._subscribeFlowProgress((p) => {
@@ -483,9 +520,7 @@ async function runOnchainOnramp(amountUsd) {
   });
 
   try {
-    const deposit = onramp.getDepositInfo();
-    showDepositInstructions(deposit.address, deposit.chain, deposit.token);
-
+    await walletProvider.connect({ chain: 'arbitrum' });
     const transfer = await onramp.fundOnchain({ amount: amountUsd, currency: 'USD' });
     return transfer;
   } finally {
@@ -496,47 +531,46 @@ async function runOnchainOnramp(amountUsd) {
 ```
 
 ```tsx React 18
-import { useEffect, useState } from 'react';
-import type { BraleOnramp, FlowProgress } from '@brale-xyz/io-sdk';
+import { useState } from 'react';
+import type { BraleOnramp, WalletProvider, FlowProgress } from '@brale-xyz/io-sdk';
 
 interface OnchainOnrampProps {
   onramp: BraleOnramp;
+  walletProvider: WalletProvider;   // the same instance passed to BraleOnramp.create
   amount: string;
 }
 
-export function OnchainOnramp({ onramp, amount }: OnchainOnrampProps) {
-  const [deposit, setDeposit] = useState<{ address: string; chain: string; token: string } | null>(null);
+export function OnchainOnramp({ onramp, walletProvider, amount }: OnchainOnrampProps) {
   const [progress, setProgress] = useState<FlowProgress | null>(null);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setDeposit(onramp.getDepositInfo());
+  async function start() {
     const unsubscribe = onramp._subscribeFlowProgress(setProgress);
-
-    onramp
-      .fundOnchain({ amount, currency: 'USD' })
-      .then(() => setDone(true))
-      .catch(console.error);
-
-    return () => {
+    try {
+      // Connect the wallet, then broadcast + swap. The wallet popup is the
+      // confirmation step — there is no separate deposit-address screen.
+      await walletProvider.connect({ chain: 'arbitrum' });
+      await onramp.fundOnchain({ amount, currency: 'USD' });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
       unsubscribe();
-    };
-  }, [onramp, amount]);
+    }
+  }
 
   if (done) return <p>Onramp complete.</p>;
-  if (!deposit) return <p>Loading…</p>;
 
   return (
     <div>
-      <p>
-        Send <strong>{amount} {deposit.token}</strong> on <strong>{deposit.chain}</strong> to:
-      </p>
-      <code>{deposit.address}</code>
+      <button onClick={start}>Pay {amount} USDC from wallet</button>
       {progress && (
         <p>
           {progress.step} — {progress.status} ({progress.index + 1}/{progress.total})
         </p>
       )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 }
@@ -545,13 +579,13 @@ export function OnchainOnramp({ onramp, amount }: OnchainOnrampProps) {
 
 ### Step-level progress
 
-The on-chain flow has more steps than the ACH flow (deposit detection → transfer create → transfer poll). For a polished UX, subscribe to `_subscribeFlowProgress` to render a per-step indicator. The event includes a `transferId` once the transfer is created — useful for displaying the in-flight ID before the flow resolves.
+The on-chain flow has more steps than the ACH flow (broadcast + wait for receipt → create transfer with retry → poll transfer). For a polished UX, subscribe to `_subscribeFlowProgress` to render a per-step indicator. The event includes a `transferId` once the transfer is created, plus `sourceTxHash` / `destinationTxHash` for the on-chain hashes — useful for explorer deep-links and displaying the in-flight ID before the flow resolves.
 
 ```ts
 const unsubscribe = onramp._subscribeFlowProgress((progress) => {
-  // progress = { step: 'detect-deposit' | 'create-transfer' | 'poll-transfer' | …,
+  // progress = { step: 'broadcast-and-wait-receipt' | 'create-transfer-with-retry' | 'poll-transfer' | …,
   //              status: 'skipped' | 'executing' | 'completed' | 'failed',
-  //              index, total, transferId? }
+  //              index, total, transferId?, sourceTxHash?, destinationTxHash? }
 });
 ```
 
@@ -573,6 +607,8 @@ import {
   BraleNotFoundError,
   BraleTimeoutError,
   BraleValidationError,
+  BraleWalletError,        // on-chain only
+  BraleNotSupportedError,  // on-chain only (e.g. non-EVM source chain)
 } from '@brale-xyz/io-sdk';
 
 try {
@@ -589,7 +625,11 @@ try {
     // Multi-step flow aborted. err.step names the failing phase.
     // The Transfer object (if any) is on err.details.
   } else if (err instanceof BraleTimeoutError) {
-    // Long-poll exceeded its budget. Retry safely with the same idempotency.
+    // Long-poll or on-chain receipt wait exceeded its budget. Retry safely.
+  } else if (err instanceof BraleWalletError) {
+    // On-chain only: user rejected the tx, or wallet disconnected mid-flight.
+  } else if (err instanceof BraleNotSupportedError) {
+    // On-chain only: unsupported operation, e.g. a non-EVM source chain.
   } else if (err instanceof BraleNetworkError) {
     // Couldn't reach Brale. Likely transient; the SDK already retried 5xx.
   } else if (err instanceof BraleApiError) {

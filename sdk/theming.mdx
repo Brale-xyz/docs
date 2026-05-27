@@ -21,7 +21,7 @@ Every `--brale-*` variable inherits from the host element into the Shadow DOM. S
 
 <script type="module">
   import { mountWidget } from '@brale-xyz/io-sdk/widget';
-  mountWidget(onramp, '#onramp');
+  mountWidget(onramp, '#onramp', { webhookUrl: 'https://example.com/plaid/webhook' });
 </script>
 ```
 

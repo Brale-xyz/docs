@@ -50,7 +50,10 @@ Simplest possible integration. Create the `BraleOnramp` instance, point `mountWi
     destination: { chain: 'base_sepolia', token: 'SBC' },
   });
 
-  const unmount = mountWidget(onramp, '#onramp', { size: 'medium' });
+  const unmount = mountWidget(onramp, '#onramp', {
+    webhookUrl: 'https://example.com/plaid/webhook',
+    size: 'medium',
+  });
 
   // On teardown:
   // unmount();
@@ -145,7 +148,10 @@ export function Onramp() {
   const mountId = `brale-widget${reactId.replace(/:/g, '-')}`;
 
   useEffect(() => {
-    const unmount = mountWidget(onramp, `#${mountId}`, { size: 'medium' });
+    const unmount = mountWidget(onramp, `#${mountId}`, {
+      webhookUrl: 'https://example.com/plaid/webhook',
+      size: 'medium',
+    });
     return unmount;
   }, [onramp, mountId]);
 
@@ -180,7 +186,10 @@ onMounted(async () => {
     destination: { chain: 'base_sepolia', token: 'SBC' },
   });
 
-  unmount = mountWidget(onramp, '#brale-widget-host', { size: 'medium' });
+  unmount = mountWidget(onramp, '#brale-widget-host', {
+    webhookUrl: 'https://example.com/plaid/webhook',
+    size: 'medium',
+  });
 });
 
 onUnmounted(() => {
@@ -220,7 +229,10 @@ onUnmounted(() => {
         destination: { chain: 'base_sepolia', token: 'SBC' },
       });
 
-      unmount = mountWidget(onramp, '#brale-widget-host', { size: 'medium' });
+      unmount = mountWidget(onramp, '#brale-widget-host', {
+    webhookUrl: 'https://example.com/plaid/webhook',
+    size: 'medium',
+  });
     })();
 
     return () => {
@@ -262,6 +274,53 @@ host?.setAttribute('data-size', 'large');     // 'small' | 'medium' | 'large'
 ```
 
 The Shadow DOM responds via the `:host([data-size="large"])` rule and reflows without touching the React tree, the BraleOnramp instance, or the in-flight flow.
+
+## Configuring the widget through `BraleOnramp.create`
+
+The widget reads its behavior from the `BraleOnramp` instance you mount, so the knobs below are set on `BraleOnramp.create(config)` — not on `mountWidget`. All are optional and backward-compatible.
+
+```ts
+import { BraleOnramp, createWalletProvider } from '@brale-xyz/io-sdk';
+import { createConfig, http } from '@wagmi/core';
+import { arbitrum, base } from '@wagmi/core/chains';
+import { injected } from '@wagmi/connectors';
+
+const onramp = await BraleOnramp.create({
+  getAccessToken: /* … */,
+  destination: { chain: 'base', token: 'SBC' },
+
+  // Required for the on-chain branch. The widget connects the wallet and
+  // broadcasts the deposit through this provider. Omit it and the widget runs
+  // ACH-only (the on-chain method is disabled). EVM chains only today.
+  walletProvider: createWalletProvider({
+    wagmiConfig: createConfig({
+      chains: [arbitrum, base],
+      connectors: [injected()],
+      transports: { [arbitrum.id]: http(), [base.id]: http() },
+    }),
+  }),
+
+  // Restrict which funding methods the widget exposes. Defaults to both.
+  // With one method, the widget skips the method-selection modal.
+  enabledMethods: ['ach', 'onchain'],
+
+  // Allow-list for the on-chain source picker. Each entry is a (chain, token)
+  // pair; a single pair pre-sets the source and hides the picker.
+  sourceOptions: [{ chain: 'arbitrum', token: 'USDC' }],
+
+  // Fee row. Default { mode: 'always-free' } shows a "Free" pill.
+  fees: { mode: 'always-free' },
+
+  // Optional per-source-token min/max for the amount input.
+  amountLimits: { USDC: { min: '1', max: '1000' } },
+});
+```
+
+A few behaviors worth knowing:
+
+- **No saved-address or saved-bank pickers.** The destination is a plain address input (the SDK registers it for you), and each ACH transaction launches Plaid Link fresh — the widget never lists previously linked addresses or banks. This is the omnibus / guest-checkout model.
+- **On-chain confirmation is the wallet popup.** There is no "copy this deposit address" screen; the user signs the deposit in their wallet, and the widget tracks broadcast → confirm → swap on a unified progress screen.
+- **Single-option pickers collapse.** When `enabledMethods`, `sourceOptions`, or the destination catalog resolve to a single choice, the corresponding picker is hidden and pre-set.
 
 ## Custom logos and chain/token metadata
 
@@ -313,7 +372,10 @@ A few things to know when smoke-testing on testnets — the widget surfaces them
 ## Lifecycle & cleanup
 
 ```ts
-const unmount = mountWidget(onramp, '#onramp', { size: 'medium' });
+const unmount = mountWidget(onramp, '#onramp', {
+  webhookUrl: 'https://example.com/plaid/webhook',
+  size: 'medium',
+});
 
 // Later — order matters: unmount the widget first, then destroy the SDK instance.
 unmount();

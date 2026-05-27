@@ -59,7 +59,10 @@ const onramp = await BraleOnramp.create({
 });
 
 // Pass a CSS selector — the widget creates a <brale-onramp> Web Component inside it.
-const unmount = mountWidget(onramp, '#onramp');
+// `webhookUrl` is required: Brale POSTs Plaid item-update events there after a bank link.
+const unmount = mountWidget(onramp, '#onramp', {
+  webhookUrl: 'https://example.com/plaid/webhook',
+});
 
 // Later, when you tear down the page:
 // unmount();
