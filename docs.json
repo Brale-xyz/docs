@@ -255,5 +255,10 @@
       "source": "/reference/:slug*",
       "destination": "/api-reference/brale/:slug*"
     }
-  ]
+  ],
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-ZM1CBNJ9KC"
+    }
+  }
 }
