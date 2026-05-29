@@ -3,6 +3,36 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-04-18" description="Week of April 14" tags={["New", "Update"]}>
+  ## PYUSD support
+
+  **PYUSD** (PayPal USD) is now available as a value type on Ethereum. You can mint, burn, and transfer PYUSD the same way you work with USDC, USDT, and RLUSD. See [value types](/coverage/value-types) and [supported chains by stablecoin](/coverage/transfer-types#supported-transfer_type-values-by-value_type) for details.
+
+  ## Payment details on transfer responses
+
+  Inbound fiat-funded transfers now include `source.payment_details` in the response. This object surfaces metadata from the underlying payment — sender name, bank name, routing number, payment reference, and IMAD — so you can reconcile inbound wires and ACH debits without leaving the API. See [transfers](/key-concepts/transfers#sourcepayment_details) for field descriptions.
+
+  ## Wire memo on outbound transfers
+
+  You can now pass `destination.wire_memo` when creating an outbound wire transfer to include a memo or payment reference for the receiving bank. See the [offramp guide](/guides/stablecoin-to-fiat-offramp) for usage.
+
+  ## Branded automations
+
+  Automations now accept an optional `brand` object so you can control which business name appears as the beneficiary on funding instructions. Pass `brand.account_id` to use your own or a managed account's name instead of the default. See [automations](/key-concepts/automations#branded-automations) for details.
+
+  ## Transfer list filters
+
+  The [List Transfers](/api-reference/brale/list-transfers) endpoint now supports query-parameter filters for `status`, `value_type`, `transfer_type`, `source_address_id`, `destination_address_id`, and `transaction_id`. Combine filters to narrow results — all apply with AND semantics.
+
+  ## Address list filters
+
+  The [List Addresses](/api-reference/brale/list-addresses) endpoint now supports filtering by `address`, `type`, and `transfer_type`. Use the `address` filter to resolve an onchain address to its Brale `address_id`.
+
+  ## Pagination fix
+
+  The transfers pagination parameter has been corrected from `page[next]` to `page[after]`. If you were using `page[next]`, update your integration to use `page[after]` instead.
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
