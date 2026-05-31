@@ -3,6 +3,49 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-04-27" description="Week of April 27" tags={["New", "Update"]}>
+  ## Branded Automations
+
+  You can now control the beneficiary name shown on Automation funding instructions. Pass a `brand.account_id` when creating an Automation to display that account's business name instead of Brale's. Useful for white-label onramps and managed-account flows. See [Automations](/key-concepts/automations#branded-automations) and the [Create an automation](/api-reference/brale/create-automations) reference.
+
+  ## Update an address (PATCH)
+
+  A new `PATCH /accounts/{account_id}/addresses/{address_id}` endpoint lets you:
+
+  - Add supported `transfer_types` to an existing address (for example, extend an EVM address to a new chain).
+  - Update the human-readable `name`.
+  - **Archive** or **unarchive** external addresses to control which destinations are eligible for new transfers.
+
+  See [Update an address](/api-reference/brale/update-address) and [Addresses](/key-concepts/addresses).
+
+  ## PYUSD on Ethereum
+
+  **PYUSD** (PayPal USD) is now supported as a value type on Ethereum. Use it alongside other third-party stablecoins in transfers. See [transfer types](/coverage/transfer-types) and [value types](/coverage/value-types).
+
+  ## PulseChain support
+
+  Brale now supports **PulseChain** as a transfer type for stablecoin transfers. Use `pulsechain` as the `transfer_type` value in the API. See [transfer types](/coverage/transfer-types) for the full list.
+
+  ## Richer Transfer responses
+
+  Transfer responses now expose more detail to make reconciliation easier:
+
+  - **`source.payment_details`** — payment metadata for inbound transfers, including a `trace_number` for ACH and wire sources.
+  - **`destination.wire_memo`** — the memo line on outbound wire transfers.
+  - **Outbound wire IMAD** — the Fed-assigned IMAD reference for outbound wires.
+
+  See [Get a transfer](/api-reference/brale/get-transfer).
+
+  ## More filters on List Transfers and List Addresses
+
+  - **List Transfers** now accepts query filters including `transaction_id`, letting you look up transfers by their onchain or fiat reference. See [List transfers](/api-reference/brale/list-transfers).
+  - **List Addresses** now accepts an `address` query parameter to look up an address by its onchain value. See [List addresses](/api-reference/brale/list-addresses).
+
+  ## Bug fixes
+
+  - **Transfers pagination** — corrected the cursor parameter to `page[after]` (previously documented as `page[next]`). Update any clients still using the old name. See [List transfers](/api-reference/brale/list-transfers).
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
