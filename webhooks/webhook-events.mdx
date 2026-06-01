@@ -125,6 +125,35 @@ Example:
 }
 ```
 
+## `transfer.canceled`
+
+Emitted when a Brale transfer is canceled.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "transfer.canceled",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleTransferId",
+    "status": "canceled",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    }
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the transfer ID.
+- Treat `data.status` as the canceled transfer state.
+- Additional fields may be present as the transfer schema evolves.
+- Your integration should ignore unknown fields.
+
 ## `account.verification.documents_required`
 
 Emitted when an account requires additional verification documents to proceed.
