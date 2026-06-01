@@ -40,6 +40,34 @@ switch (event.type) {
 }
 ```
 
+## `transfer.created`
+
+Emitted when a Brale transfer is created.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "transfer.created",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleTransferId",
+    "status": "pending",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    }
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the transfer ID.
+- Additional fields may be present as the transfer schema evolves.
+- Your integration should ignore unknown fields.
+
 ## `transfer.completed`
 
 Emitted when a Brale transfer reaches `complete` status.
@@ -96,6 +124,57 @@ Example:
   }
 }
 ```
+
+## `account.verification.documents_required`
+
+Emitted when an account requires additional verification documents to proceed.
+
+Use this event to prompt the account holder to submit the requested documents.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "account.verification.documents_required",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleAccountId",
+    "status": "documents_required"
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the account ID.
+- Additional fields may be present as the verification schema evolves.
+- Your integration should ignore unknown fields.
+
+## `account.verification.completed`
+
+Emitted when account verification reaches a completed state.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "account.verification.completed",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleAccountId",
+    "status": "complete"
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the account ID.
+- Treat `data.status` as the completed verification state.
+- Additional fields may be present as the verification schema evolves.
+- Your integration should ignore unknown fields.
 
 ## Handling future event types
 

@@ -21,12 +21,24 @@ Response:
 {
   "event_types": [
     {
+      "event_type": "transfer.created",
+      "summary": "Emitted when a transfer (token order) is created."
+    },
+    {
       "event_type": "transfer.completed",
       "summary": "Emitted when a transfer (token order) reaches complete status."
     },
     {
       "event_type": "payment.completed",
       "summary": "Emitted when a payment reaches complete status."
+    },
+    {
+      "event_type": "account.verification.documents_required",
+      "summary": "Emitted when an account requires additional verification documents."
+    },
+    {
+      "event_type": "account.verification.completed",
+      "summary": "Emitted when account verification reaches a completed state."
     }
   ]
 }
