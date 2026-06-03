@@ -1039,6 +1039,25 @@ components:
         - $ref: '#/components/schemas/CreateExternalBlockchainAddressRequest'
         - $ref: '#/components/schemas/CreateExternalFinancialInstitutionRequest'
       title: CreateExternalAddressRequest
+    CreateInternalAddressRequest:
+      type: object
+      title: CreateInternalAddressRequest
+      required:
+        - transfer_types
+        - name
+      properties:
+        transfer_types:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: 'One or more transfer types that must all resolve to the same
+            chain environment (e.g. `["ethereum","polygon"]` for EVM, `["stellar"]`
+            for Stellar).'
+        name:
+          type: string
+          nullable: true
+          description: A human-readable name for the new internal address.
 paths:
   /accounts:
     get:
@@ -1467,6 +1486,80 @@ paths:
                 properties:
                   id:
                     $ref: '#/components/schemas/Ksuid'
+  /accounts/{account_id}/addresses/internal:
+    post:
+      tags:
+        - Addresses
+      operationId: createInternalAddress
+      summary: Create a new internal address
+      description: 'Provisions an additional custodial (internal) address for the
+        specified account.
+
+        '
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          example: idemp-123e4567-e89b-12d3-a456-426614174000
+          description: 'A unique string used to prevent duplicate operations. Each POST
+            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+
+            '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInternalAddressRequest'
+            examples:
+              evm:
+                summary: EVM (Ethereum + Polygon)
+                value:
+                  name: My EVM Wallet
+                  transfer_types:
+                    - ethereum
+                    - polygon
+              stellar:
+                summary: Stellar
+                value:
+                  name: Stellar Custodial Wallet
+                  transfer_types:
+                    - stellar
+      responses:
+        '201':
+          description: Internal address successfully created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                sync_active:
+                  summary: Synchronous (deterministic-address chain)
+                  value:
+                    id: 3EdBHmAtfm7tct7varYqgAz6iYW
+                    status: active
+                    name: My EVM Wallet
+                    address: '0xc109f7016aF02fBF21E9f0d7d50a6A48f5F644Ad'
+                    transfer_types:
+                      - ethereum
+                      - polygon
+                async_pending:
+                  summary: Asynchronous (non-deterministic chain)
+                  value:
+                    id: 3EdBHmAtfm7tct7varYqgAz6iYW
+                    status: pending
+                    name: Hedera Custodial Wallet
+                    address: null
+                    transfer_types:
+                      - hedera
   /accounts/{account_id}/addresses/{address_id}/balance:
     get:
       tags:
