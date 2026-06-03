@@ -30,7 +30,7 @@ Use cases include:
 ## How It Works
 
 1. **Create Wallets**\
-   When you [register an Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains. There's no additional setup required.
+   When you [register an Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains, so the default set is ready to use without any additional setup. You can also provision additional internal wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) — useful for segmenting funds within a single account.
 2. **Receive Deposits**\
    You or your users can send stablecoins directly to custodial wallet addresses. Just [fetch wallet addresses](/key-concepts/addresses) and fund them.
 3. **Track Balances**\
@@ -45,6 +45,8 @@ Use cases include:
 [`POST /accounts`](/api-reference/brale/create-account) - Register an account
 
 [`GET /addresses`](/api-reference/brale/list-addresses) - Fetch custodial wallet addresses. Custodial wallets have type `internal`
+
+[`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) - Provision an additional internal (custodial) address
 
 [`GET /balances`](/api-reference/brale/get-address-balance) - View wallet balances
 

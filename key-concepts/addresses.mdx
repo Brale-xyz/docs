@@ -54,7 +54,28 @@ See the [PATCH address endpoint reference](/api-reference/brale/update-address) 
 
 Brale provides custodial wallets that allow businesses to securely hold and transfer stablecoins on behalf of themselves or their customers. Custodial addresses support all supported blockchains.
 
-When your customer's Account is onboarded, Brale automatically generates internal custodial addresses on all supported blockchains. You do not need to create them manually. If an address is visible under an account-scoped endpoint but not globally, use the account-scoped endpoint.
+When your customer's Account is onboarded, Brale automatically generates internal custodial addresses on all supported blockchains, so the default wallets are ready to use without any manual setup. You can also provision **additional** custodial wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address). If an address is visible under an account-scoped endpoint but not globally, use the account-scoped endpoint.
+
+Holding multiple internal wallets within a single account lets you segment funds — for example per end-user, per-purpose (operating vs. escrow vs. reserve), or per-business-unit — distinguished by `name`. This replaces the prior workaround of creating separate accounts or organizations just to keep balances apart.
+
+```json Request
+{
+  "name": "Escrow Wallet",
+  "transfer_types": ["ethereum", "polygon"]
+}
+```
+
+```json 201 Response
+{
+  "id": "3EdBHmAtfm7tct7varYqgAz6iYW",
+  "status": "active",
+  "name": "Escrow Wallet",
+  "address": "0xc109f7016aF02fBF21E9f0d7d50a6A48f5F644Ad",
+  "transfer_types": ["ethereum", "polygon"]
+}
+```
+
+For non-deterministic chains (Spark, Canton, Hedera), the address returns with `status: "pending"` and `address: null`, then transitions following the [Address lifecycle](#address-lifecycle) table above (`pending` → `active`).
 
 ## Non-Custodial (External) Addresses
 

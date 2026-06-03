@@ -1,0 +1,57 @@
+---
+title: 'Create a new internal address'
+description: 'Provision an additional custodial (internal) address for the specified account.'
+openapi: 'POST /accounts/{account_id}/addresses/internal'
+---
+
+Use this endpoint to provision an **additional** custodial (internal) address on an account beyond the wallets Brale creates automatically at onboarding. This is useful when you want to segment funds within a single account (per end-user, per-purpose, or per-business-unit) and distinguish wallets by `name`.
+
+<Note>
+Requires the `addresses:write` scope and a unique `Idempotency-Key` header on every request.
+</Note>
+
+All values in `transfer_types` must resolve to the **same chain environment** (for example `["ethereum", "polygon"]` for EVM, or `["stellar"]` for Stellar).
+
+### Request
+
+```json Request (EVM)
+{
+  "name": "My EVM Wallet",
+  "transfer_types": ["ethereum", "polygon"]
+}
+```
+
+```json Request (Stellar)
+{
+  "name": "Stellar Custodial Wallet",
+  "transfer_types": ["stellar"]
+}
+```
+
+### Responses
+
+Deterministic-address chains (Solana, Stellar, Ethereum, Base, Polygon) return synchronously with `status: "active"` and a non-null `address`.
+
+```json 201 (synchronous)
+{
+  "id": "3EdBHmAtfm7tct7varYqgAz6iYW",
+  "status": "active",
+  "name": "My EVM Wallet",
+  "address": "0xc109f7016aF02fBF21E9f0d7d50a6A48f5F644Ad",
+  "transfer_types": ["ethereum", "polygon"]
+}
+```
+
+Non-deterministic chains (Spark, Canton, Hedera) return `status: "pending"` and `address: null` until the chain confirms. The address transitions to `active` once provisioning completes — see [Address lifecycle](/key-concepts/addresses#address-lifecycle).
+
+```json 201 (asynchronous)
+{
+  "id": "3EdBHmAtfm7tct7varYqgAz6iYW",
+  "status": "pending",
+  "name": "Hedera Custodial Wallet",
+  "address": null,
+  "transfer_types": ["hedera"]
+}
+```
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
