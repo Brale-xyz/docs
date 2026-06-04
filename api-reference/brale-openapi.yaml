@@ -84,6 +84,92 @@ components:
       format: ksuid
       pattern: ^[a-zA-Z0-9]{26}$
       example: 2VcUIIsgARwVbEGlIYbhg6fGG57
+    ExternalAddressResponseStreetAddress:
+      title: ExternalAddressResponseStreetAddress
+      type: object
+      description: US street address as returned in external address responses.
+        Includes `country`, unlike the request `USStreetAddress` schema.
+      properties:
+        street_line_1:
+          type: string
+          example: 100 Example St
+        street_line_2:
+          type: string
+          nullable: true
+          example: Suite 500
+        city:
+          type: string
+          example: Springfield
+        state:
+          type: string
+          example: CA
+        zip:
+          type: string
+          example: '90001'
+        country:
+          type: string
+          example: US
+    ExternalAddressResponse:
+      title: ExternalAddressResponse
+      type: object
+      description: The full external address object returned by
+        `POST /accounts/{account_id}/addresses/external`.
+      properties:
+        id:
+          $ref: '#/components/schemas/Ksuid'
+        name:
+          type: string
+          nullable: true
+          example: checking 7890
+        owner:
+          type: string
+          example: Jane Doe
+        status:
+          type: string
+          example: active
+        ownership:
+          type: string
+          example: customer-owned
+        bank_address:
+          allOf:
+            - $ref: '#/components/schemas/ExternalAddressResponseStreetAddress'
+          nullable: true
+        beneficiary_address:
+          allOf:
+            - $ref: '#/components/schemas/ExternalAddressResponseStreetAddress'
+          nullable: true
+        created:
+          type: string
+          format: date-time
+          example: '2026-06-02T20:01:02.226850Z'
+        transfer_types:
+          type: array
+          items:
+            type: string
+          example:
+            - ach_credit
+        account_number:
+          type: string
+          description: Returned masked (e.g. `****7890`).
+          example: '****7890'
+        account_type:
+          type: string
+          enum:
+            - checking
+            - savings
+          example: checking
+        needs_update:
+          type: boolean
+          example: false
+        last_updated:
+          type: string
+          format: date-time
+          example: '2026-06-02T20:01:03.321461Z'
+        routingNumber:
+          type: string
+          description: 'Note: this single field is currently returned in camelCase
+            (`routingNumber`) while all other fields use snake_case.'
+          example: '063108680'
     Pagination:
       title: Pagination
       description: Cursor-based pagination metadata
@@ -1523,10 +1609,32 @@ paths:
           content:
             '*/*':
               schema:
-                type: object
-                properties:
-                  id:
-                    $ref: '#/components/schemas/Ksuid'
+                $ref: '#/components/schemas/ExternalAddressResponse'
+              examples:
+                offchain_ach_credit:
+                  summary: Off-chain bank address (ACH Credit)
+                  value:
+                    id: 3EaxQ8mDX3RLdK9wvn1BAptMs6H
+                    name: checking 7890
+                    owner: Jane Doe
+                    status: active
+                    ownership: customer-owned
+                    bank_address: null
+                    beneficiary_address:
+                      street_line_1: 100 Example St
+                      street_line_2: Suite 500
+                      city: Springfield
+                      state: CA
+                      zip: '90001'
+                      country: US
+                    created: '2026-06-02T20:01:02.226850Z'
+                    transfer_types:
+                      - ach_credit
+                    account_number: '****7890'
+                    account_type: checking
+                    needs_update: false
+                    last_updated: '2026-06-02T20:01:03.321461Z'
+                    routingNumber: '063108680'
   /accounts/{account_id}/addresses/internal:
     post:
       tags:
