@@ -13,7 +13,7 @@ When you create an external bank address, the path you choose determines which `
 | ------------ | ------------------------- | ----------------- |
 | `ach_debit`  | Supported                 | Not supported     |
 | `ach_credit` | Supported                 | Supported         |
-| `rtp`        | Supported                 | Supported         |
+| `rtp_credit` | Supported                 | Supported         |
 | `wire`       | Not supported             | Supported         |
 
 <Warning>
@@ -28,8 +28,21 @@ When you create an external bank address, the path you choose determines which `
 
 ## Which path should you use?
 
-- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `rtp`.
-- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, and `rtp`.
+- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `rtp_credit`.
+- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+
+## Direct bank entry field requirements
+
+For Direct bank entry, required fields depend on the transfer types you request.
+
+| Transfer type         | Required bank details                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `ach_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
+| `same_day_ach_credit` | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
+| `rtp_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
+| `wire`                | All of the above, plus `bank_address` and `beneficiary_address`                        |
+
+If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH or RTP rails. For ACH/RTP-only addresses, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
 
 ## Plaid-linked bank account flow
 
@@ -44,7 +57,7 @@ For a full walkthrough, see [Key Concepts → Addresses → Create addresses thr
 
 Submit bank account details directly using the Addresses API:
 
-- [Create a new external address](/api-reference/brale/create-address) — Provide account number, routing number, and bank details to create an `address_id` supporting `wire`, `ach_credit`, and `rtp`.
+- [Create a new external address](/api-reference/brale/create-address) — ACH/RTP-only addresses require `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types`. Wire-capable addresses also require `bank_address` and `beneficiary_address`. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
 
 For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).
 

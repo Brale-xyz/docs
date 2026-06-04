@@ -4,17 +4,39 @@ description: 'Creates a non-custodial address (EOA) for the specified account us
 openapi: 'POST /accounts/{account_id}/addresses/external'
 ---
 
-This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, or `rtp`.
+This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, or `rtp_credit`.
 
 <Note>
 This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [Plaid-linked bank account flow](/api-reference/brale/create-plaid-link-token) instead.
 </Note>
 
+<Warning>
+Address fields are conditional. `bank_address` and `beneficiary_address` are **required when `transfer_types` includes `wire`**. They are **optional** for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. For ACH/RTP-only addresses, do not provide placeholder or generic bank addresses—omit these fields unless you have accurate values.
+</Warning>
+
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
+
+### Direct bank entry field requirements
+
+For Direct bank entry, required fields depend on the transfer types you request.
+
+| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit | Wire     |
+| --------------------- | ---------- | ------------------- | ---------- | -------- |
+| `owner`               | Required   | Required            | Required   | Required |
+| `account_number`      | Required   | Required            | Required   | Required |
+| `routing_number`      | Required   | Required            | Required   | Required |
+| `account_type`        | Required   | Required            | Required   | Required |
+| `transfer_types`      | Required   | Required            | Required   | Required |
+| `bank_address`        | Optional   | Optional            | Optional   | Required |
+| `beneficiary_address` | Optional   | Optional            | Optional   | Required |
+
+If `transfer_types` includes `wire`, wire requirements apply. For ACH/RTP-only addresses, omit `bank_address` and `beneficiary_address` unless you have accurate values.
 
 ### Direct bank entry examples
 
-#### ACH credit
+#### ACH Credit (`ach_credit`, `same_day_ach_credit`)
+
+Omit `bank_address` and `beneficiary_address` for ACH-only addresses.
 
 ```json Request
 {
@@ -22,53 +44,14 @@ For a full comparison of both external bank address creation paths, see [Externa
   "transfer_types": ["ach_credit", "same_day_ach_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
-  "name": "Example Bank",
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "account_type": "checking"
+  "account_type": "checking",
+  "name": "Example Bank"
 }
 ```
 
-#### Wire
+#### RTP Credit (`rtp_credit`)
 
-```json Request
-{
-  "owner": "Jane Doe",
-  "transfer_types": ["wire"],
-  "account_number": "1234567890",
-  "routing_number": "063108680",
-  "name": "Example Bank",
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "account_type": "checking"
-}
-```
-
-#### RTP
+Omit `bank_address` and `beneficiary_address` for RTP-only addresses.
 
 ```json Request
 {
@@ -76,6 +59,26 @@ For a full comparison of both external bank address creation paths, see [Externa
   "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
+  "account_type": "checking",
+  "name": "Example Bank"
+}
+```
+
+<Info>
+RTP eligibility is determined asynchronously by the banking partner after the address is created. The `rtp_credit` transfer type may not appear immediately. See [Key Concepts → Addresses](/key-concepts/addresses#create-external-address-for-rtp) for details.
+</Info>
+
+#### Wire (`wire`)
+
+Wire-capable addresses require both `bank_address` and `beneficiary_address`.
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["wire"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "account_type": "checking",
   "name": "Example Bank",
   "bank_address": {
     "street_line_1": "100 Example St",
@@ -90,13 +93,12 @@ For a full comparison of both external bank address creation paths, see [Externa
     "city": "Springfield",
     "state": "CA",
     "zip": "90001"
-  },
-  "account_type": "checking"
+  }
 }
 ```
 
-<Info>
-RTP eligibility is determined asynchronously by the banking partner after the address is created. The `rtp_credit` transfer type may not appear immediately. See [Key Concepts → Addresses](/key-concepts/addresses#create-external-address-for-rtp) for details.
-</Info>
+<Note>
+If you include `wire` in `transfer_types`, both `bank_address` and `beneficiary_address` are required, even if the same address also includes ACH or RTP rails.
+</Note>
 
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

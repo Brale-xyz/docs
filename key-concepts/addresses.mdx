@@ -89,7 +89,7 @@ Brale supports two paths for creating an external off-chain bank address. The pa
 | --- | --- | --- |
 | `ach_debit` | Supported | Not supported |
 | `ach_credit` | Supported | Supported |
-| `rtp` | Supported | Supported |
+| `rtp_credit` | Supported | Supported |
 | `wire` | Not supported | Supported |
 
 <Warning>
@@ -122,11 +122,25 @@ The blockchains the address supports. See [Supported Chains](/coverage/value-typ
 
 ### Create via Direct bank entry
 
-Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, and `rtp`. It does **not** support `ach_debit`.
+Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. It does **not** support `ach_debit`.
 
 **POST** `/accounts/{account_id}/addresses/external`
 
-#### ACH credit example
+<Note>
+For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for ACH/RTP-only addresses using `ach_credit`, `same_day_ach_credit`, or `rtp_credit`. Omit these fields for ACH/RTP-only addresses unless you have accurate values—do not use placeholder or generic bank addresses.
+</Note>
+
+| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit (`rtp_credit`) | Wire     |
+| --------------------- | ---------- | ------------------- | ------------------------- | -------- |
+| `owner`               | Required   | Required            | Required                  | Required |
+| `account_number`      | Required   | Required            | Required                  | Required |
+| `routing_number`      | Required   | Required            | Required                  | Required |
+| `account_type`        | Required   | Required            | Required                  | Required |
+| `transfer_types`      | Required   | Required            | Required                  | Required |
+| `bank_address`        | Optional   | Optional            | Optional                  | Required |
+| `beneficiary_address` | Optional   | Optional            | Optional                  | Required |
+
+#### ACH Credit example
 
 ```json Request
 {
@@ -134,22 +148,27 @@ Use the [Create a new external address](/api-reference/brale/create-address) end
   "transfer_types": ["ach_credit", "same_day_ach_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
-  "name": "Example Bank",
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "account_type": "checking"
+  "account_type": "checking",
+  "name": "Example Bank"
+}
+```
+
+```json Response
+{
+  "id": "2VcUIIsgARwVbEGlIYbhg6fGG57"
+}
+```
+
+#### RTP Credit (`rtp_credit`) example
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
+  "account_number": "1234567890",
+  "routing_number": "063108680",
+  "account_type": "checking",
+  "name": "Example Bank"
 }
 ```
 

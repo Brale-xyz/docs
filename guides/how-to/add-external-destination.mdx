@@ -71,7 +71,15 @@ Each blockchain has its own address format. EVM-compatible chains share addresse
 
 > **Note:** Canton transfers to external parties require acceptance within 72 hours or they expire. Transfers to parties also custodied by Brale are accepted automatically.
 
-## Offchain bank account (ACH/Wire/RTP)
+## Offchain bank account (Direct bank entry)
+
+Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. Omit those fields for ACH/RTP-only addresses unless you have accurate values—do not enter placeholder or generic bank addresses.
+
+<Note>
+Need `ach_debit`? Use the [Plaid-linked bank account flow](/key-concepts/addresses#create-via-plaid-linked-bank-account). Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`, but **not** `ach_debit`.
+</Note>
+
+**ACH/RTP Direct bank entry**
 
 ```json
 {
@@ -80,6 +88,20 @@ Each blockchain has its own address format. EVM-compatible chains share addresse
   "account_number": "123456789",
   "routing_number": "071000013",
   "account_type": "checking",
+  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"]
+}
+```
+
+**Wire Direct bank entry**
+
+```json
+{
+  "owner": "Jane Doe",
+  "name": "Jane Checking Account",
+  "account_number": "123456789",
+  "routing_number": "071000013",
+  "account_type": "checking",
+  "transfer_types": ["wire"],
   "bank_address": {
     "street_line_1": "10 N Upper Wacker Dr",
     "city": "Chicago",
@@ -91,8 +113,7 @@ Each blockchain has its own address format. EVM-compatible chains share addresse
     "city": "Naperville",
     "state": "IL",
     "zip": "60540"
-  },
-  "transfer_types": ["ach_credit", "ach_debit", "wire"]
+  }
 }
 ```
 

@@ -18,77 +18,80 @@ If stablecoins are currently in an external or self-custody wallet, they must fi
 
 Destination bank addresses can be created in two ways:
 
-- **Plaid-linked bank account** — Securely connect a bank account via the Plaid Link SDK. Supports `ach_debit`, `ach_credit`, and `rtp`.
-- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, and `rtp`.
+- **Plaid-linked bank account** — Securely connect a bank account via the Plaid Link SDK. Supports `ach_debit`, `ach_credit`, and `rtp_credit`.
+- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
 
-| Capability | Plaid-linked bank account | Direct bank entry |
-| --- | --- | --- |
-| `ach_debit` | Supported | Not supported |
-| `ach_credit` | Supported | Supported |
-| `rtp` | Supported | Supported |
-| `wire` | Not supported | Supported |
+| Capability   | Plaid-linked bank account | Direct bank entry |
+| ------------ | ------------------------- | ----------------- |
+| `ach_debit`  | Supported                 | Not supported     |
+| `ach_credit` | Supported                 | Supported         |
+| `rtp_credit` | Supported                 | Supported         |
+| `wire`       | Not supported             | Supported         |
 
 **Direct bank entry** is the right path when you already have bank account details or need `wire` transfers. For the full comparison and guidance, see [External bank addresses](/key-concepts/external-bank-addresses).
 
 ### Direct bank entry
 
-Here is an example of adding an offchain address via Direct bank entry using [Create a new external address](/api-reference/brale/create-address).
+Here is an example of adding an ACH/RTP offchain address via Direct bank entry using [Create a new external address](/api-reference/brale/create-address).
 
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
-```json title="Request"
+<Note>
+For ACH/RTP-only Direct bank entry addresses, `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
+</Note>
+
+```json title="Request (ACH/RTP Credit)"
 {
   "owner": "Jane Doe",
   "account_number": "1234567890",
   "routing_number": "987654321",
+  "account_type": "checking",
   "name": "Example Bank",
   "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"]
-  "beneficiary_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "bank_address": {
-    "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500",
-    "city": "Springfield",
-    "state": "CA",
-    "zip": "90001"
-  },
-  "account_type": "checking"
 }
 ```
 
-```json title="Response"
+For a wire-capable address, include `bank_address` and `beneficiary_address`:
+
+```json title="Request (Wire)"
 {
-  "id": "34yxvqP90NfeeYkQGriO6bSfn1K",
-  "name": "THE BANK OF TAMPA",
   "owner": "Jane Doe",
-  "status": "active",
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
-  "created": "2025-11-03T19:57:25.965990Z",
+  "account_number": "1234567890",
+  "routing_number": "987654321",
+  "account_type": "checking",
+  "name": "Example Bank",
+  "transfer_types": ["wire"],
   "bank_address": {
-    "state": "CA",
-    "zip": "90001",
-    "city": "Springfield",
-    "country": "US",
     "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500"
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
   },
   "beneficiary_address": {
-    "state": "CA",
-    "zip": "90001",
-    "city": "Springfield",
-    "country": "US",
     "street_line_1": "100 Example St",
-    "street_line_2": "Suite 500"
-  },
+    "street_line_2": "Suite 500",
+    "city": "Springfield",
+    "state": "CA",
+    "zip": "90001"
+  }
+}
+```
+
+```json title="Response (ACH/RTP Credit)"
+{
+  "id": "34yxvqP90NfeeYkQGriO6bSfn1K",
+  "name": "Example Bank",
+  "owner": "Jane Doe",
+  "status": "active",
+  "transfer_types": ["ach_credit", "same_day_ach_credit"],
+  "created": "2025-11-03T19:57:25.965990Z",
+  "bank_address": null,
+  "beneficiary_address": null,
   "account_number": "****7890",
   "needs_update": false,
   "last_updated": "2025-11-03T19:57:26.801044Z",
-  "routingNumber": "063108680",
+  "routingNumber": "987654321",
   "account_type": "checking"
 }
 ```
