@@ -991,12 +991,16 @@ components:
       type: object
       additionalProperties: false
       title: CreateExternalFinancialInstitutionRequest
+      description: >
+        Address fields are conditional. `bank_address` and `beneficiary_address`
+        are required when `transfer_types` includes `wire`. They are optional
+        for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. For
+        ACH/RTP-only addresses, do not provide placeholder or generic bank
+        addresses—omit these fields unless you have accurate values.
       required:
         - owner
         - account_number
         - routing_number
-        - bank_address
-        - beneficiary_address
         - account_type
         - transfer_types
       properties:
@@ -1019,13 +1023,27 @@ components:
             - checking
             - savings
         bank_address:
-          $ref: '#/components/schemas/USStreetAddress'
+          description: >
+            Bank physical address. Required when `transfer_types` includes
+            `wire`. Optional for `ach_credit`, `same_day_ach_credit`, and
+            `rtp_credit`.
+          allOf:
+            - $ref: '#/components/schemas/USStreetAddress'
         beneficiary_address:
-          $ref: '#/components/schemas/USStreetAddress'
+          description: >
+            Beneficiary physical address. Required when `transfer_types`
+            includes `wire`. Optional for `ach_credit`, `same_day_ach_credit`,
+            and `rtp_credit`.
+          allOf:
+            - $ref: '#/components/schemas/USStreetAddress'
         transfer_types:
           type: array
           minItems: 1
-          description: Rails to enable for this bank endpoint
+          description: >
+            Rails to enable for this bank endpoint. If this array includes
+            `wire`, the request must include `bank_address` and
+            `beneficiary_address`. For ACH/RTP-only addresses, those address
+            fields are optional.
           items:
             type: string
             example: ach_credit
@@ -1446,14 +1464,37 @@ paths:
                   transfer_types:
                     - base
                   address: '0xE57e438aE0b1557bFC1ad70BD7751635E473D888'
+              offchain_ach_credit:
+                summary: Off-chain (ACH Credit / Same Day ACH Credit)
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                    - same_day_ach_credit
+                  account_number: '1234567890'
+                  routing_number: '063108680'
+                  account_type: checking
+                  name: Example Bank
+              offchain_rtp_credit:
+                summary: Off-chain (ACH + RTP Credit)
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                    - same_day_ach_credit
+                    - rtp_credit
+                  account_number: '1234567890'
+                  routing_number: '063108680'
+                  account_type: checking
+                  name: Example Bank
               offchain_wire:
-                summary: Off-chain (Wire)
+                summary: Off-chain (Wire — requires bank_address and beneficiary_address)
                 value:
                   owner: Jane Doe
                   transfer_types:
                     - wire
                   account_number: '1234567890'
-                  routing_number: 063108680
+                  routing_number: '063108680'
                   account_type: checking
                   name: Example Bank
                   bank_address:
