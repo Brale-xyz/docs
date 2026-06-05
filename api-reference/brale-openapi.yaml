@@ -226,40 +226,47 @@ components:
     Account:
       title: Account
       type: object
-      description: The details of a customer account
+      description: >-
+        Summary representation of a customer account returned by GET /accounts and
+        GET /accounts/{account_id}. Account creation requires KYB / business details
+        (see `AccountCreateRequest` / `CreateManagedAccountRequest`), but account
+        read and list responses return only this account summary and do not return
+        sensitive KYB details.
       properties:
         id:
           $ref: '#/components/schemas/Ksuid'
+        name:
+          type: string
+          description: Account / business display name returned by the API.
+          example: ABC Company
         status:
           type: string
-          description: Current KYB / onboarding status of the account
+          description: KYB / onboarding status of the account.
           enum:
             - complete
             - pending
             - rejected
           example: complete
-        business_name:
+        created:
           type: string
-          example: ABC Company Inc
-        ein:
+          format: date-time
+          description: When the account was created.
+          example: '2026-01-01T00:00:00Z'
+        updated:
           type: string
-          example: 111-11-1111
-        address:
-          $ref: '#/components/schemas/AccountAddress'
-        phone_number:
-          type: string
-          example: '2134678902'
-        email:
-          type: string
-          format: email
-          example: mark@example.com
-        website:
-          type: string
-          example: abccompany.com
-        ultimate_beneficial_owners:
-          type: array
-          items:
-            $ref: '#/components/schemas/UltimateBeneficialOwner'
+          format: date-time
+          description: When the account was last updated.
+          example: '2026-01-01T00:00:00Z'
+      required:
+        - id
+        - name
+        - status
+      example:
+        id: 2VcUIIsgARwVbEGlIYbhg6fGG57
+        name: ABC Company
+        status: complete
+        created: '2026-01-01T00:00:00Z'
+        updated: '2026-01-01T00:00:00Z'
     AccountAddress:
       title: AccountAddress
       type: object
