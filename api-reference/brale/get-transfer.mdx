@@ -132,3 +132,40 @@ See [Transfers — `destination.payment_details`](/key-concepts/transfers#destin
 The `transaction_id` field appears on the `source` and `destination` objects in the response. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network.
 
 You can also use `transaction_id` as a query-parameter filter on the [List transfers](/api-reference/brale/list-transfers) endpoint to find transfers by their on-chain hash without needing to know the transfer `id` first.
+
+## `failure`
+
+Every transfer response includes a `failure` field.
+
+- `failure` is **usually `null`**.
+- `failure` is **populated** when `status` is `failed` and Brale has structured failure details. It is especially relevant for ACH returns and other rail/provider failures.
+- Clients should **not assume** `failure` is always present for every failed transfer — check for `null` before reading nested fields.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `type` | string | Error classification for the failure (e.g. `ach_return`). |
+| `occurred_at` | string (ISO 8601) | When the failure occurred. |
+| `retriable` | boolean | Whether the failure is considered retriable. Note: spelled `retriable`, not `retryable`. |
+| `ach_return` | object \| null | ACH-only return details. Present for ACH return failures; not set for on-chain or other rail failures. |
+| `ach_return.code` | string | ACH return code (e.g. `R01` — Insufficient Funds). |
+| `ach_return.reason` | string | Human-readable description of the ACH return reason. |
+| `ach_return.category` | string | One of `administrative`, `unauthorized`, or `general`. |
+
+### Example: failed ACH transfer
+
+```json title="Response (failure excerpt)"
+{
+  "id": "3D1RcbwVywOGyU2HBSenljm5dhV",
+  "status": "failed",
+  "failure": {
+    "type": "ach_return",
+    "occurred_at": "2026-04-07T00:05:12.102000Z",
+    "retriable": false,
+    "ach_return": {
+      "code": "R01",
+      "reason": "Insufficient Funds",
+      "category": "administrative"
+    }
+  }
+}
+```

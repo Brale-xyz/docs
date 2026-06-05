@@ -61,7 +61,26 @@ The receiver will see **Company 1** as the name on the ach_debit transaction.
 
 ```json Response
 {
-  "id": "9f80c1f5-80df-4c5e-9b68-b9f5712d46d4"
+  "id": "39nw6YFnwYbrylj7csQ1FR7W0xs",
+  "status": "pending",
+  "failure": null,
+  "source": {
+    "address_id": "34R7rk6hBuBl8Dmytqyz3iSSSQd",
+    "value_type": "USD",
+    "transfer_type": "ach_debit"
+  },
+  "destination": {
+    "address_id": "34R8PiuPLgHlXbWci7JlSmLapQY",
+    "value_type": "SBC",
+    "transfer_type": "Canton"
+  },
+  "amount": {
+    "value": "100",
+    "currency": "USD"
+  },
+  "note": null,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z"
 }
 ```
 
@@ -97,6 +116,25 @@ The receiver will see Company 2 as the originator name on the ach_debit transact
 
 ```json Response
 {
-  "id": "9f80c1f5-80df-4c5e-9b68-b9f5712d46d4"
+  "id": "39nw6YFnwYbrylj7csQ1FR7W0xs",
+  "status": "pending",
+  "failure": null,
+  "source": {
+    "address_id": "34R7rk6hBuBl8Dmytqyz3iSSSQd",
+    "value_type": "USD",
+    "transfer_type": "ach_debit"
+  },
+  "destination": {
+    "address_id": "34fczKxoKRUMuZeWyMj9hhqVjuJ",
+    "value_type": "SBC",
+    "transfer_type": "Canton"
+  },
+  "amount": {
+    "value": "100",
+    "currency": "USD"
+  },
+  "note": null,
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z"
 }
 ```
