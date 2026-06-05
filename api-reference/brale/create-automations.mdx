@@ -23,8 +23,12 @@ You can optionally include a `brand` object in the request body to control which
 ```json
 {
   "name": "XYZ Onramp",
-  "destination_address": {
-    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "wire"
+  },
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
     "value_type": "SBC",
     "transfer_type": "solana"
   },

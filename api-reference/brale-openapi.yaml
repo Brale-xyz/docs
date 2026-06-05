@@ -621,13 +621,16 @@ components:
         name:
           type: string
           example: XYZ Onramp
-        destination_address:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
+        source:
+          $ref: '#/components/schemas/AutomationSource'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
         brand:
           $ref: '#/components/schemas/AutomationBrand'
       required:
         - name
-        - destination_address
+        - source
+        - destination
     AutomationBrand:
       title: AutomationBrand
       type: object
@@ -643,17 +646,44 @@ components:
             beneficiary on wire and ACH funding instructions.
       required:
         - account_id
-    AutomationDestinationAddress:
-      title: AutomationDestinationAddress
+    AutomationSource:
+      title: AutomationSource
       type: object
+      description: >-
+        The funding source for the automation. Defines the fiat rail and value type
+        that the automation accepts. When the automation becomes active,
+        `funding_instructions` is populated with the virtual account details to share
+        with the payer.
+      properties:
+        value_type:
+          type: string
+          description: The fiat value type accepted by the automation (e.g. `USD`).
+          example: USD
+        transfer_type:
+          type: string
+          description: The transfer rail used to fund the automation (e.g. `wire`).
+          example: wire
+        funding_instructions:
+          $ref: '#/components/schemas/FundingInstructions'
+      required:
+        - value_type
+        - transfer_type
+    AutomationDestination:
+      title: AutomationDestination
+      type: object
+      description: >-
+        The destination wallet that receives minted stablecoins when the automation
+        is funded.
       properties:
         address_id:
           $ref: '#/components/schemas/Ksuid'
         value_type:
           type: string
+          description: The stablecoin value type minted to the destination (e.g. `SBC`).
           example: SBC
         transfer_type:
           type: string
+          description: The destination chain or rail (e.g. `solana`).
           example: solana
       required:
         - address_id
@@ -667,17 +697,37 @@ components:
           $ref: '#/components/schemas/Ksuid'
         name:
           type: string
-          example: Customer Onramp
+          example: XYZ Onramp
         status:
           type: string
-          example: complete
-        wire_instructions:
-          $ref: '#/components/schemas/WireInstructions'
-        destinationAddress:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
-    WireInstructions:
-      title: WireInstructions
+          description: The current lifecycle state of the automation.
+          enum:
+            - pending
+            - active
+            - disabled
+            - archived
+          example: active
+        source:
+          $ref: '#/components/schemas/AutomationSource'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-01-15T12:34:56Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-01-15T12:34:56Z'
+        brand:
+          $ref: '#/components/schemas/AutomationBrand'
+    FundingInstructions:
+      title: FundingInstructions
       type: object
+      description: >-
+        Bank details for the virtual account that funds the automation. Populated by
+        Brale once the automation becomes active. Share these coordinates with the
+        payer to fund the automation.
       properties:
         beneficiary_name:
           type: string
@@ -688,18 +738,15 @@ components:
         bank_address:
           type: string
           example: 456 Commerce St., Des Moines, IA 50309
+        beneficiary_address:
+          type: string
+          example: 612 Commerce St., Des Moines, IA 50309
         account_number:
           type: string
           example: '123456789'
         routing_number:
           type: string
-          example: 063108680
-        beneficiary_address:
-          type: string
-          example: 612 Commerce St., Des Moines, IA 50309
-        memo:
-          type: string
-          example: AB1C23456789
+          example: '063108680'
     GetAutomationsResponse:
       title: AutomationListResponse
       type: object
@@ -1929,10 +1976,7 @@ paths:
           content:
             '*/*':
               schema:
-                type: object
-                properties:
-                  id:
-                    $ref: '#/components/schemas/Ksuid'
+                $ref: '#/components/schemas/Automation'
     get:
       tags:
         - Automations
