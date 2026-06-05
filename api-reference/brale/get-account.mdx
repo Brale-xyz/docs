@@ -4,3 +4,29 @@ description: 'Returns the details of a specific customer account, including KYB 
 openapi: 'GET /accounts/{account_id}'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+<Note>
+  Account creation requires KYB / business details (see [Create a customer account](/api-reference/brale/create-account)), but account read responses return only this account summary and do not include sensitive KYB details.
+</Note>
+
+## Response shape
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | string (KSUID) | The account ID. |
+| `name` | string | Account / business display name returned by the API. |
+| `status` | string | KYB / onboarding status. One of `complete`, `pending`, `rejected`. |
+| `created` | string (ISO 8601) | When the account was created. |
+| `updated` | string (ISO 8601) | When the account was last updated. |
+
+### Example
+
+```json title="Response"
+{
+  "id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+  "name": "ABC Company",
+  "status": "complete",
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z"
+}
+```

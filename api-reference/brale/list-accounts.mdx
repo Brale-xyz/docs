@@ -4,3 +4,32 @@ description: 'Retrieve your client account and any managed accounts, returning a
 openapi: 'GET /accounts'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+<Note>
+  Account creation requires KYB / business details (see [Create a customer account](/api-reference/brale/create-account)), but account list responses return only this account summary for each account and do not include sensitive KYB details.
+</Note>
+
+## Response shape
+
+`GET /accounts` returns a JSON array of Account summary objects. Each element matches the [Retrieve a customer account](/api-reference/brale/get-account) shape.
+
+### Example
+
+```json title="Response"
+[
+  {
+    "id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "name": "ABC Company",
+    "status": "complete",
+    "created": "2026-01-01T00:00:00Z",
+    "updated": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "34lCJZ2bxbPAzB3ou67Md01veUo",
+    "name": "Managed Account Beta",
+    "status": "pending",
+    "created": "2026-01-15T12:00:00Z",
+    "updated": "2026-01-15T12:00:00Z"
+  }
+]
+```

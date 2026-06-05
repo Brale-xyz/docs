@@ -226,40 +226,47 @@ components:
     Account:
       title: Account
       type: object
-      description: The details of a customer account
+      description: >-
+        Summary representation of a customer account returned by GET /accounts and
+        GET /accounts/{account_id}. Account creation requires KYB / business details
+        (see `AccountCreateRequest` / `CreateManagedAccountRequest`), but account
+        read and list responses return only this account summary and do not return
+        sensitive KYB details.
       properties:
         id:
           $ref: '#/components/schemas/Ksuid'
+        name:
+          type: string
+          description: Account / business display name returned by the API.
+          example: ABC Company
         status:
           type: string
-          description: Current KYB / onboarding status of the account
+          description: KYB / onboarding status of the account.
           enum:
             - complete
             - pending
             - rejected
           example: complete
-        business_name:
+        created:
           type: string
-          example: ABC Company Inc
-        ein:
+          format: date-time
+          description: When the account was created.
+          example: '2026-01-01T00:00:00Z'
+        updated:
           type: string
-          example: 111-11-1111
-        address:
-          $ref: '#/components/schemas/AccountAddress'
-        phone_number:
-          type: string
-          example: '2134678902'
-        email:
-          type: string
-          format: email
-          example: mark@example.com
-        website:
-          type: string
-          example: abccompany.com
-        ultimate_beneficial_owners:
-          type: array
-          items:
-            $ref: '#/components/schemas/UltimateBeneficialOwner'
+          format: date-time
+          description: When the account was last updated.
+          example: '2026-01-01T00:00:00Z'
+      required:
+        - id
+        - name
+        - status
+      example:
+        id: 2VcUIIsgARwVbEGlIYbhg6fGG57
+        name: ABC Company
+        status: complete
+        created: '2026-01-01T00:00:00Z'
+        updated: '2026-01-01T00:00:00Z'
     AccountAddress:
       title: AccountAddress
       type: object
@@ -305,7 +312,13 @@ components:
     Transfer:
       title: Transfer
       type: object
+      description: >-
+        A money movement between a source and a destination. Returned by the create,
+        get, and list transfer endpoints. The same shape is used everywhere a
+        Transfer is exposed to API consumers.
       properties:
+        id:
+          $ref: '#/components/schemas/Ksuid'
         status:
           type: string
           description: Lifecycle stage of the transfer
@@ -316,22 +329,55 @@ components:
             - canceled
             - failed
           example: pending
-        amount:
-          $ref: '#/components/schemas/Amount'
-        created_at:
-          type: string
-          format: date-time
-          example: '2025-02-05T19:39:14.316Z'
-        updated_at:
-          type: string
-          format: date-time
-          example: '2025-02-05T19:39:14.316Z'
+        failure:
+          allOf:
+            - $ref: '#/components/schemas/TransferFailure'
+          nullable: true
+          description: >-
+            Structured failure details for a failed transfer. Usually `null`. Populated
+            when `status` is `failed` and Brale has structured failure details for the
+            transfer — most commonly for ACH returns and other rail/provider failures.
+            Clients should not assume `failure` is always present for every failed
+            transfer; check for `null` before reading nested fields.
+          example: null
         source:
           $ref: '#/components/schemas/TransferEndpoint'
         destination:
           $ref: '#/components/schemas/TransferEndpoint'
+        amount:
+          $ref: '#/components/schemas/Amount'
+        note:
+          type: string
+          nullable: true
+          description: Optional free-form note attached to the transfer.
+          example: null
+        automation_id:
+          allOf:
+            - $ref: '#/components/schemas/Ksuid'
+          description: >-
+            ID of the Automation that created this transfer, when applicable. Omitted
+            for transfers created directly via the API.
+          nullable: true
+        funding_simulated:
+          type: boolean
+          description: >-
+            Set to `true` when the source funding for this transfer was simulated in a
+            test environment rather than coming from a real payment. Not present for
+            production transfers.
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-01-01T00:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-01-01T00:00:00Z'
     TransferEndpoint:
       title: TransferEndpoint
+      description: >-
+        One side (source or destination) of a Transfer. The same shape is used in
+        create requests and in responses. Response-only fields like `transaction_id`
+        and `payment_details` are populated by Brale as the underlying leg settles.
       type: object
       properties:
         value_type:
@@ -342,6 +388,15 @@ components:
           example: wire
         address_id:
           $ref: '#/components/schemas/Ksuid'
+        financial_institution_id:
+          type: string
+          deprecated: true
+          description: Legacy — use `address_id`.
+        wire_memo:
+          type: string
+          description: >-
+            Optional memo or payment reference text sent with outbound wire transfers.
+            Only applies when `transfer_type` is `wire` on the destination leg.
         transaction_id:
           type: string
           description: >-
@@ -349,10 +404,110 @@ components:
             responses once the leg has been submitted to the network. Not included
             in create requests.
           example: '0xdd5646ea…'
+        payment_details:
+          $ref: '#/components/schemas/PaymentDetails'
       required:
-        - address_id
         - value_type
         - transfer_type
+    PaymentDetails:
+      title: PaymentDetails
+      type: object
+      description: >-
+        Underlying payment metadata for a transfer leg. Response-only. Appears on
+        `source.payment_details` for inbound fiat-funded transfers (wire, ACH) and on
+        `destination.payment_details` for outbound wire transfers. Optional and may
+        be absent depending on the rail and on whether the underlying bank metadata
+        is available yet.
+      properties:
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the underlying payment was received or posted.
+          example: '2026-04-07T00:01:24.514000Z'
+        sender_name:
+          type: string
+          nullable: true
+          description: Name of the originating sender, when available.
+          example: Originator Name
+        sender_bank_name:
+          type: string
+          nullable: true
+          description: Originating bank name, when available.
+          example: JPMorgan Chase Bank
+        sender_bank_routing_number:
+          type: string
+          nullable: true
+          description: Originating bank routing number, when available.
+          example: '000000123'
+        payment_reference:
+          type: string
+          nullable: true
+          description: Sender-provided payment reference or memo, when available.
+          example: Simulated Wire
+        imad:
+          type: string
+          nullable: true
+          description: Wire IMAD / tracking identifier, when available.
+          example: 20260406XOIZJDPP953495
+        trace_number:
+          type: string
+          nullable: true
+          description: >-
+            ACH trace identifier for the underlying payment, when available. Primarily
+            relevant for inbound ACH-funded transfers.
+          example: '021000029876543'
+    TransferFailure:
+      title: TransferFailure
+      type: object
+      description: >-
+        Structured failure details for a failed transfer. Populated by Brale when
+        `status` is `failed` and the underlying rail/provider has supplied structured
+        failure details. Field availability varies by rail — for example,
+        `ach_return` is only present for ACH transfers.
+      properties:
+        type:
+          type: string
+          description: Error classification for the failure.
+          example: ach_return
+        occurred_at:
+          type: string
+          format: date-time
+          description: When the failure occurred.
+          example: '2026-04-07T00:05:12.102000Z'
+        retriable:
+          type: boolean
+          description: >-
+            Whether the failure is considered retriable. When `true`, Brale may
+            automatically retry the underlying operation; when `false`, the failure is
+            permanent.
+          example: false
+        ach_return:
+          type: object
+          nullable: true
+          description: >-
+            ACH-only return details. Present for ACH return failures; not set for
+            on-chain or other rail failures.
+          properties:
+            code:
+              type: string
+              description: ACH return code (e.g. `R01` — Insufficient Funds).
+              example: R01
+            reason:
+              type: string
+              description: Human-readable description of the ACH return reason.
+              example: Insufficient Funds
+            category:
+              type: string
+              description: >-
+                Simplified taxonomy of the ACH return. `administrative` covers bank
+                issues that may be retriable. `unauthorized` covers customer disputes.
+                `general` covers everything else.
+              enum:
+                - administrative
+                - unauthorized
+                - general
+              example: administrative
     TransfersList:
       title: TransfersList
       description: List of transfers plus pagination cursors
@@ -371,26 +526,28 @@ components:
       example:
         pagination:
           next: g3QAAAABdw...
+          prev: null
           page_size: 25
         transfers:
           - id: 30NoY6R1Ns2tRBcx1Kb16SnuXOW
             status: complete
+            failure: null
             source:
               transaction_id: "0xdd5646ea\u2026"
               address_id: "2MhCCIHu\u2026"
-              value_type: ACE
-              transfer_type: base
+              value_type: USDC
+              transfer_type: polygon
             destination:
               transaction_id: "0xdd5646ea\u2026"
               address_id: "2O6asmN\u2026"
-              value_type: ACE
-              transfer_type: base
-            updated_at: '2025-07-25T21:05:07.779018Z'
-            created_at: '2025-07-25T21:03:55.364134Z'
+              value_type: USDC
+              transfer_type: polygon
             amount:
-              value: '0.10'
+              value: '100.00'
               currency: USD
             note: null
+            created_at: '2026-01-01T00:00:00Z'
+            updated_at: '2026-01-01T00:00:00Z'
     TransferCreateRequest:
       title: TransferCreateRequest
       type: object
@@ -621,13 +778,16 @@ components:
         name:
           type: string
           example: XYZ Onramp
-        destination_address:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
+        source:
+          $ref: '#/components/schemas/AutomationSource'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
         brand:
           $ref: '#/components/schemas/AutomationBrand'
       required:
         - name
-        - destination_address
+        - source
+        - destination
     AutomationBrand:
       title: AutomationBrand
       type: object
@@ -643,17 +803,44 @@ components:
             beneficiary on wire and ACH funding instructions.
       required:
         - account_id
-    AutomationDestinationAddress:
-      title: AutomationDestinationAddress
+    AutomationSource:
+      title: AutomationSource
       type: object
+      description: >-
+        The funding source for the automation. Defines the fiat rail and value type
+        that the automation accepts. When the automation becomes active,
+        `funding_instructions` is populated with the virtual account details to share
+        with the payer.
+      properties:
+        value_type:
+          type: string
+          description: The fiat value type accepted by the automation (e.g. `USD`).
+          example: USD
+        transfer_type:
+          type: string
+          description: The transfer rail used to fund the automation (e.g. `wire`).
+          example: wire
+        funding_instructions:
+          $ref: '#/components/schemas/FundingInstructions'
+      required:
+        - value_type
+        - transfer_type
+    AutomationDestination:
+      title: AutomationDestination
+      type: object
+      description: >-
+        The destination wallet that receives minted stablecoins when the automation
+        is funded.
       properties:
         address_id:
           $ref: '#/components/schemas/Ksuid'
         value_type:
           type: string
+          description: The stablecoin value type minted to the destination (e.g. `SBC`).
           example: SBC
         transfer_type:
           type: string
+          description: The destination chain or rail (e.g. `solana`).
           example: solana
       required:
         - address_id
@@ -667,17 +854,37 @@ components:
           $ref: '#/components/schemas/Ksuid'
         name:
           type: string
-          example: Customer Onramp
+          example: XYZ Onramp
         status:
           type: string
-          example: complete
-        wire_instructions:
-          $ref: '#/components/schemas/WireInstructions'
-        destinationAddress:
-          $ref: '#/components/schemas/AutomationDestinationAddress'
-    WireInstructions:
-      title: WireInstructions
+          description: The current lifecycle state of the automation.
+          enum:
+            - pending
+            - active
+            - disabled
+            - archived
+          example: active
+        source:
+          $ref: '#/components/schemas/AutomationSource'
+        destination:
+          $ref: '#/components/schemas/AutomationDestination'
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-01-15T12:34:56Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-01-15T12:34:56Z'
+        brand:
+          $ref: '#/components/schemas/AutomationBrand'
+    FundingInstructions:
+      title: FundingInstructions
       type: object
+      description: >-
+        Bank details for the virtual account that funds the automation. Populated by
+        Brale once the automation becomes active. Share these coordinates with the
+        payer to fund the automation.
       properties:
         beneficiary_name:
           type: string
@@ -688,18 +895,15 @@ components:
         bank_address:
           type: string
           example: 456 Commerce St., Des Moines, IA 50309
+        beneficiary_address:
+          type: string
+          example: 612 Commerce St., Des Moines, IA 50309
         account_number:
           type: string
           example: '123456789'
         routing_number:
           type: string
-          example: 063108680
-        beneficiary_address:
-          type: string
-          example: 612 Commerce St., Des Moines, IA 50309
-        memo:
-          type: string
-          example: AB1C23456789
+          example: '063108680'
     GetAutomationsResponse:
       title: AutomationListResponse
       type: object
@@ -1363,13 +1567,11 @@ paths:
           description: Cursor for the previous page (value returned in `pagination.prev`)
       responses:
         '200':
-          description: A list of transfers
+          description: A list of transfers with pagination cursors
           content:
             '*/*':
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Transfer'
+                $ref: '#/components/schemas/TransfersList'
     post:
       tags:
         - Transfers
@@ -1455,10 +1657,7 @@ paths:
           content:
             '*/*':
               schema:
-                type: object
-                properties:
-                  id:
-                    $ref: '#/components/schemas/Ksuid'
+                $ref: '#/components/schemas/Transfer'
   /accounts/{account_id}/transfers/{id}:
     get:
       tags:
@@ -1929,10 +2128,7 @@ paths:
           content:
             '*/*':
               schema:
-                type: object
-                properties:
-                  id:
-                    $ref: '#/components/schemas/Ksuid'
+                $ref: '#/components/schemas/Automation'
     get:
       tags:
         - Automations
