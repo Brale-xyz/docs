@@ -199,6 +199,7 @@
               "api-reference/brale/create-transfer",
               "api-reference/brale/get-transfer",
               "api-reference/brale/list-addresses",
+              "api-reference/brale/get-address",
               "api-reference/brale/create-address",
               "api-reference/brale/create-internal-address",
               "api-reference/brale/update-address",

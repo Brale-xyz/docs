@@ -57,6 +57,7 @@ Use the Addresses API to fetch your custodial `address_id` values. These are req
     - Use `id` from an entry with `type=internal` for onchain/offchain transfers and balance checks.
     - Choose an address that supports the `transfer_type` you need (e.g., `base`, `solana`, `ethereum`).
     - Keep this `address_id` for subsequent calls (e.g., transfers, balances).
+    - To re-fetch the latest details for a known address, call [`GET /accounts/{account_id}/addresses/{address_id}`](/api-reference/brale/get-address).
   </Step>
 </Steps>
 

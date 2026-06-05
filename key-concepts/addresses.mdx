@@ -229,6 +229,8 @@ RTP eligibility is determined asynchronously by our banking partner after the ba
 
 After the bank confirms that the account is RTP-enabled, Brale will update the Address in place and add `rtp_credit` to transfer_types. This typically happens shortly after creation.
 
+To check whether RTP eligibility has been confirmed, [retrieve the Address](/api-reference/brale/get-address) with `GET /accounts/{account_id}/addresses/{address_id}` and inspect `transfer_types` for `rtp_credit`.
+
 ### Update Address transfer types
 
 Sometimes you'll want an address to gain new capabilities over time. For example:

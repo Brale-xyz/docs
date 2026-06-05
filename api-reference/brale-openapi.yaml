@@ -1709,6 +1709,37 @@ paths:
                     address: null
                     transfer_types:
                       - hedera
+  /accounts/{account_id}/addresses/{address_id}:
+    get:
+      tags:
+        - Addresses
+      operationId: getAddress
+      summary: Retrieve an address
+      description: 'Retrieves a single address by address_id. Use this endpoint to
+        fetch the latest status, address value, and enabled transfer_types for an
+        internal or external address. For RTP-enabled bank addresses, inspect transfer_types
+        to confirm whether rtp_credit has been added after asynchronous eligibility
+        checks complete.'
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the address
+      responses:
+        '200':
+          description: A single address
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Address'
   /accounts/{account_id}/addresses/{address_id}/balance:
     get:
       tags:

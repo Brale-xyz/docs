@@ -20,6 +20,10 @@ You can filter the results using the following query parameters:
 If you already know the onchain address you are looking for, you can filter the addresses list by passing the exact address in the `address` query parameter. This is useful when you need to resolve an onchain address to its Brale `address_id`.
 </Tip>
 
+<Note>
+If you already know the `address_id`, use [`GET /accounts/{account_id}/addresses/{address_id}`](/api-reference/brale/get-address) to retrieve a single Address directly.
+</Note>
+
 ### Example: filter by exact onchain address
 
 To find a specific registered onchain address, pass it as the `address` query parameter:
