@@ -133,7 +133,7 @@ curl --request PATCH \
 - **Archive / unarchive is external-only.** Only addresses with `type=external` are eligible for status changes through this endpoint.
 - Internal / custodial addresses **cannot** be archived or unarchived through this endpoint.
 - Archiving changes the status of the existing address record. It does **not** delete the address or create a new one; the `address_id` and historical record are preserved.
-- Archived addresses remain visible in `GET /accounts/{account_id}/addresses` and `GET /accounts/{account_id}/addresses/{address_id}` responses with `status: "archived"`.
+- Archived addresses remain visible in `GET /accounts/{account_id}/addresses` and [`GET /accounts/{account_id}/addresses/{address_id}`](/api-reference/brale/get-address) responses with `status: "archived"`.
 - Archived addresses **cannot be used** as a source or destination in new transfers. Existing pending transfers may still complete.
 - Unarchiving (`status: "active"`) restores the address for use in new transfers.
 - `additional_transfer_types` is merged into the existing `transfer_types`. Sending a transfer type that is already enabled is idempotent and has no effect.
