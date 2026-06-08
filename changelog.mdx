@@ -3,6 +3,16 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-06-08" description="Week of June 1" tags={["New", "Update"]}>
+  ## Branded Automations
+
+  You can now control which business name appears as the beneficiary on an Automation's funding instructions. Include a `brand` object on create with an `account_id` (your own or a managed account), and the wire and ACH coordinates returned in `source.funding_instructions` will reflect that account's business name and address. If you omit `brand`, the beneficiary continues to default to Brale. See [Branded Automations](/key-concepts/automations#branded-automations) and [Create an Automation](/api-reference/brale/create-automations).
+
+  ## Refreshed Automations API shape
+
+  The Automations endpoints now use the current `source` / `destination` model end-to-end, matching the rest of the API. Define `source.value_type` (e.g. `USD`) and a `destination` with `address_id`, `value_type`, and `transfer_type` when creating an Automation. Responses surface `source.funding_instructions` with the provisioned virtual account details once active. See the updated [Automations concept page](/key-concepts/automations) and [API reference](/api-reference/brale/list-automations).
+</Update>
+
 <Update label="2026-03-20" description="Week of March 17" tags={["New", "Update"]}>
   ## Tron support
 
