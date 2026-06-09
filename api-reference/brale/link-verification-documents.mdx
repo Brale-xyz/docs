@@ -6,7 +6,9 @@ openapi: 'PATCH /accounts/{account_id}'
 
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
-Links one or more previously staged document submissions to an account as part of the KYB verification flow. Documents must be uploaded and staged first before they can be linked via this endpoint.
+Links one or more previously staged document submissions to an account as part of the KYB verification flow. Documents must be [staged first](/api-reference/brale/stage-verification-document) before they can be linked via this endpoint.
+
+During KYB review, Brale may request additional documents. Subscribe to `account.verification.documents_required` to be notified when uploads are needed, or [poll required documents](/api-reference/brale/list-verification-documents). See [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required).
 
 ## Example request
 
@@ -40,6 +42,24 @@ Links one or more previously staged document submissions to an account as part o
 | `400`  | `doc_submission_ids` is empty or missing.                      |
 | `404`  | Account not found.                                             |
 | `422`  | Document upload not allowed for this account's current state.  |
+
+## Verification webhooks
+
+Subscribe to verification events so your integration is notified when documents are needed or when KYB completes. Create a subscription with `POST /accounts/{account_id}/webhooks` and include `account.verification.documents_required` in the `events` array. See the [Webhooks overview](/webhooks/overview) for subscription setup and signature verification.
+
+| Event | When it fires |
+| --- | --- |
+| `account.verification.documents_required` | Brale's KYB review determines one or more documents must be uploaded. |
+| `account.verification.completed` | Account verification passes and the account is enabled (`status` becomes `complete`). |
+
+**Typical reactive flow** (documents requested after initial submission):
+
+1. Create the account (`POST /accounts`).
+2. Brale reviews the application asynchronously.
+3. If additional documents are required, Brale sends `account.verification.documents_required` to your webhook URL.
+4. [Stage each required document](/api-reference/brale/stage-verification-document) (use `document_kind` and `person_label` from the webhook payload or list endpoint when present).
+5. Link staged submissions with this endpoint.
+6. When KYB passes, Brale sends `account.verification.completed`.
 
 ## Required scope
 

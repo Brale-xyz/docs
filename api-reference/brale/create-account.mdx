@@ -6,5 +6,77 @@ openapi: 'POST /accounts'
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
 <Note>
-  After creating an account, upload KYB documents and link them using `PATCH /accounts/{account_id}` with the returned `doc_submission_ids`. See [Link Verification Documents](/api-reference/brale/link-verification-documents).
+  **Verification documents:** [Stage KYB documents](/api-reference/brale/stage-verification-document) first, then either pass the returned `doc_submission_ids` on this request or [link them afterward](/api-reference/brale/link-verification-documents). If Brale's review later requires more documents, subscribe to `account.verification.documents_required` (see [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required)) or [poll required documents](/api-reference/brale/list-verification-documents) — stage and link those documents the same way. When verification passes, Brale sends `account.verification.completed` and the account `status` becomes `complete`.
 </Note>
+
+## Linking documents at creation
+
+Include optional `doc_submission_ids` in the request body to link staged document submissions when the account is created. Each ID must come from a prior [Stage a Verification Document](/api-reference/brale/stage-verification-document) call (`POST /documents`). Omit the field to create the account without documents and [link them later](/api-reference/brale/link-verification-documents).
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `doc_submission_ids` | array of strings (KSUID) | No | Staged submission IDs to link and upload as part of account creation. |
+
+`doc_submission_ids` is not supported for testnet-only clients or self-attested accounts. In those cases, omit the field or link documents after creation if supported for your account type.
+
+For the full account creation payload (business details, controller, beneficial owners, TOS attestation), see [Accounts](/key-concepts/accounts#creating-an-account).
+
+## Example request with documents
+
+```json
+{
+  "business_name": "Acme Corp",
+  "ein": "12-3456789",
+  "address": {
+    "street_line_1": "123 Main St",
+    "city": "Des Moines",
+    "state": "IA",
+    "zip": "12345"
+  },
+  "phone_number": "2134678902",
+  "email": "mark@example.com",
+  "website": "https://acme.example.com",
+  "business_controller": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "ssn": "222-22-2222",
+    "dob": "1981-01-25",
+    "email": "john@acme.example.com",
+    "phone_number": "2154688987",
+    "ownership_percentage": "50",
+    "address": {
+      "street_line_1": "456 Elm St",
+      "city": "Chicago",
+      "state": "IL",
+      "zip": "60601"
+    }
+  },
+  "beneficial_owners": [],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-06-09T10:00:00Z"
+  },
+  "doc_submission_ids": [
+    "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "3Ar9BnQCKIrB3SYjKGBzCtFs6XM"
+  ]
+}
+```
+
+## Example response (201)
+
+```json
+{
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "name": "Acme Corp",
+  "status": "pending",
+  "created": "2026-06-09T10:00:00Z",
+  "updated": "2026-06-09T10:00:00Z"
+}
+```
+
+Linked documents are uploaded asynchronously after the account is created. The account `status` remains `pending` while Brale reviews the submission.
+
+## Required scope
+
+`accounts:write`

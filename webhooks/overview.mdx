@@ -14,6 +14,7 @@ Use webhooks to:
 - Update your internal ledger when a transfer completes
 - Notify your users when money movement settles
 - Reconcile completed transfers or payments
+- Prompt customers to upload KYB documents when verification review requires them
 - Trigger downstream workflows without polling
 - Build real-time dashboards for operations and treasury teams
 
@@ -55,6 +56,8 @@ Current supported events:
 | --- | --- | --- |
 | `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
 | `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
+| `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
+| `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
 
 Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed.
 
