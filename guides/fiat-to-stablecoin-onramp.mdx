@@ -206,3 +206,5 @@ When an automation becomes active, the source.funding_instructions object is pop
   "created_at": "2025-11-20T15:56:03.531196Z"
 }
 ```
+
+> When an automation is no longer needed, archive it by sending `PATCH /accounts/{account_id}/automations/{automation_id}` with `{ "status": "archived" }`. This closes the virtual account and stops future deposits from being processed.
