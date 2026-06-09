@@ -1,0 +1,75 @@
+---
+title: 'Stage a Verification Document'
+description: 'Upload a KYB/KYC document for later linking to an account.'
+openapi: 'POST /documents'
+---
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+Uploads a verification document file and returns a `doc_submission_id`. Staged submissions are not yet associated with an account — link them with [Link Verification Documents](/api-reference/brale/link-verification-documents) (`PATCH /accounts/{account_id}`) or pass the IDs when [creating an account](/api-reference/brale/create-account).
+
+<Note>
+  This endpoint accepts `multipart/form-data`, not JSON. Include an `Idempotency-Key` header (UUID v4) on every request. See [Idempotency](/key-concepts/idempotency).
+</Note>
+
+## Request fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `file` | file | Yes | Document file. Accepted formats: PDF, PNG, JPG, JPEG. Maximum size: 25 MB. |
+| `document_kind` | string | Yes | Document type code. See supported values below. Display names (for example, `IRS SS-4 / 147-C EIN letter`) are also accepted. |
+| `person_label` | string | Conditional | Required for individual documents (`government_photo_id`). Must match a person on the account when linking — use `available_person_labels` from [List Verification Documents](/api-reference/brale/list-verification-documents) or the `person_label` in an `account.verification.documents_required` webhook. |
+
+### Supported `document_kind` values
+
+| `document_kind` | `document_type` | Description |
+| --- | --- | --- |
+| `articles_of_incorporation` | `business_document` | Articles of Incorporation / Organization |
+| `certificate_of_good_standing` | `business_document` | Certificate of Good Standing |
+| `ein_letter` | `business_document` | IRS SS-4 / 147-C EIN letter |
+| `government_photo_id` | `individual_document` | Government-issued photo ID (requires `person_label`) |
+| `other` | `misc_document` | Other supporting documents |
+
+## Example request
+
+```bash
+curl -X POST https://api.brale.xyz/documents \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Idempotency-Key: {uuid}" \
+  -F "file=@ein-letter.pdf" \
+  -F "document_kind=ein_letter"
+```
+
+For an individual document:
+
+```bash
+curl -X POST https://api.brale.xyz/documents \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Idempotency-Key: {uuid}" \
+  -F "file=@id.pdf" \
+  -F "document_kind=government_photo_id" \
+  -F "person_label=Jane Doe"
+```
+
+## Example response (201)
+
+```json
+{
+  "doc_submission_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL"
+}
+```
+
+Pass the returned `doc_submission_id` to `PATCH /accounts/{account_id}` or include it in `doc_submission_ids` on account creation.
+
+## Error responses
+
+| Status | Cause |
+| --- | --- |
+| `400` | `file` or `document_kind` is missing, or `document_kind` is invalid. |
+| `401` | Missing or invalid access token. |
+| `403` | Client lacks `accounts:write` scope. |
+| `422` | `person_label` is required for individual documents, file type is unsupported, or file exceeds the size limit. |
+
+## Required scope
+
+`accounts:write`

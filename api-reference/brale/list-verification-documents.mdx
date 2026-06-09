@@ -1,0 +1,65 @@
+---
+title: 'List Verification Documents'
+description: 'List required KYB/KYC documents and their upload status for an account.'
+openapi: 'GET /accounts/{account_id}/verification/documents'
+---
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+Returns the documents Brale currently requires for an account's KYB verification, including upload status for each. Use this endpoint to poll for required documents instead of relying on the `account.verification.documents_required` webhook.
+
+<Note>
+  For each document with `status: "pending_upload"`, stage the file with [Stage a Verification Document](/api-reference/brale/stage-verification-document) (`POST /documents`), then link it with [Link Verification Documents](/api-reference/brale/link-verification-documents). See [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required) for the webhook alternative.
+</Note>
+
+## Example response (200)
+
+```json
+{
+  "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "documents": [
+    {
+      "document_kind": "certificate_of_good_standing",
+      "document_type": "business_document",
+      "display_name": "Certificate of Good Standing",
+      "status": "pending_upload",
+      "person_label": null
+    },
+    {
+      "document_kind": "government_photo_id",
+      "document_type": "individual_document",
+      "display_name": "Government-issued photo ID",
+      "status": "uploaded",
+      "person_label": "Jane Doe"
+    }
+  ],
+  "other_documents_uploaded_count": 1,
+  "available_person_labels": ["Jane Doe", "Chief Financial Officer"]
+}
+```
+
+### Response fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `account_id` | string (KSUID) | The account ID. |
+| `documents` | array | Required documents and their current status. |
+| `documents[].document_kind` | string | Code to pass as `document_kind` when staging a upload. |
+| `documents[].document_type` | string | `business_document`, `individual_document`, or `misc_document`. |
+| `documents[].display_name` | string | Human-readable document name. |
+| `documents[].status` | string | `pending_upload` or `uploaded`. |
+| `documents[].person_label` | string \| null | Person this document applies to (individual documents only). |
+| `other_documents_uploaded_count` | integer | Count of miscellaneous (`other`) documents already uploaded. |
+| `available_person_labels` | array | Person labels on the account's verification profile — use when staging individual documents. |
+
+## Error responses
+
+| Status | Cause |
+| --- | --- |
+| `401` | Missing or invalid access token. |
+| `403` | Client lacks `accounts:read` scope. |
+| `404` | Account not found. |
+
+## Required scope
+
+`accounts:read`

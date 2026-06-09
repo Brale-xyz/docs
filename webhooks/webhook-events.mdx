@@ -156,53 +156,71 @@ Notes:
 
 ## `account.verification.documents_required`
 
-Emitted when an account requires additional verification documents to proceed.
+Emitted when Brale's KYB review determines one or more documents must be uploaded.
 
-Use this event to prompt the account holder to submit the requested documents.
+Use this event to prompt the account holder to submit the requested documents. For each document with `status: "pending_upload"`, [stage the file](/api-reference/brale/stage-verification-document) (use `document_kind` and `person_label` from the payload), then [link staged submissions](/api-reference/brale/link-verification-documents). You can also [poll required documents](/api-reference/brale/list-verification-documents) instead of using this webhook.
 
 Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
   "type": "account.verification.documents_required",
-  "created": "2026-04-29T23:30:00.000000Z",
+  "created": "2026-06-09T14:32:00Z",
   "data": {
-    "id": "3D4ExampleAccountId",
-    "status": "documents_required"
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "updated_at": "2026-06-09T14:32:00Z",
+    "documents": [
+      {
+        "document_kind": "certificate_of_good_standing",
+        "document_type": "business_document",
+        "display_name": "Certificate of Good Standing",
+        "status": "pending_upload",
+        "person_label": null
+      },
+      {
+        "document_kind": "government_photo_id",
+        "document_type": "individual_document",
+        "display_name": "Government-issued photo ID",
+        "status": "pending_upload",
+        "person_label": "Jane Doe"
+      }
+    ]
   }
 }
 ```
 
 Notes:
 
-- Treat `data.id` as the account ID.
-- Additional fields may be present as the verification schema evolves.
+- Treat `data.account_id` as the account ID.
+- Each entry in `data.documents` describes a required document. `status` is `pending_upload` until the document is submitted.
+- Include `person_label` when staging individual (KYC) documents.
 - Your integration should ignore unknown fields.
 
 ## `account.verification.completed`
 
-Emitted when account verification reaches a completed state.
+Emitted when account verification completes and the account is enabled.
 
 Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
   "type": "account.verification.completed",
-  "created": "2026-04-29T23:30:00.000000Z",
+  "created": "2026-06-09T16:00:00Z",
   "data": {
-    "id": "3D4ExampleAccountId",
-    "status": "complete"
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "status": "complete",
+    "updated_at": "2026-06-09T16:00:00Z"
   }
 }
 ```
 
 Notes:
 
-- Treat `data.id` as the account ID.
-- Treat `data.status` as the completed verification state.
-- Additional fields may be present as the verification schema evolves.
+- Treat `data.account_id` as the account ID.
+- Treat `data.status` as the completed verification state (`complete`).
+- This event fires only when the account reaches `complete` status.
 - Your integration should ignore unknown fields.
 
 ## Handling future event types

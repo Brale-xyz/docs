@@ -127,12 +127,20 @@ Brale will review the Account and return a `status` field denoting the customer'
 
 ## Verification
 
-KYB verification can require supporting documents (for example, proof of incorporation or beneficial-owner identification). Documents are submitted in two steps:
+Account KYB verification is asynchronous. After creating an account, Brale reviews the submitted information. Two integration patterns are supported.
 
-1. **Stage the documents.** Upload each KYB document to obtain a `doc_submission_id`. Staged submissions are not yet associated with an account.
-2. **Link the submissions to the account.** Call [Link Verification Documents](/api-reference/brale/link-verification-documents) (`PATCH /accounts/{account_id}`) with the staged `doc_submission_ids` to attach them to the account for review.
+**Proactive (at onboarding):** [Stage documents](/api-reference/brale/stage-verification-document), then either pass `doc_submission_ids` when creating the account or [link them later](/api-reference/brale/link-verification-documents).
 
-The account `status` remains `pending` while Brale reviews the submitted documents, then transitions to `complete` if KYB passes or `rejected` if declined.
+**Reactive (documents requested during review):** When Brale needs additional documents, subscribe to the `account.verification.documents_required` webhook event (see [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required)). The payload lists each required document (`document_kind`, `display_name`, `person_label`, `status`). [Stage the files](/api-reference/brale/stage-verification-document), then [link them](/api-reference/brale/link-verification-documents). Alternatively, [poll required documents](/api-reference/brale/list-verification-documents).
+
+```
+Create account → Brale reviews → [documents required?]
+  → Yes: webhook account.verification.documents_required
+    → Stage document → Link to account
+  → Brale re-reviews → account.verification.completed (status: complete)
+```
+
+When verification succeeds, Brale emits `account.verification.completed` and the account `status` transitions to `complete`. If verification is declined, `status` becomes `rejected`.
 
 ## Using Account ID in every request
 
