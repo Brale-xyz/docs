@@ -214,6 +214,12 @@
               "api-reference/brale/create-plaid-link-token",
               "api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id"
             ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/brale/update-webhook-subscription"
+            ]
           }
         ]
       }
