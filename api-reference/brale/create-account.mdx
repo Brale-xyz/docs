@@ -4,3 +4,7 @@ description: 'Creates a new customer (account) with the required KYC/KYB details
 openapi: 'POST /accounts'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+<Note>
+  After creating an account, upload KYB documents and link them using `PATCH /accounts/{account_id}` with the returned `doc_submission_ids`. See [Link Verification Documents](/api-reference/brale/link-verification-documents).
+</Note>

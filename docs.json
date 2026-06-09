@@ -195,6 +195,7 @@
               "api-reference/brale/list-accounts",
               "api-reference/brale/create-account",
               "api-reference/brale/get-account",
+              "api-reference/brale/link-verification-documents",
               "api-reference/brale/list-transfers",
               "api-reference/brale/create-transfer",
               "api-reference/brale/get-transfer",

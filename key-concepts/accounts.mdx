@@ -125,6 +125,15 @@ Brale will review the Account and return a `status` field denoting the customer'
 | `complete` | KYB is completed and the account is approved |
 | `rejected` | The account's KYB was rejected               |
 
+## Verification
+
+KYB verification can require supporting documents (for example, proof of incorporation or beneficial-owner identification). Documents are submitted in two steps:
+
+1. **Stage the documents.** Upload each KYB document to obtain a `doc_submission_id`. Staged submissions are not yet associated with an account.
+2. **Link the submissions to the account.** Call [Link Verification Documents](/api-reference/brale/link-verification-documents) (`PATCH /accounts/{account_id}`) with the staged `doc_submission_ids` to attach them to the account for review.
+
+The account `status` remains `pending` while Brale reviews the submitted documents, then transitions to `complete` if KYB passes or `rejected` if declined.
+
 ## Using Account ID in every request
 
 All resources in the Brale API (Addresses, Financial Institutions, Transfers, Automations, etc.) are scoped to specific accounts. Supply the ID in the path, never in the body.
