@@ -202,3 +202,51 @@ Retrieve a specific Automation.
   "created_at": "2025-11-20T15:56:03.531196Z"
 }
 ```
+
+## Archive an Automation
+
+Automations can be archived when they are no longer needed. Archiving permanently closes the automation's virtual account — no further deposits will be processed — and removes the Stripe billing seat for the automation.
+
+<Warning>
+  Archived is a terminal state. An archived automation cannot be re-enabled.
+</Warning>
+
+**PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}`
+
+```json Request
+{
+  "status": "archived"
+}
+```
+
+```json Response
+{
+  "id": "3D8pEQwvYY7cJXmQkojpZZ9vdr3",
+  "name": "ACE Corp 5",
+  "status": "archived",
+  "source": {
+    "transfer_type": null,
+    "value_type": "USD",
+    "funding_instructions": {
+      "account_number": "488255579773",
+      "beneficiary_name": "Brand Account 2",
+      "bank_address": "8700 Perry Highway Pittsburgh, PA 15237",
+      "beneficiary_address": "7834 pipe drive San Diego, CA 92115",
+      "routing_number": "043087080",
+      "bank_name": "SSB Bank"
+    }
+  },
+  "destination": {
+    "address_id": "3D8odPs57kcf4kErbi8snLOQg0H",
+    "transfer_type": "base",
+    "value_type": "ACE"
+  },
+  "updated_at": "2026-06-04T21:13:53.122105Z",
+  "created_at": "2026-05-01T22:10:38.297457Z",
+  "brand": {
+    "account_id": "3D8occi363tmBYDByo0Rr292kBO"
+  }
+}
+```
+
+Required scope: `automations:write`

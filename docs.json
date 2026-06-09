@@ -207,6 +207,7 @@
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
               "api-reference/brale/get-automations",
+              "api-reference/brale/archive-automation",
               "api-reference/brale/list-financial-institutions",
               "api-reference/brale/create-financial-institution",
               "api-reference/brale/get-financial-institution",

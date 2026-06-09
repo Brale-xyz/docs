@@ -1,0 +1,77 @@
+---
+title: 'Archive an Automation'
+description: 'Archives an automation, permanently stopping it from processing deposits. The underlying virtual account is closed and billing is released.'
+---
+
+Archive an automation when it is no longer needed. Archiving permanently closes the automation's virtual account — no further deposits will be processed — and releases the Stripe billing seat for the automation.
+
+<Warning>
+  Archived is a terminal state. An archived automation cannot be re-enabled.
+</Warning>
+
+**PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}`
+
+Required scope: `automations:write`
+
+## Path parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `account_id` | string (KSUID) | Yes | The account that owns the automation. |
+| `automation_id` | string (KSUID) | Yes | The automation to archive. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `status` | string | Yes | Must be `"archived"`. |
+
+```json Request
+{
+  "status": "archived"
+}
+```
+
+## Responses
+
+### 200 OK
+
+Returns the full `Automation` object with `status: "archived"`.
+
+```json Response
+{
+  "id": "3D8pEQwvYY7cJXmQkojpZZ9vdr3",
+  "name": "ACE Corp 5",
+  "status": "archived",
+  "source": {
+    "transfer_type": null,
+    "value_type": "USD",
+    "funding_instructions": {
+      "account_number": "488255579773",
+      "beneficiary_name": "Brand Account 2",
+      "bank_address": "8700 Perry Highway Pittsburgh, PA 15237",
+      "beneficiary_address": "7834 pipe drive San Diego, CA 92115",
+      "routing_number": "043087080",
+      "bank_name": "SSB Bank"
+    }
+  },
+  "destination": {
+    "address_id": "3D8odPs57kcf4kErbi8snLOQg0H",
+    "transfer_type": "base",
+    "value_type": "ACE"
+  },
+  "updated_at": "2026-06-04T21:13:53.122105Z",
+  "created_at": "2026-05-01T22:10:38.297457Z",
+  "brand": {
+    "account_id": "3D8occi363tmBYDByo0Rr292kBO"
+  }
+}
+```
+
+### 404 Not Found
+
+Automation not found or not owned by the account.
+
+### 422 Unprocessable Entity
+
+Invalid status transition (for example, the automation is already archived).
