@@ -1,0 +1,41 @@
+---
+title: 'Update a Webhook Subscription'
+description: 'Update the URL or subscribed event types for an active webhook subscription.'
+openapi: 'PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}'
+---
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+Updates an active webhook subscription. At least one of `url` or `events` must be provided. When `events` is sent, it replaces the full set of subscribed event types — it is not additive.
+
+## Request body fields
+
+| Field    | Type             | Required                          | Description                                                                                            |
+| -------- | ---------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `url`    | string           | At least one of `url` or `events` | New HTTPS destination URL for webhook `POST` requests. Max 2048 characters.                            |
+| `events` | array of strings | At least one of `url` or `events` | Replaces all currently subscribed event types. See [supported event types](/webhooks/webhook-events). |
+
+### Example: change URL only
+
+```json
+{
+  "url": "https://your-server.example.com/webhooks/brale"
+}
+```
+
+### Example: replace subscribed events
+
+```json
+{
+  "events": ["transfer.completed", "transfer.failed"]
+}
+```
+
+## Error responses
+
+- `400` — empty patch body (no fields provided).
+- `404` — subscription not found or not owned by the account.
+- `409` — subscription is already archived; archived subscriptions cannot be updated.
+- `422` — unsupported event type, or `events` array was empty when the `events` key was sent.
+
+Required scope: `webhooks:write`.
