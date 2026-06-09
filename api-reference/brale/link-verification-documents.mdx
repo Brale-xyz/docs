@@ -1,0 +1,46 @@
+---
+title: 'Link Verification Documents'
+description: 'Link staged KYB document submissions to an account.'
+openapi: 'PATCH /accounts/{account_id}'
+---
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+Links one or more previously staged document submissions to an account as part of the KYB verification flow. Documents must be uploaded and staged first before they can be linked via this endpoint.
+
+## Example request
+
+```json
+{
+  "doc_submission_ids": [
+    "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "3Ar9BnQCKIrB3SYjKGBzCtFs6XM"
+  ]
+}
+```
+
+## Example response (200)
+
+```json
+{
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "name": "Acme Corp",
+  "status": "pending",
+  "created": "2026-01-15T10:00:00Z",
+  "updated": "2026-06-09T12:00:00Z"
+}
+```
+
+`status` will remain `"pending"` while Brale reviews the submitted documents. It transitions to `"complete"` once KYB passes or `"rejected"` if declined.
+
+## Error responses
+
+| Status | Cause                                                          |
+| ------ | -------------------------------------------------------------- |
+| `400`  | `doc_submission_ids` is empty or missing.                      |
+| `404`  | Account not found.                                             |
+| `422`  | Document upload not allowed for this account's current state.  |
+
+## Required scope
+
+`accounts:write`
