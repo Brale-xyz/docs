@@ -846,6 +846,18 @@ components:
         - address_id
         - value_type
         - transfer_type
+    ArchiveAutomationRequest:
+      title: ArchiveAutomationRequest
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: The new lifecycle state for the automation. Must be `archived`.
+          enum:
+            - archived
+          example: archived
     Automation:
       title: Automation
       type: object
@@ -2179,6 +2191,51 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Automation'
+    patch:
+      tags:
+        - Automations
+      operationId: archiveAutomation
+      summary: Archive an automation
+      description: >-
+        Archives an automation, permanently stopping it from processing
+        deposits. The underlying virtual account is closed and billing is
+        released. Archived is a terminal state — an archived automation cannot
+        be re-enabled.
+      security:
+        - OAuth2:
+            - automations:write
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account that owns the automation.
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the automation to archive.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchiveAutomationRequest'
+      responses:
+        '200':
+          description: The archived automation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Automation'
+        '404':
+          description: Automation not found or not owned by the account.
+        '422':
+          description: >-
+            Invalid status transition (for example, the automation is already
+            archived).
   /accounts/{account_id}/plaid/link_token:
     post:
       tags:
