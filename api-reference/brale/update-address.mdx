@@ -8,6 +8,12 @@ Use the playground below to try this endpoint directly, or review the OpenAPI de
 
 This endpoint lets you make targeted updates to an existing address. All fields are optional — only include what you want to change.
 
+**Endpoint**
+
+```http
+PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
+```
+
 ### Updatable fields
 
 | Field | Type | Description |
@@ -17,6 +23,22 @@ This endpoint lets you make targeted updates to an existing address. All fields 
 | `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
 | `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
 | `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
+
+### Add transfer types to an existing address
+
+To add new rails to an existing address (for example, adding `ach_credit` and `same_day_ach_credit` to an address), send a `PATCH` to the same endpoint with `additional_transfer_types`:
+
+```http
+PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
+```
+
+```json Request
+{
+  "additional_transfer_types": ["ach_credit", "same_day_ach_credit"]
+}
+```
+
+`additional_transfer_types` is **merged** into the address's existing `transfer_types`. You do not need to resend the full existing list — send only the rails you want to add. Sending a transfer type that is already enabled is idempotent.
 
 ### Error responses
 

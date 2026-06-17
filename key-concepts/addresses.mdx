@@ -244,7 +244,7 @@ Onchain Address Example - add a new EVM chain
 
 Suppose you have a non-custodial EVM wallet Address that currently only supports `base` and want to add `ethereum`:
 
-**PATCH** `/accounts/{account_id}/addresses/{{address_id}}`
+**PATCH** `/accounts/{account_id}/addresses/{address_id}`
 
 ```json Request
 {
@@ -270,11 +270,11 @@ Offchain Address Example - add ACH Credit to a wire-only bank Address
 
 Suppose you have an off-chain bank Address that currently only supports wires and now want to update to include ACH and SDACH.
 
-**PATCH** `/accounts/{account_id}/addresses/{{address_id}}`
+**PATCH** `/accounts/{account_id}/addresses/{address_id}`
 
 ```json Request
 {
-  "additional_transfer_types": ["same_day_ach_credit", "ach_credit"]
+  "additional_transfer_types": ["ach_credit", "same_day_ach_credit"]
 }
 ```
 
@@ -323,10 +323,10 @@ You can also use this endpoint to update the human-readable name (alias) of an A
 
 #### Behavior
 
-`additional_transfer_types` is a list of transfer types to **add** to this Address. These are merged into the existing `transfer_types`.
+`additional_transfer_types` is a list of transfer types to **add** to this Address. These are **merged** into the address's existing `transfer_types` — you do not need to resend the full existing list.
 
-- The values in `additional_transfer_types` are **added** to the Address’s existing `transfer_types`.
-- Existing `transfer_types` are preserved even if you don’t include them in the request.
+- The values in `additional_transfer_types` are **added** to the Address's existing `transfer_types`.
+- Existing `transfer_types` are preserved even if you don't include them in the request. Only send the rails you want to add.
 - Sending a transfer type that is already enabled is idempotent and has no effect.
 - This endpoint can also be used to update the `name` of the address, a human readable alias.
 
