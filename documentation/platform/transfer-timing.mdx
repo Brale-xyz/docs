@@ -221,7 +221,7 @@ The response includes a `status` field with one of the values described above, a
 ### Polling Recommendations
 
 <Info>
-  Where available, use [`transfer.completed`](/webhooks/webhook-events) [webhooks](/webhooks/overview) for real-time production completion notifications. Polling remains useful for fallback handling, reconciliation, and retrieving the latest transfer state.
+  Where available, use [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) for real-time production notifications when a transfer reaches a terminal state. Polling remains useful for fallback handling, reconciliation, and retrieving the latest transfer state.
 </Info>
 
 - **Poll interval** — Start at 25% of the anticipated transfer time. If the transfer is still in `pending` or `processing`, apply exponential backoff up to a reasonable maximum (for example, 60 seconds).

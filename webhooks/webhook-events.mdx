@@ -30,6 +30,9 @@ switch (event.type) {
   case "transfer.completed":
     await handleTransferCompleted(event.data);
     break;
+  case "transfer.failed":
+    await handleTransferFailed(event.data);
+    break;
   case "payment.completed":
     await handlePaymentCompleted(event.data);
     break;
@@ -96,6 +99,50 @@ Notes:
 
 - Treat `data.id` as the transfer ID.
 - Treat `data.status` as the completed transfer state.
+- Additional fields may be present as the transfer schema evolves.
+- Your integration should ignore unknown fields.
+
+## `transfer.failed`
+
+Emitted when a Brale transfer reaches `failed` status.
+
+Use this event to react to permanent transfer failures (e.g., ACH returns or other rail/provider failures). For ACH-specific return details, inspect `data.failure.ach_return`.
+
+Example:
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "transfer.failed",
+  "created": "2026-04-29T23:30:00.000000Z",
+  "data": {
+    "id": "3D4ExampleTransferId",
+    "status": "failed",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    },
+    "failure": {
+      "type": "ach_return",
+      "occurred_at": "2026-04-29T23:29:55.000000Z",
+      "retriable": false,
+      "ach_return": {
+        "code": "R01",
+        "reason": "Insufficient Funds",
+        "category": "administrative"
+      }
+    }
+  }
+}
+```
+
+Notes:
+
+- Treat `data.id` as the transfer ID.
+- Treat `data.status` as the failed transfer state.
+- `data.failure` is usually populated for `transfer.failed`, but may be `null` when Brale does not have structured failure details. Always null-check before reading nested fields.
+- `data.failure.retriable` indicates whether the failure is retriable. Spelled `retriable`, not `retryable`.
+- `data.failure.ach_return` is only set for ACH return failures. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
