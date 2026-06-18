@@ -54,7 +54,10 @@ Current supported events:
 
 | Event type | When it fires | Recommended use |
 | --- | --- | --- |
+| `transfer.created` | A transfer is created | Record transfer intents and surface in-flight state to customers |
 | `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
+| `transfer.canceled` | A transfer is canceled | Reverse provisional ledger entries and notify customers of cancellations |
+| `transfer.failed` | A transfer reaches `failed` status | React to permanent transfer failures (e.g., ACH returns); inspect `data.failure` for details |
 | `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
