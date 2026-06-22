@@ -3,6 +3,64 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-06-22" description="Week of June 22" tags={["New", "Update", "Fix"]}>
+  This week's updates expand webhook coverage, add new endpoints for managing addresses, automations, and verification, and broaden network support.
+
+  ## New
+
+  ### Worldchain support
+
+  Brale now supports Worldchain as a transfer type on both mainnet (`worldchain`) and testnet (`worldchain_testnet`). See [transfer types](/coverage/transfer-types) for the full list of supported networks.
+
+  ### New webhook events
+
+  Webhook subscriptions now support additional event types so applications can react to more of the transfer and account lifecycle in real time:
+
+  - `transfer.failed` — fires on permanent transfer failures and includes a structured `data.failure` object with `type`, `occurred_at`, `retriable`, and an `ach_return` payload for ACH returns.
+  - `transfer.canceled` — fires when a transfer is canceled.
+  - `payment.completed` — fires when a payment reaches `complete` status.
+  - `account.verification.documents_required` — fires when KYB review requires document uploads from the account holder.
+  - `account.verification.completed` — fires when account verification finishes and the account is enabled.
+
+  See [webhook events](/webhooks/webhook-events) for payload details.
+
+  ### Update Webhook Subscription endpoint
+
+  You can now update a webhook subscription's destination URL and subscribed event list in place using [`PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}`](/api-reference/brale/update-webhook-subscription), without having to recreate the subscription.
+
+  ### Create Internal Address endpoint
+
+  A new [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) endpoint lets you provision additional custodial addresses on an account beyond the wallets created at onboarding — useful for segmenting funds across workflows. Deterministic chains return `active` synchronously; non-deterministic chains return `pending` until provisioning completes.
+
+  ### Link Verification Documents endpoint
+
+  A new [Link Verification Documents](/api-reference/brale/link-verification-documents) endpoint completes the reactive document-upload flow that pairs with the `account.verification.documents_required` webhook, letting you attach staged document submissions to an account during KYB review.
+
+  ### Archive an Automation
+
+  Automations can now be archived via [`PATCH /accounts/{account_id}/automations/{automation_id}`](/api-reference/brale/archive-automation) with `{"status": "archived"}`. Archiving permanently closes the virtual account and stops deposit processing — it's a terminal state.
+
+  ## Updates
+
+  ### Update an Address endpoint
+
+  The [Update Address endpoint](/api-reference/brale/update-address) now supports renaming, archiving and unarchiving, and adding rails via `additional_transfer_types`, which merges into an address's existing transfer types rather than replacing them. It also accepts `bank_address` and `beneficiary_address` (wire-only) so bank addresses can be enabled for wire payouts.
+
+  ### Get an Address endpoint
+
+  The [Get Address endpoint](/api-reference/brale/get-address) returns the current `status`, `address` value, and enabled `transfer_types` for a single internal or external address — useful for polling asynchronous capability updates such as RTP eligibility.
+
+  ### Refreshed Automation API schemas
+
+  Automation request and response schemas now reflect the current `source`/`destination` shape, making automation payloads consistent with the rest of the API.
+
+  ## Fixes
+
+  ### Clearer Create External Address responses
+
+  The [Create Address](/api-reference/brale/create-address) reference now documents the full `201` response and clarifies that `bank_address` and `beneficiary_address` apply only to wire when adding a bank address via direct entry.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
