@@ -7,17 +7,17 @@ description: "Create an ach_debit funded transaction to a custodial, or self cus
 
 This document is a guide to help your team evaluate and implement the ach_debit transfer type. It covers what the ach_debit functionalities are, how to get set up, and the key steps to go from initial testing to production. Use it as a reference while you integrate.
 
-When making `POST` requests Brale requires an Idempotency-Key header to be included and used on retries. Read more about [idempotency keys in Brale](https://brale.mintlify.app/key-concepts/idempotency#what-is-an-idempotency-key). Using ach-debits required your business to be fully onboarded, and branded ach_debits are a premium feature.
+When making `POST` requests Brale requires an Idempotency-Key header to be included and used on retries. Read more about [idempotency keys in Brale](/key-concepts/idempotency#what-is-an-idempotency-key). Using ach-debits required your business to be fully onboarded, and branded ach_debits are a premium feature.
 
 - **Testnet Environment**
   - If users wants to first test the below endpoints on testnet, they will need to create API credentials that are scoped to testnet - please follow the below link for more information:
-    - [Sandbox and Testnet walkthrough](https://brale.mintlify.app/overview/sandbox-and-testnet)
+    - [Sandbox and Testnet walkthrough](/overview/sandbox-and-testnet)
 - **Production Environment**
   - Partners can leverage mainnet APIs by using their mainnet API keys generated in the Brale Portal.
 
 ## End Customer Account Creation
 
-- [`Here is an example of how to get your account_id`](https://brale.mintlify.app/guides/how-to/get-your-account-id)
+- [`Here is an example of how to get your account_id`](/guides/how-to/get-your-account-id)
 
   ```tsx
   curl --request GET \
@@ -98,7 +98,7 @@ Response Body Example:
 
   **Off-chain bank account request example:**
   - Partner will need to create a form that requests this information from end users to provide the below data
-  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”. [Create off-chain external address](https://brale.mintlify.app/api-reference/brale/create-address):
+  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”. [Create off-chain external address](/api-reference/brale/create-address):
 
   ```bash
   curl --request POST \
@@ -122,7 +122,7 @@ Response Body Example:
 - At this stage your end users’ accounts should already be connected, where Brale will execute debits and mint to desired stablecoins from the process below:
 - You will need to call the following below endpoints with the relevant data to be able to execute a `swap` or a `transfer`.
   - Transfer - Fiat to Stablecoin Transfer scenarios:
-  - [`Transfer scenarios: understanding value_type and transfer_type`](https://brale.mintlify.app/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
+  - [`Transfer scenarios: understanding value_type and transfer_type`](/key-concepts/transfers#transfer-scenarios-understanding-value_type-and-transfer_type)
 
   **POST** **`https://api.brale.xyz/accounts/account_id/transfers`**
   - `USDC` to `SBC` request body example:
@@ -145,7 +145,7 @@ Response Body Example:
     }
   }
   ```
-  - [`USD to Stablecoin request body example`](https://brale.mintlify.app/key-concepts/transfers#usd-to-stablecoin-ach-debit):
+  - [`USD to Stablecoin request body example`](/key-concepts/transfers#usd-to-stablecoin-ach-debit):
 
   ```json
   {
