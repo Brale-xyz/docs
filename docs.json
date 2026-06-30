@@ -190,57 +190,52 @@
             ]
           },
           {
-            "group": "Endpoints",
+            "group": "Accounts",
             "pages": [
-              {
-                "group": "Accounts",
-                "pages": [
-                  "api-reference/brale/list-accounts",
-                  "api-reference/brale/create-account",
-                  "api-reference/brale/get-account",
-                  "api-reference/brale/stage-verification-document",
-                  "api-reference/brale/list-verification-documents",
-                  "api-reference/brale/link-verification-documents"
-                ]
-              },
-              {
-                "group": "Addresses",
-                "pages": [
-                  "api-reference/brale/list-addresses",
-                  "api-reference/brale/get-address",
-                  "api-reference/brale/create-address",
-                  "api-reference/brale/create-internal-address",
-                  "api-reference/brale/update-address",
-                  "api-reference/brale/get-address-balance"
-                ]
-              },
-              {
-                "group": "Automations",
-                "pages": [
-                  "api-reference/brale/list-automations",
-                  "api-reference/brale/create-automations",
-                  "api-reference/brale/get-automations",
-                  "api-reference/brale/archive-automation"
-                ]
-              },
-              {
-                "group": "Transfers",
-                "pages": [
-                  "api-reference/brale/list-transfers",
-                  "api-reference/brale/create-transfer",
-                  "api-reference/brale/get-transfer"
-                ]
-              },
-              {
-                "group": "Financial institutions",
-                "pages": [
-                  "api-reference/brale/list-financial-institutions",
-                  "api-reference/brale/create-financial-institution",
-                  "api-reference/brale/get-financial-institution",
-                  "api-reference/brale/create-plaid-link-token",
-                  "api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id"
-                ]
-              }
+              "api-reference/brale/list-accounts",
+              "api-reference/brale/create-account",
+              "api-reference/brale/get-account",
+              "api-reference/brale/stage-verification-document",
+              "api-reference/brale/list-verification-documents",
+              "api-reference/brale/link-verification-documents"
+            ]
+          },
+          {
+            "group": "Addresses",
+            "pages": [
+              "api-reference/brale/list-addresses",
+              "api-reference/brale/get-address",
+              "api-reference/brale/create-address",
+              "api-reference/brale/create-internal-address",
+              "api-reference/brale/update-address",
+              "api-reference/brale/get-address-balance"
+            ]
+          },
+          {
+            "group": "Automations",
+            "pages": [
+              "api-reference/brale/list-automations",
+              "api-reference/brale/create-automations",
+              "api-reference/brale/get-automations",
+              "api-reference/brale/archive-automation"
+            ]
+          },
+          {
+            "group": "Transfers",
+            "pages": [
+              "api-reference/brale/list-transfers",
+              "api-reference/brale/create-transfer",
+              "api-reference/brale/get-transfer"
+            ]
+          },
+          {
+            "group": "Financial institutions",
+            "pages": [
+              "api-reference/brale/list-financial-institutions",
+              "api-reference/brale/create-financial-institution",
+              "api-reference/brale/get-financial-institution",
+              "api-reference/brale/create-plaid-link-token",
+              "api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id"
             ]
           },
           {
