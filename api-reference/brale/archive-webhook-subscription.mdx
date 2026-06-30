@@ -1,0 +1,28 @@
+---
+title: 'Archive Webhook Subscription'
+description: 'Archive a webhook subscription. Future events will not be delivered to this subscription.'
+---
+
+```
+DELETE /accounts/{account_id}/webhooks/subscriptions/{subscription_id}
+```
+
+Required scope: `webhooks:write`.
+
+Archiving stops future deliveries. Delivery history is retained.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | The Brale account that owns the subscription. |
+| `subscription_id` | string | The ID of the webhook subscription to archive. |
+
+## Example request
+
+```bash
+curl -X DELETE https://api.brale.xyz/accounts/{account_id}/webhooks/subscriptions/{subscription_id} \
+  -H "Authorization: Bearer {access_token}"
+```
+
+See the [Webhooks overview](/webhooks/overview) for how subscriptions, delivery, and account scope work.

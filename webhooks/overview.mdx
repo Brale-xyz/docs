@@ -42,6 +42,51 @@ Brale POSTs the event to your webhook URL
 Your app verifies, deduplicates, and updates state
 ```
 
+## Webhook subscription API
+
+Webhook subscriptions are managed under a Brale account:
+
+```
+/accounts/{account_id}/webhooks
+```
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/accounts/{account_id}/webhooks/event_types` | Discover supported event types |
+| POST | `/accounts/{account_id}/webhooks` | Create a webhook subscription |
+| GET | `/accounts/{account_id}/webhooks` | List webhook subscriptions |
+| GET | `/accounts/{account_id}/webhooks/{subscription_id}` | Get one webhook subscription |
+| PATCH | `/accounts/{account_id}/webhooks/subscriptions/{subscription_id}` | Update a webhook subscription |
+| DELETE | `/accounts/{account_id}/webhooks/subscriptions/{subscription_id}` | Archive a webhook subscription |
+| GET | `/accounts/{account_id}/webhooks/deliveries` | List delivery attempts |
+
+### Create a subscription
+
+```bash
+curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "url": "https://your-app.example.com/webhooks/brale",
+    "events": ["transfer.completed"]
+  }'
+```
+
+<Note>
+  The `sharedSecret` is returned only once when the subscription is created. Store it immediately. List and get subscription endpoints do not return the secret again.
+</Note>
+
+## Account scope
+
+Webhook subscriptions are account-scoped. A subscription created under `/accounts/{account_id}/webhooks` receives events for that Brale account.
+
+If all of your activity runs under one Brale account, one webhook subscription can receive events for that account.
+
+If your integration manages separate Brale accounts for separate customers, create a webhook subscription for each account whose events you want to receive. Brale does not currently provide a single org-level catch-all webhook subscription across all accounts.
+
+For testnet and mainnet, create webhook subscriptions in the account/environment you want to receive events from. If you have separate testnet and mainnet accounts, create separate subscriptions for those accounts.
+
 ## Supported events
 
 Use the event type discovery endpoint to see currently available events:

@@ -276,7 +276,7 @@ Brale may add new event types over time.
 
 Best practices:
 
-- Use `GET /webhooks/event_types` to discover supported events.
+- Use `GET /accounts/{account_id}/webhooks/event_types` to discover supported events.
 - Branch on `event.type`.
 - Acknowledge unknown event types safely.
 - Ignore unknown fields in `data`.

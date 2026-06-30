@@ -1,0 +1,56 @@
+---
+title: 'Create Webhook Subscription'
+description: 'Create a new webhook subscription under a Brale account.'
+---
+
+```
+POST /accounts/{account_id}/webhooks
+```
+
+Required scope: `webhooks:write`.
+
+Use an `Idempotency-Key` header.
+
+<Note>
+  The `sharedSecret` is returned only once in the response to this call. Store it immediately — list and get subscription endpoints do not return the secret again.
+</Note>
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | The Brale account that will receive events for this subscription. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `url` | string | Yes | HTTPS destination URL for webhook `POST` requests. |
+| `events` | array of strings | Yes | Event types to subscribe to. See [List Webhook Event Types](/api-reference/brale/list-webhook-event-types). |
+
+## Example request
+
+```bash
+curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "url": "https://your-app.example.com/webhooks/brale",
+    "events": ["transfer.completed"]
+  }'
+```
+
+## Example response
+
+```json
+{
+  "id": "3D3jNzs2r7Sf78qtYpRe1biscLG",
+  "sharedSecret": "base64url-encoded-secret",
+  "events": ["transfer.completed"],
+  "url": "https://your-app.example.com/webhooks/brale",
+  "status": "active"
+}
+```
+
+See the [Webhooks overview](/webhooks/overview) for account scope, environment scope (testnet/mainnet), and signature verification details.

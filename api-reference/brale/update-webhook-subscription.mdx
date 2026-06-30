@@ -4,6 +4,10 @@ description: 'Update the URL or subscribed event types for an active webhook sub
 openapi: 'PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}'
 ---
 
+```
+PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}
+```
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
 Updates an active webhook subscription. At least one of `url` or `events` must be provided. When `events` is sent, it replaces the full set of subscribed event types — it is not additive.
@@ -39,3 +43,12 @@ Updates an active webhook subscription. At least one of `url` or `events` must b
 - `422` — unsupported event type, or `events` array was empty when the `events` key was sent.
 
 Required scope: `webhooks:write`.
+
+## Related endpoints
+
+- [Create webhook subscription](/api-reference/brale/create-webhook-subscription)
+- [List webhook subscriptions](/api-reference/brale/list-webhook-subscriptions)
+- [Get webhook subscription](/api-reference/brale/get-webhook-subscription)
+- [Archive webhook subscription](/api-reference/brale/archive-webhook-subscription)
+- [List delivery attempts](/api-reference/brale/list-webhook-delivery-attempts)
+- [Webhooks overview](/webhooks/overview)
