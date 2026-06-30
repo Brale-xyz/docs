@@ -246,7 +246,13 @@
           {
             "group": "Webhooks",
             "pages": [
-              "api-reference/brale/update-webhook-subscription"
+              "api-reference/brale/list-webhook-event-types",
+              "api-reference/brale/create-webhook-subscription",
+              "api-reference/brale/list-webhook-subscriptions",
+              "api-reference/brale/get-webhook-subscription",
+              "api-reference/brale/update-webhook-subscription",
+              "api-reference/brale/archive-webhook-subscription",
+              "api-reference/brale/list-webhook-delivery-attempts"
             ]
           }
         ]

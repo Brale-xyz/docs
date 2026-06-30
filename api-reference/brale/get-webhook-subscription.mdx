@@ -1,0 +1,39 @@
+---
+title: 'Get Webhook Subscription'
+description: 'Retrieve a single webhook subscription by ID.'
+---
+
+```
+GET /accounts/{account_id}/webhooks/{subscription_id}
+```
+
+Required scope: `webhooks:read`.
+
+The `sharedSecret` is not returned by this endpoint.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | The Brale account that owns the subscription. |
+| `subscription_id` | string | The ID of the webhook subscription. |
+
+## Example request
+
+```bash
+curl https://api.brale.xyz/accounts/{account_id}/webhooks/{subscription_id} \
+  -H "Authorization: Bearer {access_token}"
+```
+
+## Example response
+
+```json
+{
+  "id": "3D3jNzs2r7Sf78qtYpRe1biscLG",
+  "events": ["transfer.completed"],
+  "url": "https://your-app.example.com/webhooks/brale",
+  "status": "active"
+}
+```
+
+See the [Webhooks overview](/webhooks/overview) for delivery, scope, and signature details.

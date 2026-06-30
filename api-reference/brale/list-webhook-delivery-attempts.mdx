@@ -1,0 +1,43 @@
+---
+title: 'List Webhook Delivery Attempts'
+description: 'List webhook delivery attempts for debugging delivery status, retries, and failures.'
+---
+
+```
+GET /accounts/{account_id}/webhooks/deliveries
+```
+
+Required scope: `webhooks:read`.
+
+Delivery logs are useful for debugging:
+
+- Whether Brale attempted delivery
+- What HTTP status your endpoint returned
+- Whether a delivery was retried
+- Failure messages
+- Attempt numbers
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | The Brale account whose delivery attempts you want to list. |
+
+## Query parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `page[size]` | integer | Page size. |
+| `page[after]` | string | Cursor for the next page. |
+| `page[before]` | string | Cursor for the previous page. |
+
+Do not send both `page[after]` and `page[before]`.
+
+## Example request
+
+```bash
+curl "https://api.brale.xyz/accounts/{account_id}/webhooks/deliveries?page[size]=25" \
+  -H "Authorization: Bearer {access_token}"
+```
+
+See the [Webhooks overview](/webhooks/overview) for how delivery, retries, and signatures work.
