@@ -281,3 +281,4 @@ Best practices:
 - Acknowledge unknown event types safely.
 - Ignore unknown fields in `data`.
 - Do not assume event ordering.
+- To automatically receive future events in a family (e.g., new `transfer.*` or `account.*` events), subscribe with a namespace wildcard like `transfer.*` or `account.*` when you [create](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions) or [update](/api-reference/brale/update-webhook-subscription) a subscription. Wildcards work for every event family.

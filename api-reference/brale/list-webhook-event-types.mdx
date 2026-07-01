@@ -59,4 +59,10 @@ curl https://api.brale.xyz/accounts/{account_id}/webhooks/event_types \
 }
 ```
 
-See the [Webhooks overview](/webhooks/overview) for how subscriptions and event delivery work.
+## Subscribing with wildcards
+
+When you create or update a subscription, the `events` array accepts either a concrete event type from the list above or a namespace wildcard of the form `<namespace>.*`. For example, `transfer.*` subscribes to all `transfer.*` events (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`), and `account.*` subscribes to all `account.*` events including `account.verification.*` variants.
+
+Wildcards are supported for every event family Brale exposes. New events added to a family in the future are automatically included in any matching wildcard subscription — no subscription update required.
+
+See [Create Webhook Subscription — Wildcard event subscriptions](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions) for full details, and the [Webhooks overview](/webhooks/overview) for how subscriptions and event delivery work.
