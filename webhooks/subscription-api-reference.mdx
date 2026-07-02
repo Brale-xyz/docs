@@ -71,6 +71,17 @@ Request:
 }
 ```
 
+The `events` array accepts concrete event types (e.g., `transfer.completed`) and namespace wildcards of the form `<namespace>.*` (e.g., `transfer.*`, `payment.*`, `account.*`). A wildcard subscribes to every event in that family, including any future events Brale adds. Wildcards are supported for all event families — not just `transfer`.
+
+Wildcard request example:
+
+```json
+{
+  "url": "https://your-app.example.com/webhooks/brale",
+  "events": ["transfer.*", "account.*"]
+}
+```
+
 Response:
 
 ```json

@@ -109,6 +109,29 @@ Current supported events:
 
 Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed.
 
+### Wildcard subscriptions
+
+The `events` array on create and update subscription requests accepts namespace wildcards of the form `<namespace>.*`. For example, subscribing to `transfer.*` gives you a single subscription that receives every event in the transfer family (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`, and any future `transfer.*` events).
+
+Wildcards work for every major event family — not just transfers:
+
+- `transfer.*` — all transfer events
+- `payment.*` — all payment events
+- `account.*` — all account events, including nested types like `account.verification.completed`
+
+You can combine wildcards and concrete event types in the same subscription (e.g., `["transfer.*", "payment.completed"]`). New events added to a family in the future are automatically delivered to any matching wildcard subscription.
+
+Example create request using a wildcard:
+
+```json
+{
+  "url": "https://your-app.example.com/webhooks/brale",
+  "events": ["transfer.*"]
+}
+```
+
+See [Create Webhook Subscription — Wildcard event subscriptions](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions) for the full reference.
+
 ## Requirements
 
 Your webhook endpoint must:

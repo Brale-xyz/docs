@@ -17,7 +17,7 @@ Updates an active webhook subscription. At least one of `url` or `events` must b
 | Field    | Type             | Required                          | Description                                                                                            |
 | -------- | ---------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `url`    | string           | At least one of `url` or `events` | New HTTPS destination URL for webhook `POST` requests. Max 2048 characters.                            |
-| `events` | array of strings | At least one of `url` or `events` | Replaces all currently subscribed event types. See [supported event types](/webhooks/webhook-events). |
+| `events` | array of strings | At least one of `url` or `events` | Replaces all currently subscribed event types. Accepts concrete event types (e.g., `transfer.completed`) and namespace wildcards (e.g., `transfer.*`). See [supported event types](/webhooks/webhook-events) and [Wildcard event subscriptions](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions). |
 
 ### Example: change URL only
 
@@ -35,12 +35,22 @@ Updates an active webhook subscription. At least one of `url` or `events` must b
 }
 ```
 
+### Example: replace with a wildcard
+
+Subscribe to every event in a family by using a `<namespace>.*` wildcard. Wildcards work for all event families (`transfer.*`, `payment.*`, `account.*`, etc.).
+
+```json
+{
+  "events": ["transfer.*", "account.*"]
+}
+```
+
 ## Error responses
 
 - `400` — empty patch body (no fields provided).
 - `404` — subscription not found or not owned by the account.
 - `409` — subscription is already archived; archived subscriptions cannot be updated.
-- `422` — unsupported event type, or `events` array was empty when the `events` key was sent.
+- `422` — unsupported event type or unknown wildcard namespace, or `events` array was empty when the `events` key was sent.
 
 Required scope: `webhooks:write`.
 

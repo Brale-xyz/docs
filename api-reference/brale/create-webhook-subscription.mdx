@@ -26,7 +26,41 @@ Use an `Idempotency-Key` header.
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `url` | string | Yes | HTTPS destination URL for webhook `POST` requests. |
-| `events` | array of strings | Yes | Event types to subscribe to. See [List Webhook Event Types](/api-reference/brale/list-webhook-event-types). |
+| `events` | array of strings | Yes | Event types to subscribe to. Accepts concrete event types (e.g., `transfer.completed`) and namespace wildcards (e.g., `transfer.*`). See [List Webhook Event Types](/api-reference/brale/list-webhook-event-types) and [Wildcard event subscriptions](#wildcard-event-subscriptions). |
+
+## Wildcard event subscriptions
+
+The `events` array accepts a namespace wildcard of the form `<namespace>.*`. Subscribing to `transfer.*` creates a subscription that delivers every event in the `transfer` family (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`, and any future `transfer.*` events Brale adds).
+
+Wildcards are supported for every event family — not just `transfer`. Any major namespace works the same way, for example:
+
+- `transfer.*` — all transfer events
+- `payment.*` — all payment events
+- `account.*` — all account events, including nested types like `account.verification.completed` and `account.verification.documents_required`
+
+You can mix concrete event types and wildcards in the same subscription. Overlapping selections are deduplicated — subscribing to both `transfer.*` and `transfer.completed` still delivers each event once.
+
+### Example: subscribe to all transfer events
+
+```bash
+curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "url": "https://your-app.example.com/webhooks/brale",
+    "events": ["transfer.*"]
+  }'
+```
+
+### Example: mix wildcards and concrete events
+
+```json
+{
+  "url": "https://your-app.example.com/webhooks/brale",
+  "events": ["transfer.*", "account.*", "payment.completed"]
+}
+```
 
 ## Example request
 
