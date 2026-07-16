@@ -38,3 +38,12 @@ curl --request POST \\
 - See coverage for supported payment methods and blockchains.
 - Use [Webhooks](/webhooks/overview) to receive signed, real-time notifications when transfers or payments complete, instead of continuously polling for status.
 
+## Tokenization Endpoints
+
+These endpoints are for self-attested/tokenization programs.
+
+- POST /accounts/{account_id}/tokens/mints
+- POST /accounts/{account_id}/tokens/burns
+- POST /accounts/{account_id}/tokens/transfers
+- GET /accounts/{account_id}/tokens/transactions
+
