@@ -1,0 +1,67 @@
+---
+title: 'List Token Transfers'
+description: 'List tokenization transfers for an account.'
+openapi: 'GET /accounts/{account_id}/tokens/transfers'
+---
+
+```
+GET /accounts/{account_id}/tokens/transfers
+```
+
+Required scope: `self_attested_tokens:read`.
+
+Returns the list of tokenization transfers for an account, newest first.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account. |
+
+## Example request
+
+```bash
+curl --request GET \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/transfers \
+  --header 'Authorization: Bearer <token>'
+```
+
+## Example success response
+
+```json
+{
+  "data": [
+    {
+      "id": "2XyTransferKsuid00000000000",
+      "status": "completed",
+      "amount": "1000.50",
+      "source": {
+        "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+        "value_type": "MY_TOKEN",
+        "transfer_type": "base"
+      },
+      "destination": {
+        "address_id": "2srdkF6Sm8TWOJpWt1oNlTVes1w",
+        "value_type": "MY_TOKEN",
+        "transfer_type": "base"
+      },
+      "created_at": "2025-01-15T12:00:00Z"
+    }
+  ]
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 403,
+  "title": "Forbidden",
+  "detail": "Account is not configured as a tokenization (self-attested) account."
+}
+```
+
+## Related endpoints
+
+- [Create token transfer](/api-reference/brale/create-token-transfer)
+- [Get token transfer](/api-reference/brale/get-token-transfer)

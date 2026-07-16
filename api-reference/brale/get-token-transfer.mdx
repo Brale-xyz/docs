@@ -1,0 +1,62 @@
+---
+title: 'Get Token Transfer'
+description: 'Retrieve a single tokenization transfer by ID.'
+openapi: 'GET /accounts/{account_id}/tokens/transfers/{transfer_id}'
+---
+
+```
+GET /accounts/{account_id}/tokens/transfers/{transfer_id}
+```
+
+Required scope: `self_attested_tokens:read`.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account. |
+| `transfer_id` | string | KSUID of the tokenization transfer to retrieve. |
+
+## Example request
+
+```bash
+curl --request GET \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/transfers/{transfer_id} \
+  --header 'Authorization: Bearer <token>'
+```
+
+## Example success response
+
+```json
+{
+  "id": "2XyTransferKsuid00000000000",
+  "status": "completed",
+  "amount": "1000.50",
+  "source": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "destination": {
+    "address_id": "2srdkF6Sm8TWOJpWt1oNlTVes1w",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "created_at": "2025-01-15T12:00:00Z"
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 404,
+  "title": "Not Found",
+  "detail": "Tokenization transfer not found for this account."
+}
+```
+
+## Related endpoints
+
+- [Create token transfer](/api-reference/brale/create-token-transfer)
+- [List token transfers](/api-reference/brale/list-token-transfers)
