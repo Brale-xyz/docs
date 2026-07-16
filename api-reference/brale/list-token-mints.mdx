@@ -1,0 +1,61 @@
+---
+title: 'List Token Mints'
+description: 'List tokenization mint orders for an account.'
+---
+
+```
+GET /accounts/{account_id}/tokens/mints
+```
+
+Required scope: `self_attested_tokens:mint`.
+
+Returns the list of mint orders for a tokenization account, newest first.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account. |
+
+## Example request
+
+```bash
+curl --request GET \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/mints \
+  --header 'Authorization: Bearer <token>'
+```
+
+## Example success response
+
+```json
+{
+  "data": [
+    {
+      "id": "2XyMintKsuid000000000000000",
+      "status": "completed",
+      "amount": "1000.50",
+      "destination": {
+        "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+        "value_type": "MY_TOKEN",
+        "transfer_type": "base"
+      },
+      "created_at": "2025-01-15T12:00:00Z"
+    }
+  ]
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 403,
+  "title": "Forbidden",
+  "detail": "Account is not configured as a tokenization (self-attested) account."
+}
+```
+
+## Related endpoints
+
+- [Create token mint](/api-reference/brale/create-token-mint)
+- [Get token mint](/api-reference/brale/get-token-mint)

@@ -38,3 +38,16 @@ curl --request POST \\
 - See coverage for supported payment methods and blockchains.
 - Use [Webhooks](/webhooks/overview) to receive signed, real-time notifications when transfers or payments complete, instead of continuously polling for status.
 
+## Tokenization Endpoints
+
+Tokenization endpoints are available for self-attested (tokenization) programs, where you issue and operate your own tokens and Brale handles wallet orchestration, key custody, and on-chain execution. See the [tokenization guide](/guides/tokenization) for the workflow.
+
+- `POST /accounts/{account_id}/tokens/mints` — [Create token mint](/api-reference/brale/create-token-mint)
+- `GET /accounts/{account_id}/tokens/mints` — [List token mints](/api-reference/brale/list-token-mints)
+- `GET /accounts/{account_id}/tokens/mints/{mint_id}` — [Get token mint](/api-reference/brale/get-token-mint)
+- `POST /accounts/{account_id}/tokens/burns` — [Create token burn](/api-reference/brale/create-token-burn)
+- `GET /accounts/{account_id}/tokens/burns` — [List token burns](/api-reference/brale/list-token-burns)
+- `GET /accounts/{account_id}/tokens/burns/{burn_id}` — [Get token burn](/api-reference/brale/get-token-burn)
+- `POST /accounts/{account_id}/tokens/transfers` — [Create token transfer](/api-reference/brale/create-token-transfer)
+- `GET /accounts/{account_id}/tokens/transfers` — [List token transfers](/api-reference/brale/list-token-transfers)
+- `GET /accounts/{account_id}/tokens/transfers/{transfer_id}` — [Get token transfer](/api-reference/brale/get-token-transfer)

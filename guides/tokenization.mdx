@@ -46,22 +46,21 @@ Use **standard stablecoin issuance** when:
 3. **Wallets & balances**
 
    - Use the existing **Accounts** and **Addresses** APIs to create accounts and read wallet addresses and balances.
-   - In tokenization mode, **balances** are notional units mapped to any backing currency
+   - In tokenization mode, **balances** are notional units mapped to any backing currency.
 
 4. **Mint / Burn / Transfers**
 
-   - Use the `/accounts/{account_id}/tokens/mint` endpoint to **mint** tokens into a wallet.
-   - Use `/accounts/{account_id}/tokens/burn` to **burn** tokens from a wallet.
-   - Use `/accounts/{account_id}/tokens/transfers` to move tokens between custodial and external addresses.
+   - Use `POST /accounts/{account_id}/tokens/mints` to **mint** tokens into a wallet.
+   - Use `POST /accounts/{account_id}/tokens/burns` to **burn** tokens from a wallet.
+   - Use `POST /accounts/{account_id}/tokens/transfers` to move tokens between custodial and external addresses.
 
 5. **Reporting**
-   - Use `GET /accounts/{account_id}/tokens/transactions` to view all tokenization mints, burns, and transfers in one place.
 
-Next, see **Tokenization – Mint, Burn & Transfers** for concrete API examples.
+   - List and retrieve prior operations with the tokenization list/get endpoints (mints, burns, transfers).
 
 ## Minting tokens
 
-**POST** `https://api.brale.xyz/accounts/account_id/tokens/mints`
+**POST** `https://api.brale.xyz/accounts/{account_id}/tokens/mints`
 
 ```json title="Request"
 {
@@ -76,7 +75,7 @@ Next, see **Tokenization – Mint, Burn & Transfers** for concrete API examples.
 
 ## Burning tokens
 
-**POST** `https://api.brale.xyz/accounts/account_id/tokens/burns`
+**POST** `https://api.brale.xyz/accounts/{account_id}/tokens/burns`
 
 ```json title="Request"
 {
@@ -88,3 +87,35 @@ Next, see **Tokenization – Mint, Burn & Transfers** for concrete API examples.
   }
 }
 ```
+
+## Transferring tokens
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/tokens/transfers`
+
+```json title="Request"
+{
+  "amount": "100",
+  "source": {
+    "address_id": "2srdkF6Sm8TWOJpWt1oNlTVes1w",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  }
+}
+```
+
+## Tokenization API reference
+
+- [Create token mint](/api-reference/brale/create-token-mint)
+- [List token mints](/api-reference/brale/list-token-mints)
+- [Get token mint](/api-reference/brale/get-token-mint)
+- [Create token burn](/api-reference/brale/create-token-burn)
+- [List token burns](/api-reference/brale/list-token-burns)
+- [Get token burn](/api-reference/brale/get-token-burn)
+- [Create token transfer](/api-reference/brale/create-token-transfer)
+- [List token transfers](/api-reference/brale/list-token-transfers)
+- [Get token transfer](/api-reference/brale/get-token-transfer)

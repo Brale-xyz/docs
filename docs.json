@@ -229,6 +229,20 @@
             ]
           },
           {
+            "group": "Tokenization",
+            "pages": [
+              "api-reference/brale/create-token-mint",
+              "api-reference/brale/list-token-mints",
+              "api-reference/brale/get-token-mint",
+              "api-reference/brale/create-token-burn",
+              "api-reference/brale/list-token-burns",
+              "api-reference/brale/get-token-burn",
+              "api-reference/brale/create-token-transfer",
+              "api-reference/brale/list-token-transfers",
+              "api-reference/brale/get-token-transfer"
+            ]
+          },
+          {
             "group": "Financial institutions",
             "pages": [
               "api-reference/brale/list-financial-institutions",

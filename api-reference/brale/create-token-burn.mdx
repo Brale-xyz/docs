@@ -1,0 +1,79 @@
+---
+title: 'Create Token Burn'
+description: 'Burn tokens from a source address. Only available for tokenization (self-attested) accounts.'
+---
+
+```
+POST /accounts/{account_id}/tokens/burns
+```
+
+Required scope: `self_attested_tokens:burn`.
+
+Use an `Idempotency-Key` header. Only available for tokenization (self-attested) accounts.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account performing the burn. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `amount` | string | Yes | Amount to burn, as a decimal string. |
+| `note` | string | No | Optional free-text note attached to the burn. |
+| `source.address_id` | string | Yes | KSUID of the source address holding the tokens to burn. |
+| `source.value_type` | string | Yes | The token value type (e.g., `MY_TOKEN`). |
+| `source.transfer_type` | string | Yes | The chain the tokens are held on (e.g., `base`, `solana`). |
+
+## Example request
+
+```bash
+curl --request POST \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/burns \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --header 'Idempotency-Key: <uuid>' \
+  --data '{
+    "amount": "1000.50",
+    "note": "Monthly burn for Q1 2024",
+    "source": {
+      "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+      "value_type": "MY_TOKEN",
+      "transfer_type": "base"
+    }
+  }'
+```
+
+## Example success response
+
+```json
+{
+  "id": "2XyBurnKsuid000000000000000",
+  "status": "pending",
+  "amount": "1000.50",
+  "source": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "created_at": "2025-01-15T12:00:00Z"
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 400,
+  "title": "Bad Request",
+  "detail": "Insufficient balance at source address for requested burn amount."
+}
+```
+
+## Related endpoints
+
+- [List token burns](/api-reference/brale/list-token-burns)
+- [Get token burn](/api-reference/brale/get-token-burn)
+- [Tokenization guide](/guides/tokenization)
