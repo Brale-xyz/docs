@@ -1,0 +1,115 @@
+---
+title: "Individual accounts"
+description: "Create a KYC-verified individual account that receives value on-chain without holding custody at Brale."
+---
+
+Individual accounts are transactional: they are verified with KYC, they do not hold custody with Brale, and they are shaped for inbound value. Use them when your end user is a natural person who needs to receive stablecoins on-chain or be the destination of an on-ramp, but should not hold a Brale-custodied wallet.
+
+For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types).
+
+## What it does
+
+- Registers a natural person as a Brale account (`entity_type: individual`, `account_type: transactional`).
+- Runs KYC identity verification on the individual.
+- Emits the same `account.verification.*` webhook events as business KYB.
+- Lets you register external on-chain destination addresses so the account can receive value.
+
+## Who it's for
+
+Use cases include:
+
+- Payout recipients who need to receive stablecoins on-chain but do not hold balances at Brale.
+- End users of a wallet or fintech app who receive on-ramps to their own self-custody wallet.
+- Any natural person your platform needs to identify and pay, without provisioning custody.
+
+## What a transactional account cannot do
+
+<Warning>
+A transactional account is inbound by design. It does not get a Brale-custodied wallet and cannot originate on-chain transfers.
+</Warning>
+
+- **No Brale-custodied wallets, ever.** A transactional account has no automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses. This is enforced.
+- **External addresses are destination-only.** An external address on a transactional account can receive value but cannot be the source of a transfer.
+- **The account cannot originate an on-chain transfer.** An attempt returns `422` with type `compatible_address_not_found`. Checking the address balance first does not predict this, because the constraint is about the address role, not funds.
+- **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
+
+## How it works
+
+1. **Create the account.**\
+   Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.
+
+   ```json Request
+   {
+     "entity_type": "individual",
+     "account_type": "transactional",
+     "verification_mode": "standard",
+     "individual": {
+       "first_name": "Jane",
+       "last_name": "Doe",
+       "date_of_birth": "1990-01-01",
+       "email": "jane@example.com",
+       "phone_number": "2125550182",
+       "country": "US",
+       "address": {
+         "street_line_1": "123 Main St",
+         "street_line_2": "Apt 4",
+         "city": "New York",
+         "state": "NY",
+         "zip": "10001"
+       },
+       "identity": {
+         "number": "222-22-2222",
+         "type": "SSN9"
+       }
+     },
+     "tos_attestation": {
+       "version": "2025-04-01",
+       "accepted_at": "2026-05-13T20:45:15Z",
+       "ip": "203.0.113.42",
+       "user_agent": "Mozilla/5.0 ..."
+     }
+   }
+   ```
+
+   ```json 201 Response
+   {
+     "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+     "name": "Jane Doe",
+     "status": "pending",
+     "created": "2026-05-13T20:45:16Z"
+   }
+   ```
+
+   The created account's `name` is derived from the individual's first and last name.
+
+2. **Wait for verification.**\
+   Brale runs identity verification asynchronously. On approval the account is enabled, `status` becomes `complete`, and `account.verification.completed` fires. This is typically fast — on the order of seconds. If more documents are needed, `account.verification.documents_required` fires with the required documents; stage and link them exactly as [documented for business accounts](/key-concepts/accounts#verification). Polling is also supported.
+
+3. **Add an external destination address.**\
+   Register the on-chain wallet that will receive value with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). External addresses on a transactional account are destination-only.
+
+   ```json Request
+   {
+     "name": "Recipient EVM Wallet",
+     "address": "0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b",
+     "transfer_types": ["ethereum", "base"]
+   }
+   ```
+
+4. **Receive value.**\
+   The account's external addresses can be used as the destination in transfers originating elsewhere (for example, an on-ramp automation owned by your managing account). Inbound events carry `data.account_id` so a subscription on the managing account can attribute them to the correct managed account. See [Webhook Events](/webhooks/webhook-events).
+
+5. **Do not attempt to originate transfers from this account.**\
+   Any attempt to use an external address on a transactional account as a transfer source returns `422 compatible_address_not_found`. Route outbound value through a different, custodial account.
+
+## Managed by the API key owner
+
+An individual account created through the API is automatically managed by the account that owns the API key. The managing account's credentials authorize requests scoped to it. These accounts are managed entirely through the API — there is no end-user dashboard for them. See [Custodial Accounts](/guides/managed-accounts) for the sibling business flow.
+
+## Related API references
+
+- [`POST /accounts`](/api-reference/brale/create-account) — create an individual account.
+- [`GET /accounts/{account_id}`](/api-reference/brale/get-account) — check verification status.
+- [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address) — register a destination address.
+- [`POST /documents`](/api-reference/brale/stage-verification-document) and [Link verification documents](/api-reference/brale/link-verification-documents) — supply KYC documents when requested.
+- [Webhook Events](/webhooks/webhook-events) — `account.verification.completed`, `account.verification.documents_required`, and inbound payment events with `data.account_id`.

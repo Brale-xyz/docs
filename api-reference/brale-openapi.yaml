@@ -1085,6 +1085,10 @@ components:
       type: object
       additionalProperties: false
       title: CreateManagedAccountRequest
+      description: >
+        Business (KYB) account creation payload. This is the default path when
+        `entity_type` is omitted, or when it is explicitly set to `business`
+        with `account_type: custodial` and `verification_mode: standard`.
       required:
         - business_name
         - ein
@@ -1095,6 +1099,28 @@ components:
         - business_controller
         - tos_attestation
       properties:
+        entity_type:
+          type: string
+          enum:
+            - business
+          description: >
+            Optional discriminator. When omitted, defaults to `business`.
+          example: business
+        account_type:
+          type: string
+          enum:
+            - custodial
+          description: >
+            Optional. When omitted, defaults to `custodial` for business
+            accounts.
+          example: custodial
+        verification_mode:
+          type: string
+          enum:
+            - standard
+          description: >
+            Optional. When omitted, defaults to `standard`.
+          example: standard
         business_name:
           type: string
           example: My Customer
@@ -1130,6 +1156,195 @@ components:
         name:
           type: string
           example: My Account
+        doc_submission_ids:
+          type: array
+          description: Optional pre-staged verification document submission IDs to link on
+            creation.
+          items:
+            $ref: '#/components/schemas/Ksuid'
+    IndividualAddress:
+      type: object
+      additionalProperties: false
+      title: IndividualAddress
+      description: >
+        Residential address for an individual account. When
+        `individual.country` is `US` or `USA`, `state` must be a valid US state
+        or territory abbreviation. For non-US individuals, `state` is free-form
+        and is not validated.
+      required:
+        - street_line_1
+        - city
+        - state
+        - zip
+      properties:
+        street_line_1:
+          type: string
+          example: 123 Main St
+        street_line_2:
+          type: string
+          example: Apt 4
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        zip:
+          type: string
+          example: '10001'
+    IndividualIdentity:
+      type: object
+      additionalProperties: false
+      title: IndividualIdentity
+      description: >
+        A government-issued identifier for the individual. `SSN9` denotes a
+        US Social Security number. Non-US identity documents are also
+        supported; see the current OpenAPI spec for the complete list of
+        accepted `type` values.
+      required:
+        - number
+        - type
+      properties:
+        number:
+          type: string
+          example: 222-22-2222
+          description: The identifier value (for `SSN9`, the 9-digit Social Security number).
+        type:
+          type: string
+          example: SSN9
+          description: The kind of identifier submitted (e.g., `SSN9` for a US Social
+            Security number). Non-US identity document types are also
+            supported.
+    Individual:
+      type: object
+      additionalProperties: false
+      title: Individual
+      required:
+        - first_name
+        - last_name
+        - date_of_birth
+        - email
+        - phone_number
+        - country
+        - address
+        - identity
+      properties:
+        first_name:
+          type: string
+          example: Jane
+        last_name:
+          type: string
+          example: Doe
+        date_of_birth:
+          type: string
+          description: ISO date, `YYYY-MM-DD`.
+          example: '1990-01-01'
+        email:
+          type: string
+          example: jane@example.com
+        phone_number:
+          type: string
+          example: '2125550182'
+        country:
+          type: string
+          description: >
+            Top-level jurisdiction used for verification. Separate from
+            `address`. When `US` or `USA`, `address.state` must be a valid US
+            state or territory.
+          example: US
+        address:
+          $ref: '#/components/schemas/IndividualAddress'
+        identity:
+          $ref: '#/components/schemas/IndividualIdentity'
+    CreateIndividualAccountRequest:
+      type: object
+      additionalProperties: false
+      title: CreateIndividualAccountRequest
+      description: >
+        Individual (KYC) transactional account creation payload. Business-only
+        fields (`business_name`, `ein`, `website`, `business_controller`,
+        `beneficial_owners`) must not be sent on this path.
+      required:
+        - entity_type
+        - account_type
+        - individual
+        - tos_attestation
+      properties:
+        entity_type:
+          type: string
+          enum:
+            - individual
+          example: individual
+        account_type:
+          type: string
+          enum:
+            - transactional
+          example: transactional
+        verification_mode:
+          type: string
+          enum:
+            - standard
+            - reliance
+          description: >
+            `standard` (default) or `reliance`. Use `reliance` when your
+            integration operates under an agreement with Brale that specifies
+            a reliance model.
+          example: standard
+        individual:
+          $ref: '#/components/schemas/Individual'
+        tos_attestation:
+          $ref: '#/components/schemas/EndUserTosAttestation'
+        name:
+          type: string
+          description: Optional display name. When omitted, the account's `name` is
+            derived from the individual's first and last name.
+          example: Jane Doe
+        doc_submission_ids:
+          type: array
+          description: Optional pre-staged verification document submission IDs to link on
+            creation.
+          items:
+            $ref: '#/components/schemas/Ksuid'
+    CreateAccountRequest:
+      title: CreateAccountRequest
+      description: >
+        Request body for `POST /accounts`. The three optional dimension fields
+        `entity_type`, `account_type`, and `verification_mode` select which
+        shape is validated. Supported combinations:
+
+        - `business` + `custodial` + `standard` (KYB, default when all three
+          are omitted)
+
+        - `individual` + `transactional` + `standard` (KYC)
+
+        - `individual` + `transactional` + `reliance` (KYC under a reliance
+          model)
+
+        Any other combination returns `422 unsupported_account_combination`.
+      oneOf:
+        - $ref: '#/components/schemas/CreateManagedAccountRequest'
+        - $ref: '#/components/schemas/CreateIndividualAccountRequest'
+      discriminator:
+        propertyName: entity_type
+        mapping:
+          business: '#/components/schemas/CreateManagedAccountRequest'
+          individual: '#/components/schemas/CreateIndividualAccountRequest'
+    ErrorResponse:
+      type: object
+      title: ErrorResponse
+      description: Standard Brale error envelope.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable error type identifier.
+          example: unsupported_account_combination
+        message:
+          type: string
+          description: Human-readable explanation of the error.
+          example: The combination of entity_type, account_type, and verification_mode
+            is not supported.
     BrandData:
       type: object
       nullable: true
@@ -1407,7 +1622,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateManagedAccountRequest'
+              $ref: '#/components/schemas/CreateAccountRequest'
             examples:
               create_business_account:
                 summary: Business account with controller + TOS attestation
@@ -1456,6 +1671,33 @@ paths:
                     user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
                       ...
                   name: My Account
+              create_individual_account:
+                summary: Individual (KYC) transactional account
+                value:
+                  entity_type: individual
+                  account_type: transactional
+                  verification_mode: standard
+                  individual:
+                    first_name: Jane
+                    last_name: Doe
+                    date_of_birth: '1990-01-01'
+                    email: jane@example.com
+                    phone_number: '2125550182'
+                    country: US
+                    address:
+                      street_line_1: 123 Main St
+                      street_line_2: Apt 4
+                      city: New York
+                      state: NY
+                      zip: '10001'
+                    identity:
+                      number: 222-22-2222
+                      type: SSN9
+                  tos_attestation:
+                    accepted_at: '2026-05-13T20:45:15Z'
+                    version: '2025-04-01'
+                    ip: 203.0.113.42
+                    user_agent: Mozilla/5.0 ...
       responses:
         '201':
           description: Account successfully created
@@ -1466,6 +1708,42 @@ paths:
                 properties:
                   id:
                     $ref: '#/components/schemas/Ksuid'
+        '400':
+          description: >
+            Bad request. Possible `type` values on the individual path:
+
+            - `individual_details_required` — `entity_type: individual` was
+              sent with no `individual` object.
+
+            - `tos_attestation_required` — the individual path was used with
+              no `tos_attestation`.
+
+            - `unexpected_business_fields` — a business-only field
+              (`business_name`, `ein`, `website`, `business_controller`,
+              `beneficial_owners`) was sent on the individual path.
+
+            - `invalid_attestation_timestamp` — `tos_attestation.accepted_at`
+              is not an ISO-8601 timestamp.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            Unprocessable entity. Possible `type` values on account creation:
+
+            - `unsupported_account_combination` — the combination of
+              `entity_type`, `account_type`, and `verification_mode` is
+              outside the three supported rows. Permanent; safe to cache
+              against an idempotency key.
+
+            - `invalid_us_state` — `individual.country` is `US` or `USA` and
+              `individual.address.state` is not a recognized US state or
+              territory.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /accounts/{account_id}:
     get:
       tags:

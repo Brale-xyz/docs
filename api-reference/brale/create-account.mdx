@@ -19,9 +19,13 @@ Include optional `doc_submission_ids` in the request body to link staged documen
 
 `doc_submission_ids` is not supported for testnet-only clients or self-attested accounts. In those cases, omit the field or link documents after creation if supported for your account type.
 
-For the full account creation payload (business details, controller, beneficial owners, TOS attestation), see [Accounts](/key-concepts/accounts#creating-an-account).
+For the full account creation payload (business details, controller, beneficial owners, TOS attestation), see [Accounts](/key-concepts/accounts#creating-a-business-account). For the individual (KYC) path, see [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account).
 
-## Example request with documents
+## Choosing between a business and an individual account
+
+`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select between a KYB-verified business account with Brale-custodied wallets and a KYC-verified individual account without custody. Omitting all three preserves today's business behavior. See [Account types](/key-concepts/account-types) for the full matrix.
+
+## Example request with documents (business)
 
 ```json
 {
@@ -76,6 +80,57 @@ For the full account creation payload (business details, controller, beneficial 
 ```
 
 Linked documents are uploaded asynchronously after the account is created. The account `status` remains `pending` while Brale reviews the submission.
+
+## Example request (individual)
+
+Create a KYC-verified individual account. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent on this path.
+
+```json
+{
+  "entity_type": "individual",
+  "account_type": "transactional",
+  "verification_mode": "standard",
+  "individual": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "date_of_birth": "1990-01-01",
+    "email": "jane@example.com",
+    "phone_number": "2125550182",
+    "country": "US",
+    "address": {
+      "street_line_1": "123 Main St",
+      "street_line_2": "Apt 4",
+      "city": "New York",
+      "state": "NY",
+      "zip": "10001"
+    },
+    "identity": {
+      "number": "222-22-2222",
+      "type": "SSN9"
+    }
+  },
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z",
+    "ip": "203.0.113.42",
+    "user_agent": "Mozilla/5.0 ..."
+  }
+}
+```
+
+## Example response, individual (201)
+
+```json
+{
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "name": "Jane Doe",
+  "status": "pending",
+  "created": "2026-05-13T20:45:16Z",
+  "updated": "2026-05-13T20:45:16Z"
+}
+```
+
+The account's `name` is derived from the individual's first and last name. `status` transitions to `complete` when KYC succeeds and `account.verification.completed` fires. See [Individual accounts](/guides/individual-accounts) for the end-to-end workflow, including the receive-only constraints on transactional accounts.
 
 ## Required scope
 
