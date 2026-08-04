@@ -1191,16 +1191,23 @@ components:
           example: NY
         zip:
           type: string
+          description: Postal code. Any format is accepted, so non-US postal codes are
+            supported.
           example: '10001'
+        country:
+          type: string
+          description: >
+            Optional. The individual's jurisdiction is taken from the top-level
+            `individual.country`, not from this field.
+          example: US
     IndividualIdentity:
       type: object
       additionalProperties: false
       title: IndividualIdentity
       description: >
-        A government-issued identifier for the individual. `SSN9` denotes a
-        US Social Security number. Non-US identity documents are also
-        supported; see the current OpenAPI spec for the complete list of
-        accepted `type` values.
+        A government-issued identifier for the individual. One identity is
+        submitted per individual: `SSN9` for a US taxpayer, or a document type
+        such as `PASSPORT` or `NATIONAL_ID` for a non-US individual.
       required:
         - number
         - type
@@ -1211,10 +1218,25 @@ components:
           description: The identifier value (for `SSN9`, the 9-digit Social Security number).
         type:
           type: string
+          enum:
+            - SSN9
+            - SSN4
+            - DRIVER_LICENSE
+            - PASSPORT
+            - NATIONAL_ID
+            - VOTER_ID
+            - BVN
+            - NIN
+            - NIN_SLIP
+            - SSNIT
+            - TAX_ID
+            - KENYA_KRA_PIN
+            - ALIEN_CARD
+            - RESIDENT_ID
+            - COLOMBIA_PPT_NUMBER
+            - GHANA_CARD_NUMBER
           example: SSN9
-          description: The kind of identifier submitted (e.g., `SSN9` for a US Social
-            Security number). Non-US identity document types are also
-            supported.
+          description: The kind of identifier submitted.
     Individual:
       type: object
       additionalProperties: false
@@ -1321,14 +1343,16 @@ components:
           model)
 
         Any other combination returns `422 unsupported_account_combination`.
+
+
+        No `discriminator` is declared, because `entity_type` is optional: a
+        request that omits it is a business account, and a discriminator would
+        require the property to be present. The two branches resolve
+        unambiguously without one, since both set `additionalProperties: false`
+        and their required fields are disjoint.
       oneOf:
         - $ref: '#/components/schemas/CreateManagedAccountRequest'
         - $ref: '#/components/schemas/CreateIndividualAccountRequest'
-      discriminator:
-        propertyName: entity_type
-        mapping:
-          business: '#/components/schemas/CreateManagedAccountRequest'
-          individual: '#/components/schemas/CreateIndividualAccountRequest'
     ErrorResponse:
       type: object
       title: ErrorResponse
@@ -1698,6 +1722,29 @@ paths:
                     version: '2025-04-01'
                     ip: 203.0.113.42
                     user_agent: Mozilla/5.0 ...
+              create_individual_account_non_us:
+                summary: Individual (KYC) transactional account, non-US
+                value:
+                  entity_type: individual
+                  account_type: transactional
+                  individual:
+                    first_name: Amara
+                    last_name: Okafor
+                    date_of_birth: '1988-07-22'
+                    email: amara@example.com
+                    phone_number: '+2348012345678'
+                    country: NG
+                    address:
+                      street_line_1: 12 Awolowo Road
+                      city: Lagos
+                      state: Lagos
+                      zip: '101233'
+                    identity:
+                      number: '22222222222'
+                      type: BVN
+                  tos_attestation:
+                    accepted_at: '2026-05-13T20:45:15Z'
+                    version: '2025-04-01'
       responses:
         '201':
           description: Account successfully created
