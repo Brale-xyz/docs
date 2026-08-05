@@ -1233,7 +1233,6 @@ components:
             - KENYA_KRA_PIN
             - ALIEN_CARD
             - RESIDENT_ID
-            - COLOMBIA_PPT_NUMBER
             - GHANA_CARD_NUMBER
           example: SSN9
           description: The kind of identifier submitted.
