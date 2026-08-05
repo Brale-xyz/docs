@@ -122,6 +122,8 @@ EOAs
 KSUIDs
 KYB
 KYB'd
+KYC
+KYC'd
 LLMs
 MSAs
 SLAs

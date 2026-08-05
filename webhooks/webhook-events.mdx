@@ -23,6 +23,17 @@ All webhook events use a JSON envelope:
 | `created` | string | UTC timestamp when the event was created. |
 | `data` | object | Event-specific payload. `data.id` is the resource ID (e.g., transfer ID or payment ID), which may differ from the event `id`. |
 
+## Managing accounts and event fan-in
+
+If your integration uses [managed accounts](/guides/managed-accounts) or [individual accounts](/guides/individual-accounts), a single managing account can receive events for every account it manages.
+
+- A webhook subscription owned by a **managing account** receives events for every account it manages, plus its own.
+- A webhook subscription owned by a **managed account** receives only that account's own events.
+
+This is derived from the subscription's owner. There is no scope parameter to set when creating the subscription.
+
+To attribute an event to the correct managed account, read `data.account_id` from the payload. It is present on `payment.completed`, `transfer.created`, and `transfer.failed`, in addition to the `account.verification.*` events that already carry it.
+
 Your handler should branch on `type`.
 
 ```tsx
@@ -56,6 +67,7 @@ Example:
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
     "id": "3D4ExampleTransferId",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "pending",
     "amount": {
       "value": "100.00",
@@ -68,6 +80,7 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
+- `data.account_id` identifies the account the transfer belongs to. Managing accounts use this to attribute events to a specific managed account.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
@@ -117,6 +130,7 @@ Example:
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
     "id": "3D4ExampleTransferId",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "failed",
     "amount": {
       "value": "100.00",
@@ -139,6 +153,7 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
+- `data.account_id` identifies the account the transfer belongs to. Managing accounts use this to attribute events to a specific managed account.
 - Treat `data.status` as the failed transfer state.
 - `data.failure` is usually populated for `transfer.failed`, but may be `null` when Brale does not have structured failure details. Always null-check before reading nested fields.
 - `data.failure.retriable` indicates whether the failure is retriable. Spelled `retriable`, not `retryable`.
@@ -159,6 +174,7 @@ Example:
   "created": "2026-04-28T21:30:00.000000Z",
   "data": {
     "id": "3D4ExamplePaymentId",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "complete",
     "amount": {
       "value": "1000.00",
@@ -171,6 +187,10 @@ Example:
   }
 }
 ```
+
+Notes:
+
+- `data.account_id` identifies the account the payment belongs to. Managing accounts use this to attribute events to a specific managed account.
 
 ## `transfer.canceled`
 

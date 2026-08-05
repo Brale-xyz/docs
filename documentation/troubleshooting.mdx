@@ -64,6 +64,17 @@ Use this checklist when integrating and operating at volume.
   - `address_id` does not belong to the specified `account_id` on an account-scoped route
 - Fix: verify the `address_id` belongs to the `account_id`, ensure the address supports the `transfer_type`, and double-check casing.
 
+### 422 `compatible_address_not_found` (transactional accounts)
+
+- Cause: the source account is a transactional (individual) account. Transactional accounts cannot originate on-chain transfers — their external addresses are destination-only, and they hold no internal (custodial) addresses. Checking the address balance first does not predict this; the constraint is about the address role, not funds.
+- Fix: route outbound value through a business, custodial account. See [Individual accounts](/guides/individual-accounts) and [Account types](/key-concepts/account-types) for what a transactional account can and cannot do.
+
+### 422 `unsupported_account_combination`
+
+- Cause: `POST /accounts` was called with a combination of `entity_type`, `account_type`, and `verification_mode` outside the supported rows. Only three combinations are accepted: `business` + `custodial` + `standard`, `individual` + `transactional` + `standard`, and `individual` + `transactional` + `reliance`.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: adjust the dimension fields to one of the supported combinations. See [Account types](/key-concepts/account-types).
+
 ## When in doubt
 
 - Re-read Coverage for exact identifiers (case and spelling).

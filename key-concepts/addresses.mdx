@@ -56,6 +56,10 @@ Brale provides custodial wallets that allow businesses to securely hold and tran
 
 When your customer's Account is onboarded, Brale automatically generates internal custodial addresses on all supported blockchains, so the default wallets are ready to use without any manual setup. You can also provision **additional** custodial wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address). If an address is visible under an account-scoped endpoint but not globally, use the account-scoped endpoint.
 
+<Warning>
+Internal (custodial) addresses are only available on business, custodial accounts. Individual, transactional accounts (`account_type: transactional`) do not get an automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses. Their external addresses are destination-only — they can receive value on-chain but cannot be the source of a transfer. See [Account types](/key-concepts/account-types) and [Individual accounts](/guides/individual-accounts).
+</Warning>
+
 Holding multiple internal wallets within a single account lets you segment funds — for example per end-user, per-purpose (operating vs. escrow vs. reserve), or per-business-unit — distinguished by `name`. This replaces the prior workaround of creating separate accounts or organizations just to keep balances apart.
 
 ```json Request

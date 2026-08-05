@@ -13,6 +13,10 @@ description: "Configure automatic onramps, offramps, and swaps that trigger when
   Automations can also be created in the Brale Dashboard on the Automations tab.
 </Tip>
 
+<Warning>
+Automations on a transactional account (`account_type: transactional`) may only target external destinations. A Brale-custodied destination is rejected. See [Account types](/key-concepts/account-types) and [Individual accounts](/guides/individual-accounts).
+</Warning>
+
 ## Onramp Automation with Virtual Accounts
 
 Automations provide a unique account number and routing number for wire transfers and ACH deposits. When funds are received, stablecoins are automatically minted to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in a customer's wallet.

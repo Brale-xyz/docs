@@ -1,19 +1,52 @@
 ---
 title: "Accounts"
-description: "Accounts represent KYB-verified business entities with `account_id` values used to scope API requests and manage custodial wallets."
+description: "Accounts represent verified entities — KYB-verified businesses with custodial wallets, or KYC-verified individuals with transactional receive-only wallets — identified by `account_id`."
 ---
 
-Accounts are represented by `account_id` values, which are assigned to KYB'd (business) entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients.
+Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users.
 
-Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
+Two shapes are supported today:
+
+- **Business, custodial (KYB)** — the existing behavior. The account holds one or more Brale-custodied (`type=internal`) on-chain wallets, can originate transfers, and can hold off-chain bank Addresses.
+- **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
+
+Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
+
+Each `account_id` (business, custodial) is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). Individual, transactional accounts have no internal addresses. The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
 
 The `account_id` is used in the request URL across many Brale API endpoints to scope the request to a specific application or client.
 
-To KYB and approve an account, we collect key details such as business name and EIN. For more information, see our Compliance Requirements. If additional details are required, we will notify you with the necessary steps to complete KYB.
+To KYB and approve a business account, we collect key details such as business name and EIN. To KYC an individual account, we collect the person's legal name, date of birth, address, and government identifier. For more information, see our Compliance Requirements. If additional details are required, Brale will notify you with the steps to complete verification.
 
-<Tip>Customers can also self onboard at https://app.brale.xyz/signup.</Tip>
+<Tip>Business customers can also self onboard at https://app.brale.xyz/signup. Individual accounts are managed entirely through the API — there is no end-user dashboard for them.</Tip>
 
-## Creating an account
+## Account dimensions
+
+`POST /accounts` accepts three optional discriminator fields:
+
+| Field | Values | Default when omitted |
+| --- | --- | --- |
+| `entity_type` | `business`, `individual` | `business` |
+| `account_type` | `custodial`, `transactional` | `custodial` |
+| `verification_mode` | `standard`, `reliance` | `standard` |
+
+Only three combinations are accepted:
+
+| `entity_type` | `account_type` | `verification_mode` | Verification |
+| --- | --- | --- | --- |
+| `business` | `custodial` | `standard` | KYB (existing behavior) |
+| `individual` | `transactional` | `standard` | KYC |
+| `individual` | `transactional` | `reliance` | KYC under a reliance model |
+
+Any other combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
+
+<Note>
+Omitting all three dimension fields produces exactly today's behavior. Existing integrations that create business accounts do not need to change.
+</Note>
+
+For a fuller discussion of when to choose each combination, see [Account types](/key-concepts/account-types).
+
+## Creating a business account
 
 You are required to pass in business information, controller information, and ultimate beneficial owner information.
 
@@ -80,7 +113,7 @@ You are required to pass in business information, controller information, and ul
 
 Partners must show the exact Brale End-User Agreement (EUA) to their end users before calling `POST` `/accounts` and capture consent. The most recent version is hosted at https://brale.xyz/legal/end-user-agreement.
 
-## Accounts - Required vs. Optional Fields
+### Business account — Required vs. Optional Fields
 
 | Field                            | Type   | Required | Description                                                                                                                                                                                       |
 | -------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -96,15 +129,152 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `beneficial_owners`              | array  | Yes      | Individual with ≥25% ownership                                                                                                                                                                    |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
 
+## Creating an individual account
+
+On the individual path, set `entity_type` to `individual` and `account_type` to `transactional`. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent — they are rejected on this path.
+
+**POST** `https://api.brale.xyz/accounts`
+
+```json Request
+{
+  "entity_type": "individual",
+  "account_type": "transactional",
+  "verification_mode": "standard",
+  "individual": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "date_of_birth": "1990-01-01",
+    "email": "jane@example.com",
+    "phone_number": "2125550182",
+    "country": "US",
+    "address": {
+      "street_line_1": "123 Main St",
+      "street_line_2": "Apt 4",
+      "city": "New York",
+      "state": "NY",
+      "zip": "10001"
+    },
+    "identity": {
+      "number": "222-22-2222",
+      "type": "SSN9"
+    }
+  },
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z",
+    "ip": "203.0.113.42",
+    "user_agent": "Mozilla/5.0 ..."
+  }
+}
+```
+
+The created account's `name` is derived from the individual's first and last name.
+
+### Individual account — Required vs. Optional Fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `entity_type` | string | Yes (for this path) | Must be `individual`. |
+| `account_type` | string | Yes (for this path) | Must be `transactional`. |
+| `verification_mode` | string | No | `standard` (default) or `reliance`. |
+| `individual.first_name` | string | Yes | Legal first name. |
+| `individual.last_name` | string | Yes | Legal last name. |
+| `individual.date_of_birth` | string | Yes | ISO date, `YYYY-MM-DD`. |
+| `individual.email` | string | Yes | Contact email for the individual. |
+| `individual.phone_number` | string | Yes | Accepts common formats (digits only, dashed, with country code). |
+| `individual.country` | string | Yes | Top-level jurisdiction used for verification. Separate from `individual.address`. When `US` or `USA`, `individual.address.state` must be a valid US state or territory. |
+| `individual.address.street_line_1` | string | Yes | |
+| `individual.address.street_line_2` | string | No | Apt / Suite / Floor. |
+| `individual.address.city` | string | Yes | |
+| `individual.address.state` | string | Yes | For US individuals, must be a valid US state or territory (abbreviated, e.g. `NY`). For non-US individuals, free-form (state, province, or region) and not validated. |
+| `individual.address.zip` | string | Yes | Postal code. Any format is accepted, so non-US postal codes are supported. |
+| `individual.address.country` | string | No | Optional. The verification jurisdiction comes from the top-level `individual.country`, not from this field. |
+| `individual.identity.number` | string | Yes | The government identifier value. For US individuals with `type: SSN9`, the 9-digit Social Security number. |
+| `individual.identity.type` | string | Yes | The kind of identifier submitted. One of the values in [Identity types](#identity-types) below. |
+| `tos_attestation` | object | Yes | Consent record. See [Presenting the Brale End-User Agreement](#presenting-the-brale-end-user-agreement). |
+| `doc_submission_ids` | array of strings (KSUID) | No | Optional pre-staged verification documents. Works the same way it does for business accounts. |
+
+### Identity types
+
+One identity is submitted per individual. Use `SSN9` for a US taxpayer, or the matching document type for a non-US individual.
+
+| Region | Accepted `identity.type` values |
+| --- | --- |
+| United States | `SSN9`, `SSN4`, `DRIVER_LICENSE`, `TAX_ID`, `ALIEN_CARD` |
+| International | `PASSPORT`, `NATIONAL_ID`, `VOTER_ID`, `RESIDENT_ID`, `DRIVER_LICENSE` |
+| Nigeria | `BVN`, `NIN`, `NIN_SLIP` |
+| Ghana | `GHANA_CARD_NUMBER`, `SSNIT` |
+| Kenya | `KENYA_KRA_PIN` |
+| Colombia | `COLOMBIA_PPT_NUMBER` |
+
+The region column is guidance on which value to send, not a separate validation: any value in this list is accepted, and the individual's jurisdiction comes from `individual.country`.
+
+### Creating a non-US individual account
+
+Non-US individuals are supported. `individual.address.state` is free-form and the postal code accepts any format, so only the identity type and country change:
+
+```json Request
+{
+  "entity_type": "individual",
+  "account_type": "transactional",
+  "individual": {
+    "first_name": "Amara",
+    "last_name": "Okafor",
+    "date_of_birth": "1988-07-22",
+    "email": "amara@example.com",
+    "phone_number": "+2348012345678",
+    "country": "NG",
+    "address": {
+      "street_line_1": "12 Awolowo Road",
+      "city": "Lagos",
+      "state": "Lagos",
+      "zip": "101233"
+    },
+    "identity": {
+      "number": "22222222222",
+      "type": "BVN"
+    }
+  },
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+### What a transactional account cannot do
+
+<Warning>
+Transactional accounts are inbound by design. The following constraints are enforced, not conventional:
+
+- **No Brale-custodied wallets, ever.** A transactional account has no automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses.
+- **External addresses are destination-only.** An external address on a transactional account can receive value but cannot be the source of a transfer.
+- **The account cannot originate an on-chain transfer.** An attempt returns `422` with type `compatible_address_not_found`. Checking the address balance first does not predict this, because the constraint is about the address role, not funds.
+- **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
+</Warning>
+
+The supported shape today is inbound: the account receives value on chain and can be the destination of an on-ramp. See [Individual accounts](/guides/individual-accounts) for the end-to-end workflow.
+
 ## Common Errors when creating Accounts
 
 | HTTP Status | Code                   | Message                                               | Potential Cause                     | Fix                     |
 | ----------- | ---------------------- | ----------------------------------------------------- | ----------------------------------- | ----------------------- |
 | `422`       | `Unprocessable Entity` | Invalid format for business or controller information | Phone number area code is not valid | Include valid area code |
 
+### Individual path errors
+
+| HTTP | Error type | Cause |
+| --- | --- | --- |
+| `422` | `unsupported_account_combination` | Dimension combination outside the three supported rows. Permanent; safe to cache against an idempotency key. |
+| `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
+| `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
+| `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`). |
+| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is not a recognized state or territory. |
+| `400` | `invalid_attestation_timestamp` | `tos_attestation.accepted_at` is not an ISO-8601 timestamp. |
+
 ## Account Status
 
-Brale will review the Account and return a `status` field denoting the customer's KYB status. If the customer is in a pending status, you will need to wait for the customer to be verified before creating or linking addresses or bank accounts.
+Brale will review the Account and return a `status` field denoting the customer's verification status (KYB for business accounts, KYC for individual accounts). If the customer is in a pending status, you will need to wait for the customer to be verified before creating or linking addresses or bank accounts.
 
 **GET** `https://api.brale.xyz/accounts/:id`
 
@@ -119,15 +289,15 @@ Brale will review the Account and return a `status` field denoting the customer'
 
 ### Account Statuses
 
-| Value      | Description                                  |
-| ---------- | -------------------------------------------- |
-| `pending`  | KYB is in progress                           |
-| `complete` | KYB is completed and the account is approved |
-| `rejected` | The account's KYB was rejected               |
+| Value      | Description                                                                          |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `pending`  | Verification is in progress (KYB for business accounts, KYC for individual accounts) |
+| `complete` | Verification is completed and the account is approved                                |
+| `rejected` | The account's verification was rejected                                              |
 
 ## Verification
 
-Account KYB verification is asynchronous. After creating an account, Brale reviews the submitted information. Two integration patterns are supported.
+Account verification is asynchronous. After creating an account, Brale reviews the submitted information — KYB for business accounts, KYC for individual accounts. The lifecycle and webhook events are identical in shape across both. Two integration patterns are supported.
 
 **Proactive (at onboarding):** [Stage documents](/api-reference/brale/stage-verification-document), then either pass `doc_submission_ids` when creating the account or [link them later](/api-reference/brale/link-verification-documents).
 
