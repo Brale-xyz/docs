@@ -186,7 +186,7 @@ The created account's `name` is derived from the individual's first and last nam
 | `individual.address.street_line_1` | string | Yes | |
 | `individual.address.street_line_2` | string | No | Apt / Suite / Floor. |
 | `individual.address.city` | string | Yes | |
-| `individual.address.state` | string | Yes | For US individuals, must be a valid US state or territory (abbreviated, e.g. `NY`). For non-US individuals, free-form (state, province, or region) and not validated. |
+| `individual.address.state` | string | US only | Required when `individual.country` is `US` or `USA`, and must be a valid state or territory (abbreviated, e.g. `NY`). Optional for non-US individuals, since many countries have no state or province; free-form and not validated when supplied. A blank value is treated as absent. |
 | `individual.address.zip` | string | Yes | Postal code. Any format is accepted, so non-US postal codes are supported. |
 | `individual.address.country` | string | No | Optional. The verification jurisdiction comes from the top-level `individual.country`, not from this field. |
 | `individual.identity.number` | string | Yes | The government identifier value. For US individuals with `type: SSN9`, the 9-digit Social Security number. |
@@ -211,7 +211,7 @@ The region column is guidance on which value to send, not a separate validation:
 
 ### Creating a non-US individual account
 
-Non-US individuals are supported. `individual.address.state` is free-form and the postal code accepts any format, so only the identity type and country change:
+Non-US individuals are supported. `individual.address.state` is optional and free-form, and the postal code accepts any format, so only the identity type and country change. Omit `state` for countries that have no state or province:
 
 ```json Request
 {
@@ -269,7 +269,7 @@ The supported shape today is inbound: the account receives value on chain and ca
 | `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
 | `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
 | `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`). |
-| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is not a recognized state or territory. |
+| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is missing, blank, or not a recognized state or territory. |
 | `400` | `invalid_attestation_timestamp` | `tos_attestation.accepted_at` is not an ISO-8601 timestamp. |
 
 ## Account Status

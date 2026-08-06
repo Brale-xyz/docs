@@ -1168,13 +1168,16 @@ components:
       title: IndividualAddress
       description: >
         Residential address for an individual account. When
-        `individual.country` is `US` or `USA`, `state` must be a valid US state
-        or territory abbreviation. For non-US individuals, `state` is free-form
-        and is not validated.
+        `individual.country` is `US` or `USA`, `state` is required and must be a
+        valid US state or territory abbreviation. For non-US individuals it is
+        optional and free-form, since many countries have no state or province.
+
+
+        `state` is absent from `required` because whether it is required depends
+        on `individual.country`, which this schema cannot express.
       required:
         - street_line_1
         - city
-        - state
         - zip
       properties:
         street_line_1:
@@ -1188,6 +1191,10 @@ components:
           example: New York
         state:
           type: string
+          description: >
+            State, province, or region. Required when `individual.country` is
+            `US` or `USA`, optional otherwise. A blank value is treated as
+            absent.
           example: NY
         zip:
           type: string
