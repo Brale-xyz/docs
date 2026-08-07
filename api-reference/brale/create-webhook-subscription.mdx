@@ -37,7 +37,7 @@ Wildcards are supported for every event family — not just `transfer`. Any majo
 
 - `transfer.*` — all transfer events
 - `payment.*` — all payment events
-- `account.*` — all account events, including nested types like `account.verification.completed` and `account.verification.documents_required`
+- `account.*` — all account events, including nested types like `account.verification.completed`, `account.verification.rejected` and `account.verification.documents_required`
 
 You can mix concrete event types and wildcards in the same subscription. Overlapping selections are deduplicated — subscribing to both `transfer.*` and `transfer.completed` still delivers each event once.
 

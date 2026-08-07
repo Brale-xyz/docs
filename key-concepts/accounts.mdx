@@ -308,9 +308,12 @@ Create account → Brale reviews → [documents required?]
   → Yes: webhook account.verification.documents_required
     → Stage document → Link to account
   → Brale re-reviews → account.verification.completed (status: complete)
+                     or account.verification.rejected  (status: rejected)
 ```
 
-When verification succeeds, Brale emits `account.verification.completed` and the account `status` transitions to `complete`. If verification is declined, `status` becomes `rejected`.
+When verification succeeds, Brale emits `account.verification.completed` and the account `status` transitions to `complete`. When it is declined, Brale emits [`account.verification.rejected`](/webhooks/webhook-events#accountverificationrejected) and `status` becomes `rejected`.
+
+A decline is terminal. The account will not reach `complete` on its own and uploading further documents does not reopen it, so do not keep polling a rejected account. Contact Brale if you believe a decline is incorrect.
 
 ## Using Account ID in every request
 

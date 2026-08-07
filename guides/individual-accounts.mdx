@@ -115,4 +115,4 @@ An individual account created through the API is automatically managed by the ac
 - [`GET /accounts/{account_id}`](/api-reference/brale/get-account) — check verification status.
 - [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address) — register a destination address.
 - [`POST /documents`](/api-reference/brale/stage-verification-document) and [Link verification documents](/api-reference/brale/link-verification-documents) — supply KYC documents when requested.
-- [Webhook Events](/webhooks/webhook-events) — `account.verification.completed`, `account.verification.documents_required`, and inbound payment events with `data.account_id`.
+- [Webhook Events](/webhooks/webhook-events) — `account.verification.completed`, `account.verification.rejected`, `account.verification.documents_required`, and inbound payment events with `data.account_id`.
