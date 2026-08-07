@@ -83,7 +83,7 @@ A transactional account is inbound by design. It does not get a Brale-custodied 
 
    The created account's `name` is derived from the individual's first and last name.
 
-   Non-US individuals are supported. `individual.address.state` is free-form and the postal code accepts any format; send the identity document type that matches the individual's country. See [Identity types](/key-concepts/accounts#identity-types) for the accepted values and [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account) for an example.
+   Non-US individuals are supported. `individual.address.state` is optional and free-form, and the postal code accepts any format; send the identity document type that matches the individual's country. See [Identity types](/key-concepts/accounts#identity-types) for the accepted values and [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account) for an example.
 
 2. **Wait for verification.**\
    Brale runs identity verification asynchronously. On approval the account is enabled, `status` becomes `complete`, and `account.verification.completed` fires. This is typically fast — on the order of seconds. If more documents are needed, `account.verification.documents_required` fires with the required documents; stage and link them exactly as [documented for business accounts](/key-concepts/accounts#verification). Polling is also supported.
