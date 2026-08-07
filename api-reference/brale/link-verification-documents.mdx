@@ -51,6 +51,7 @@ Subscribe to verification events so your integration is notified when documents 
 | --- | --- |
 | `account.verification.documents_required` | Brale's KYB review determines one or more documents must be uploaded. |
 | `account.verification.completed` | Account verification passes and the account is enabled (`status` becomes `complete`). |
+| `account.verification.rejected` | Account verification is declined (`status` becomes `rejected`). Terminal: uploading more documents does not reopen it. |
 
 **Typical reactive flow** (documents requested after initial submission):
 

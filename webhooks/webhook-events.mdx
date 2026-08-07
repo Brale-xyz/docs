@@ -290,6 +290,37 @@ Notes:
 - This event fires only when the account reaches `complete` status.
 - Your integration should ignore unknown fields.
 
+## `account.verification.rejected`
+
+Emitted when account verification is declined. This is the terminal outcome for a review: the account will not become `complete` on its own, and no further verification events follow.
+
+Example:
+
+```json
+{
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "type": "account.verification.rejected",
+  "created": "2026-06-09T16:00:00Z",
+  "data": {
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "status": "rejected",
+    "updated_at": "2026-06-09T16:00:00Z"
+  }
+}
+```
+
+Notes:
+
+- Treat `data.account_id` as the account ID.
+- Treat `data.status` as the declined verification state (`rejected`).
+- The account's `status` from `GET /accounts/{account_id}` becomes `rejected` at the same time, so polling and webhooks agree.
+- Uploading more documents does not reopen a declined account. Contact Brale if you believe a decline is incorrect.
+- Your integration should ignore unknown fields.
+
+<Note>
+Subscriptions to the `account.verification.*` wildcard receive this event automatically. If you subscribed to `account.verification.completed` by name, add `account.verification.rejected` to your subscription to be told about declines.
+</Note>
+
 ## Handling future event types
 
 Brale may add new event types over time.
