@@ -106,6 +106,7 @@ Current supported events:
 | `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
+| `account.verification.rejected` | Account verification is declined | React to terminal declines when account `status` becomes `rejected`; see [`account.verification.rejected`](/webhooks/webhook-events#accountverificationrejected) |
 
 Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed.
 
