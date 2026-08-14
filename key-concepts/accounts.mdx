@@ -125,9 +125,90 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.state`         | string | Yes      | Abbreviated format (NY, FL)                                                                                                                                                                       |
 | `business.address.zip`           | string | Yes      |                                                                                                                                                                                                   |
-| `business_controller`            | object | Yes      | One natural person who exercises control. API accepts U.S.-based controllers only; email [support@brale.xyz](mailto:support@brale.xyz) if your controller is non-U.S. and we'll process manually. |
-| `beneficial_owners`              | array  | Yes      | Individual with ≥25% ownership                                                                                                                                                                    |
+| `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
+| `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
+
+### Non-US controllers and beneficial owners
+
+A controller or beneficial owner outside the US is created through the same `POST /accounts` call. Only the fields that depend on where the person lives change:
+
+| Field | US party | Party outside the US |
+| --- | --- | --- |
+| `address.country` | `US`, or omitted | ISO 3166-1 code or country name, e.g. `CO` |
+| `address.state` | Required, must be a US state abbreviation | Optional and free-form; omit it for countries with no state or province |
+| `address.zip` | `#####` or `#####-####` | Any format |
+| `ssn` | Required, `###-##-####` | Not accepted |
+| `identity` | Optional, for a document other than an SSN | Required: the number and the document type |
+| `phone_number` | US number | Parsed against `address.country`, so a national-format number is accepted |
+
+`ssn` and `identity` are mutually exclusive and exactly one is required. Sending `ssn` for a party outside the US returns `400`, because an SSN has no meaning there. Use the [identity type](#identity-types) that matches the document.
+
+The business itself is still US-only. This covers a US business whose controller or owners live elsewhere, not a foreign entity.
+
+```json Request
+{
+  "business_name": "ABC Company Inc",
+  "ein": "12-3456789",
+  "address": {
+    "street_line_1": "123 Main St",
+    "city": "Des Moines",
+    "state": "IA",
+    "zip": "12345"
+  },
+  "phone_number": "2134678902",
+  "email": "mark@example.com",
+  "website": "https://abccompany.com",
+  "business_controller": {
+    "first_name": "Ana",
+    "last_name": "Gomez",
+    "dob": "1985-01-15",
+    "email": "ana@abccompany.com",
+    "phone_number": "3001234567",
+    "ownership_percentage": "40",
+    "identity": {
+      "number": "1020304050",
+      "type": "NATIONAL_ID"
+    },
+    "address": {
+      "street_line_1": "Calle 93 #11-27",
+      "street_line_2": "Oficina 402",
+      "city": "Bogota",
+      "state": "Cundinamarca",
+      "zip": "110221",
+      "country": "CO"
+    }
+  },
+  "beneficial_owners": [
+    {
+      "first_name": "Wei",
+      "last_name": "Chen",
+      "dob": "1979-04-02",
+      "email": "wei@abccompany.com",
+      "phone_number": "+6591234567",
+      "ownership_percentage": "35",
+      "identity": {
+        "number": "S1234567D",
+        "type": "NATIONAL_ID"
+      },
+      "address": {
+        "street_line_1": "1 Raffles Place",
+        "city": "Singapore",
+        "zip": "048616",
+        "country": "SG"
+      }
+    }
+  ],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+The Singaporean owner above omits `state` entirely, which is what to do for a country with no subdivision to give.
+
+Owners and controllers can be mixed: a US controller sending `ssn` alongside an owner outside the US sending `identity` is a valid request.
 
 ## Creating an individual account
 
@@ -196,7 +277,7 @@ The created account's `name` is derived from the individual's first and last nam
 
 ### Identity types
 
-One identity is submitted per individual. Use `SSN9` for a US taxpayer, or the matching document type for a non-US individual.
+One identity is submitted per person. Use `SSN9` for a US taxpayer, or the matching document type for someone outside the US. The same values apply wherever an `identity` object is accepted: an individual account, and a business controller or beneficial owner.
 
 | Region | Accepted `identity.type` values |
 | --- | --- |
@@ -207,7 +288,7 @@ One identity is submitted per individual. Use `SSN9` for a US taxpayer, or the m
 | Kenya | `KENYA_KRA_PIN` |
 | Colombia | `COLOMBIA_PPT` |
 
-The region column is guidance on which value to send, not a separate validation: any value in this list is accepted, and the individual's jurisdiction comes from `individual.country`.
+The region column is guidance on which value to send, not a separate validation: any value in this list is accepted. Jurisdiction comes from the country on the person, `individual.country` for an individual account and `address.country` for a controlling party.
 
 ### Creating a non-US individual account
 
@@ -260,6 +341,16 @@ The supported shape today is inbound: the account receives value on chain and ca
 | HTTP Status | Code                   | Message                                               | Potential Cause                     | Fix                     |
 | ----------- | ---------------------- | ----------------------------------------------------- | ----------------------------------- | ----------------------- |
 | `422`       | `Unprocessable Entity` | Invalid format for business or controller information | Phone number area code is not valid | Include valid area code |
+
+### Business path errors
+
+| HTTP | Error type | Cause |
+| --- | --- | --- |
+| `400` | `controlling_party_identity_required` | A controller or beneficial owner sent neither `ssn` nor `identity`. |
+| `400` | `invalid_controlling_party_identity` | Both `ssn` and `identity` were sent, or `ssn` was sent for a party whose `address.country` is not the US. |
+| `422` | `invalid_country_code` | An `address.country` that is not a recognized ISO country code or name. |
+| `422` | `invalid_us_state` | `address.country` is the US and `address.state` is missing, blank, or not a recognized state or territory. |
+| `400` | `invalid_phone_number` | A `phone_number` that is not valid in that party's `address.country`. |
 
 ### Individual path errors
 
