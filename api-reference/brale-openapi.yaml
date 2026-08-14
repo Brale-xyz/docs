@@ -1025,15 +1025,70 @@ components:
         zip:
           type: string
           example: '90001'
+    ControllingPartyAddress:
+      type: object
+      additionalProperties: false
+      title: ControllingPartyAddress
+      description: >
+        Postal address for a business controller or beneficial owner. Unlike the
+        business `USStreetAddress`, `state` is free-form and the postal code
+        accepts any format, so controlling parties outside the US are supported.
+
+
+        `state` is absent from `required` because whether it is required depends
+        on `country`, which this schema cannot express: a US party must supply a
+        recognized US state, and elsewhere it is optional because many countries
+        have no state or province.
+      required:
+        - street_line_1
+        - city
+        - zip
+      properties:
+        street_line_1:
+          type: string
+          example: Calle 93 #11-27
+        street_line_2:
+          type: string
+          example: Oficina 402
+        city:
+          type: string
+          example: Bogota
+        state:
+          type: string
+          description: >
+            State, province, or region. Required when `country` is the US,
+            optional otherwise. A blank value is treated as absent.
+          example: Cundinamarca
+        zip:
+          type: string
+          description: Postal code. Any format is accepted, so non-US postal codes are
+            supported.
+          example: '110221'
+        country:
+          type: string
+          description: >
+            ISO 3166-1 country code or country name. Defaults to `US` when
+            omitted, so requests written before non-US parties were supported are
+            unchanged.
+          example: CO
     ControllingParty:
       type: object
       additionalProperties: false
       title: ControllingParty
+      description: >
+        A business controller or beneficial owner. Identity is supplied one of two
+        ways, and exactly one of them is required: `ssn` for a US party, which is
+        what every request written before non-US parties were supported already
+        sends, or `identity` (number and type) otherwise.
+
+
+        `ssn` is only accepted when the party's country is the US, since an SSN
+        has no meaning elsewhere. A US party may also use `identity` when the
+        document is something other than an SSN.
       required:
         - first_name
         - last_name
         - dob
-        - ssn
         - address
         - email
         - phone_number
@@ -1050,14 +1105,29 @@ components:
         ssn:
           type: string
           example: 123-45-6789
+          description: >
+            US Social Security Number. Required for a US party unless `identity`
+            is supplied, and not accepted for a party outside the US.
+        identity:
+          allOf:
+            - $ref: '#/components/schemas/IndividualIdentity'
+          nullable: true
+          description: >
+            Typed identity document, a number and the kind of document it came
+            from. Required for a party outside the US, where the number could be a
+            passport, a national ID or a tax number and the type is what keeps it
+            from being submitted as an SSN. Mutually exclusive with `ssn`.
         address:
-          $ref: '#/components/schemas/USStreetAddress'
+          $ref: '#/components/schemas/ControllingPartyAddress'
         email:
           type: string
           example: a@b.com
         phone_number:
           type: string
           example: 515-555-1212
+          description: >
+            Parsed against the party's own country, so a number written in
+            national form outside the US is accepted and stored in E.164.
         ownership_percentage:
           type: number
           nullable: true
@@ -1212,9 +1282,10 @@ components:
       additionalProperties: false
       title: IndividualIdentity
       description: >
-        A government-issued identifier for the individual. One identity is
-        submitted per individual: `SSN9` for a US taxpayer, or a document type
-        such as `PASSPORT` or `NATIONAL_ID` for a non-US individual.
+        A government-issued identifier for a natural person. One identity is
+        submitted per person: `SSN9` for a US taxpayer, or a document type such as
+        `PASSPORT` or `NATIONAL_ID` for someone outside the US. Used by an
+        individual account and, as `identity`, by a controlling party.
       required:
         - number
         - type
