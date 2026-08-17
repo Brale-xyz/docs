@@ -3,6 +3,16 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-08-17" description="Week of August 10" tags={["New"]}>
+  This week we shipped support for non-US controllers and beneficial owners on business (KYB) accounts.
+
+  ## Non-US controllers and beneficial owners
+
+  `POST /accounts` now accepts a business controller or beneficial owner who lives outside the US. Provide their `identity` (document number and type) and an `address` with a `country`; `ssn` is only accepted for US parties. Existing US-based requests are unchanged.
+
+  Controllers and owners can be mixed on the same account. The business itself is still US-only. See [non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners) and [create an account](/api-reference/brale/create-account).
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
