@@ -1954,7 +1954,7 @@ paths:
             maximum: 100
           example: 50
           description: The number of transfers to return per page (1–100, default 25).
-        - name: page[next]
+        - name: page[after]
           in: query
           required: false
           schema:
