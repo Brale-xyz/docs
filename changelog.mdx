@@ -3,6 +3,21 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-08-24" description="Week of August 17" tags={["Update"]}>
+  This week we clarified transfer limits across payment rails.
+
+  ## Transfer limits by rail
+
+  Per-transaction limits are now documented for each supported rail:
+
+  - Standard and Same-Day ACH: generally $50,000 per transaction, including deposits and payouts.
+  - RTP: generally $50,000 per transaction.
+  - Wire: no standard hard maximum. Wires above $3,000,000 may require additional review and processing time.
+  - Stablecoin: no standard per-transaction maximum, subject to account-specific controls, compliance review, available liquidity, and blockchain network constraints.
+
+  Limits may vary by account, rail, direction, jurisdiction, and risk profile. Contact Brale before initiating a larger transfer or if you need account-specific limits. See [transfer limits](/key-concepts/transfers#transfer-limits).
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
