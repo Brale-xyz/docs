@@ -23,7 +23,7 @@ For the full account creation payload (business details, controller, beneficial 
 
 ## Choosing between a business and an individual account
 
-`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select between a KYB-verified business account with Brale-custodied wallets and a KYC-verified individual account without custody. Omitting all three preserves today's business behavior. See [Account types](/key-concepts/account-types) for the full matrix.
+`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select the account shape. Supported combinations are business custodial, business transactional, and individual transactional. Individual custodial is not currently supported. Omitting all three fields preserves today's business custodial behavior. See [Account types](/key-concepts/account-types) for the full matrix and [Account availability](/coverage/account-availability) for the U.S. states where each combination can be created.
 
 ## Example request with documents (business)
 
@@ -35,7 +35,7 @@ For the full account creation payload (business details, controller, beneficial 
     "street_line_1": "123 Main St",
     "city": "Des Moines",
     "state": "IA",
-    "zip": "12345"
+    "zip": "50309"
   },
   "phone_number": "2134678902",
   "email": "mark@example.com",
@@ -100,9 +100,9 @@ Create a KYC-verified individual account. The `individual` object and `tos_attes
     "address": {
       "street_line_1": "123 Main St",
       "street_line_2": "Apt 4",
-      "city": "New York",
-      "state": "NY",
-      "zip": "10001"
+      "city": "Des Moines",
+      "state": "IA",
+      "zip": "50309"
     },
     "identity": {
       "number": "222-22-2222",

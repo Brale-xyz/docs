@@ -1,0 +1,43 @@
+---
+title: "Account availability"
+description: "U.S. state availability for Brale business and individual accounts, custodial and transactional."
+---
+
+This page is the canonical source for geographic account eligibility. It states where each customer type and account type combination is available in the United States.
+
+## Availability by customer and account type
+
+| Customer type | Account type | Availability |
+| --- | --- | --- |
+| Business | Custodial | Available in every U.S. state except New York, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Business | Transactional | Available in every U.S. state except New York, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Individual | Custodial | Not currently supported. |
+
+<Note>
+All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's restricted-business policies. Availability in a state does not guarantee approval.
+</Note>
+
+## Custodial vs. transactional
+
+- **Custodial accounts** receive Brale-managed internal wallet addresses and can hold Brale-custodied balances. See [Custodial Accounts](/guides/managed-accounts).
+- **Transactional accounts** are non-custodial. They do not receive internal wallet addresses and cannot hold balances at Brale.
+- Transactional accounts can register external, self-custody destination addresses.
+- External addresses belonging to a transactional account are destination-only. They cannot originate on-chain transfers.
+
+<Warning>
+Geographic account eligibility is not the same as workflow or rail availability. An account being available in a state does not mean that every payment rail, automation, transfer direction, industry, or funds flow is available to it. Consult the relevant workflow guides, [Transfer Types](/coverage/transfer-types), and [Value Types](/coverage/value-types) for capability-specific requirements.
+</Warning>
+
+## Which address determines eligibility
+
+- **Individual accounts** — the individual's principal residential address.
+- **Business accounts** — the business's principal operating address.
+
+A business's incorporation state or bank location does not, by itself, determine eligibility.
+
+## Related
+
+- [Account types](/key-concepts/account-types) — the `entity_type` and `account_type` fields on `POST /accounts`.
+- [Accounts](/key-concepts/accounts) — the full account resource, fields, and lifecycle.
+- [`POST /accounts`](/api-reference/brale/create-account) — API reference.
