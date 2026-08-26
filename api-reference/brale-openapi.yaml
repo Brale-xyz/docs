@@ -1157,8 +1157,9 @@ components:
       title: CreateManagedAccountRequest
       description: >
         Business (KYB) account creation payload. This is the default path when
-        `entity_type` is omitted, or when it is explicitly set to `business`
-        with `account_type: custodial` and `verification_mode: standard`.
+        `entity_type` is omitted, or when it is explicitly set to `business`.
+        `account_type` selects between a custodial account (the default) and a
+        non-custodial transactional account.
       required:
         - business_name
         - ein
@@ -1180,9 +1181,13 @@ components:
           type: string
           enum:
             - custodial
+            - transactional
           description: >
             Optional. When omitted, defaults to `custodial` for business
-            accounts.
+            accounts. `custodial` accounts receive Brale-managed internal
+            wallets and can hold balances. `transactional` accounts are
+            non-custodial: they receive no internal wallets, hold no balances
+            at Brale, and register external destination-only addresses.
           example: custodial
         verification_mode:
           type: string
@@ -1258,19 +1263,19 @@ components:
           example: Apt 4
         city:
           type: string
-          example: New York
+          example: Des Moines
         state:
           type: string
           description: >
             State, province, or region. Required when `individual.country` is
             `US` or `USA`, optional otherwise. A blank value is treated as
             absent.
-          example: NY
+          example: IA
         zip:
           type: string
           description: Postal code. Any format is accepted, so non-US postal codes are
             supported.
-          example: '10001'
+          example: '50309'
         country:
           type: string
           description: >
@@ -1415,12 +1420,15 @@ components:
         - `business` + `custodial` + `standard` (KYB, default when all three
           are omitted)
 
+        - `business` + `transactional` + `standard` (KYB, non-custodial)
+
         - `individual` + `transactional` + `standard` (KYC)
 
         - `individual` + `transactional` + `reliance` (KYC under a reliance
           model)
 
-        Any other combination returns `422 unsupported_account_combination`.
+        `individual` + `custodial` is not currently supported. Any other
+        combination returns `422 unsupported_account_combination`.
 
 
         No `discriminator` is declared, because `entity_type` is optional: a
@@ -1733,11 +1741,11 @@ paths:
                   ein: 11-1111111
                   address:
                     street_line_1: 100 Example St
-                    city: New York
-                    state: NY
-                    zip: '10001'
+                    city: Des Moines
+                    state: IA
+                    zip: '50309'
                     country: US
-                  phone_number: '2125550182'
+                  phone_number: '5155550182'
                   email: ops@abc.example
                   website: https://abc.example
                   beneficial_owners:
@@ -1749,9 +1757,9 @@ paths:
                       phone_number: 212-555-0182
                       address:
                         street_line_1: 100 Example St
-                        city: New York
-                        state: NY
-                        zip: '10001'
+                        city: Des Moines
+                        state: IA
+                        zip: '50309'
                         country: US
                   business_controller:
                     first_name: Alicia
@@ -1762,9 +1770,9 @@ paths:
                     phone_number: '+12125550182'
                     address:
                       street_line_1: 200 Market St
-                      city: New York
-                      state: NY
-                      zip: '10002'
+                      city: Des Moines
+                      state: IA
+                      zip: '50310'
                       country: US
                   tos_attestation:
                     accepted_at: '2025-05-13T20:45:15Z'
@@ -1789,9 +1797,9 @@ paths:
                     address:
                       street_line_1: 123 Main St
                       street_line_2: Apt 4
-                      city: New York
-                      state: NY
-                      zip: '10001'
+                      city: Des Moines
+                      state: IA
+                      zip: '50309'
                     identity:
                       number: 222-22-2222
                       type: SSN9
@@ -1859,8 +1867,9 @@ paths:
 
             - `unsupported_account_combination` — the combination of
               `entity_type`, `account_type`, and `verification_mode` is
-              outside the three supported rows. Permanent; safe to cache
-              against an idempotency key.
+              outside the supported rows (for example, individual +
+              custodial). Permanent; safe to cache against an idempotency
+              key.
 
             - `invalid_us_state` — `individual.country` is `US` or `USA` and
               `individual.address.state` is not a recognized US state or

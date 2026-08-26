@@ -1,18 +1,21 @@
 ---
 title: "Accounts"
-description: "Accounts represent verified entities — KYB-verified businesses with custodial wallets, or KYC-verified individuals with transactional receive-only wallets — identified by `account_id`."
+description: "Accounts represent verified entities identified by `account_id`: KYB-verified businesses (custodial or transactional) and KYC-verified individuals (transactional)."
 ---
 
 Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users.
 
-Two shapes are supported today:
+Three shapes are supported today:
 
 - **Business, custodial (KYB)** — the existing behavior. The account holds one or more Brale-custodied (`type=internal`) on-chain wallets, can originate transfers, and can hold off-chain bank Addresses.
+- **Business, transactional (KYB)** — a KYB-verified business that is non-custodial. It has no internal Brale wallet and no stored balance at Brale, and it registers external, self-custody destination addresses.
 - **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
+
+Individual custodial accounts are not currently supported. Geographic eligibility for each shape depends on the account's U.S. state — see [Account availability](/coverage/account-availability) for the canonical state table.
 
 Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
 
-Each `account_id` (business, custodial) is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). Individual, transactional accounts have no internal addresses. The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
+Each custodial `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). Transactional accounts (business or individual) have no internal addresses. The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
 
 The `account_id` is used in the request URL across many Brale API endpoints to scope the request to a specific application or client.
 
@@ -30,21 +33,22 @@ To KYB and approve a business account, we collect key details such as business n
 | `account_type` | `custodial`, `transactional` | `custodial` |
 | `verification_mode` | `standard`, `reliance` | `standard` |
 
-Only three combinations are accepted:
+Supported combinations:
 
-| `entity_type` | `account_type` | `verification_mode` | Verification |
+| `entity_type` | `account_type` | Status | Verification |
 | --- | --- | --- | --- |
-| `business` | `custodial` | `standard` | KYB (existing behavior) |
-| `individual` | `transactional` | `standard` | KYC |
-| `individual` | `transactional` | `reliance` | KYC under a reliance model |
+| `business` | `custodial` | Supported | KYB (existing behavior) |
+| `business` | `transactional` | Supported | KYB |
+| `individual` | `transactional` | Supported | KYC (`verification_mode` may be `standard` or `reliance`) |
+| `individual` | `custodial` | Not currently supported | — |
 
-Any other combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
+An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
 
 <Note>
 Omitting all three dimension fields produces exactly today's behavior. Existing integrations that create business accounts do not need to change.
 </Note>
 
-For a fuller discussion of when to choose each combination, see [Account types](/key-concepts/account-types).
+For a fuller discussion of when to choose each combination, see [Account types](/key-concepts/account-types). For where each combination is available, see [Account availability](/coverage/account-availability).
 
 ## Creating a business account
 
@@ -61,7 +65,7 @@ You are required to pass in business information, controller information, and ul
     "street_line_2": "Apt C",
     "city": "Des Moines",
     "state": "IA",
-    "zip": "12345"
+    "zip": "50309"
   },
   "phone_number": "2134678902",
   "email": "mark@example.com",
@@ -154,7 +158,7 @@ The business itself is still US-only. This covers a US business whose controller
     "street_line_1": "123 Main St",
     "city": "Des Moines",
     "state": "IA",
-    "zip": "12345"
+    "zip": "50309"
   },
   "phone_number": "2134678902",
   "email": "mark@example.com",
@@ -231,9 +235,9 @@ On the individual path, set `entity_type` to `individual` and `account_type` to 
     "address": {
       "street_line_1": "123 Main St",
       "street_line_2": "Apt 4",
-      "city": "New York",
-      "state": "NY",
-      "zip": "10001"
+      "city": "Des Moines",
+      "state": "IA",
+      "zip": "50309"
     },
     "identity": {
       "number": "222-22-2222",
@@ -356,7 +360,7 @@ The supported shape today is inbound: the account receives value on chain and ca
 
 | HTTP | Error type | Cause |
 | --- | --- | --- |
-| `422` | `unsupported_account_combination` | Dimension combination outside the three supported rows. Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_account_combination` | Dimension combination outside the supported rows (for example, individual + custodial). Permanent; safe to cache against an idempotency key. |
 | `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
 | `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
 | `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`). |

@@ -5,7 +5,7 @@ description: "Hold fiat-backed stablecoins on behalf of end users with Brale-man
 
 Brale enables businesses to hold fiat-backed stablecoins on behalf of their end users—unlocking powerful digital dollar experiences for wallets, marketplaces, fintech apps, and neobanks. Use stablecoins as account balances, enable fast transfers, or power embedded payouts.
 
-Custodial accounts are only available for businesses.
+Custodial accounts are only available for businesses. See [Account availability](/coverage/account-availability) for the U.S. states where custodial accounts can be created.
 
 <Note>
 Need to onboard an individual end user who receives value on-chain but does not hold custody at Brale? See [Individual accounts](/guides/individual-accounts) for the KYC-verified, transactional flow.
@@ -21,7 +21,7 @@ Custody lets you:
 - Hold stablecoin balances across all supported chains
 - Initiate transfers and payouts directly from custodied funds using any stablecoin supported at Brale.
 
-All Brale Accounts support custodial wallets on all supported chains out of the box—no custom wallet infrastructure required. When new custodial wallets are created they are instantly compatible with all transfer types on the platform.
+All supported custodial accounts receive Brale-managed internal wallets on supported chains out of the box—no custom wallet infrastructure required. Transactional accounts are non-custodial and do not receive internal wallets. When new custodial wallets are created they are instantly compatible with all transfer types on the platform.
 
 ## Who It's For
 
@@ -36,7 +36,7 @@ Use cases include:
 ## How It Works
 
 1. **Create Wallets**\
-   When you [register an Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains, so the default set is ready to use without any additional setup. You can also provision additional internal wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) — useful for segmenting funds within a single account.
+   When you [register a custodial Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains, so the default set is ready to use without any additional setup. You can also provision additional internal wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) — useful for segmenting funds within a single account.
 2. **Receive Deposits**\
    You or your users can send stablecoins directly to custodial wallet addresses. Just [fetch wallet addresses](/key-concepts/addresses) and fund them.
 3. **Track Balances**\

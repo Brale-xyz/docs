@@ -65,6 +65,7 @@
           {
             "group": "Coverage",
             "pages": [
+              "coverage/account-availability",
               "coverage/transfer-types",
               "coverage/value-types"
             ]
