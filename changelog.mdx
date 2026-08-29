@@ -3,6 +3,22 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-07-05" description="Week of June 29" tags={["New", "Update"]}>
+  This week's updates focused on programmatic management of webhook subscriptions.
+
+  ## Webhook subscription API
+
+  You can now create, list, retrieve, update, and archive webhook subscriptions directly through the API, and pull delivery attempt logs for debugging. Previously, subscriptions were managed out-of-band. See the [webhook subscription API reference](/webhooks/subscription-api-reference) and the [webhooks overview](/webhooks/overview).
+
+  ## Wildcard event subscriptions
+
+  Webhook subscriptions now accept namespace wildcards like `transfer.*`, `payment.*`, and `account.*`. Subscribing with a wildcard automatically opts you into every current and future event in that family, so you don't need to update subscriptions when Brale ships new event types. See [create a subscription](/api-reference/brale/create-webhook-subscription).
+
+  ## Account-scoped webhooks
+
+  Webhook subscriptions are scoped per account. Multi-account organizations should create a subscription for each account that needs event delivery. See the [webhooks overview](/webhooks/overview) for details.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
