@@ -1,0 +1,129 @@
+---
+title: "Security & Threat Model"
+description: "Honest disclosure of token blast radius, platform limits, mitigations, and what to do today when integrating the Brale IO SDK."
+---
+
+This page documents the security posture of the Brale IO SDK as it ships today. It is professional risk disclosure — the same kind Stripe, Plaid, MoonPay, and Coinbase publish. Read it before you deploy.
+
+The SDK was designed to remove the worst footgun (`client_id` / `client_secret` in the browser) by routing every token request through a partner-side backend. That is a real improvement, and it is not the whole story. The token your backend mints still has wider scope than most partners assume on first read, and the Brale platform does not yet expose every primitive a defense-in-depth design would want. This page tells you exactly what those gaps are and what you can do about them today.
+
+## 1. What a leaked token can do
+
+When the SDK fetches `/api/token`, your backend mints a Brale OAuth2 access token via the `client_credentials` grant and returns it. That token sits in the browser tab for the duration of the user's onramp session.
+
+**The blast radius of that token is your entire Brale partner account, not a single end user.**
+
+If the token is exfiltrated (XSS, malicious browser extension, shared device, intercepted via a misconfigured proxy), the attacker can:
+
+- **List every transfer** on every account under your partner — including transfers belonging to other end users.
+- **Create new transfers** from the partner's custodial balance to any registered destination.
+- **Register new external addresses** on any account under your partner.
+- **Read every internal custodial address** and every linked bank account.
+- **Drain custodial balances** by initiating transfers to attacker-controlled external wallets they register on the fly.
+
+There is no per-user scoping at the Brale API layer. A token issued while User A is on-ramping can act over User B's flows in the same partner account.
+
+## 2. Platform limits Brale ships today
+
+The constraints below are properties of the Brale platform, not of the SDK. Knowing them is part of designing a safe integration.
+
+| Capability | Available today? |
+|---|---|
+| OAuth2 grant types beyond `client_credentials` | No — machine-to-machine only. No end-user login endpoint, no MFA primitive. |
+| End-user identity inside Brale (account class that is not a KYB'd business) | No. Every Brale account is a KYB'd business entity. |
+| Per-`account_id`-scoped tokens (token can only operate on one specific Managed Account) | No. Tokens are partner-account-wide. |
+| Configurable token TTL (ability to set a 5–10 minute lifetime) | No. Tokens currently live ~60 minutes. |
+| OAuth scope enforcement on the API (`addresses:read`, `transfers:write`, etc.) | **No.** The auth server accepts scopes, but the API does not honor them. Verified by direct test. |
+| IP / User-Agent binding on tokens | No. Token works from any IP. |
+| `publishableKey` / read-only key safe to embed in browsers | No. |
+| Server-side filtering on `GET /transfers` (`?status=`, `?address_id=`, `?external_id=`) | No. Filtering happens client-side. |
+| Persistent transfer correlation field (`note` survives, or `external_id` / `metadata` map) | No — tested in Spike 01. The SDK matches transfers heuristically by amount + source + destination + timestamp. |
+
+If Brale ships per-`account_id`-scoped tokens + short TTL + scope enforcement + a persistent correlation field, the threat model in §1 collapses to "one user's worth of activity for ~5 minutes per leak." Until then, design for the table above.
+
+## 3. Custodial-address considerations
+
+For an on-chain onramp (e.g. `USDC on Solana → SBC on Base`), the SDK has the user deposit USDC into the **partner-account's Solana custodial address**. If your partner serves many end users from one Brale account, **every user deposits into the same on-chain wallet**.
+
+Three consequences fall out of that:
+
+1. **Mixed deposits.** Two users sending the same amount around the same time become indistinguishable except by transaction hash + sender wallet. Without a persistent correlation field on the Brale transfer API, attribution is heuristic.
+2. **Compliance posture.** All custodial activity is attributed to the partner's KYB'd entity. There is no Brale-side per-user KYC footprint to fall back on if the partner's controls fail.
+3. **Blast radius compounding.** A leaked partner-wide token combined with a shared custodial wallet means an attacker can move funds that were deposited by users other than the one whose token leaked.
+
+The mitigation is **Managed Accounts** — see §4.
+
+## 4. Mitigations available today
+
+### 4.1 Run the SDK behind your existing user-auth layer
+
+This is the single highest-leverage control. The reference implementation in [Backend Setup](/sdk/backend) uses a signed-cookie session for clarity; production deployments should drop in NextAuth.js, Clerk, Auth0, Express + Passport, or whatever you already operate. If `/api/token` is publicly callable, anyone can mint a Brale token via your domain — that is the worst possible failure mode and the only one the SDK cannot prevent for you.
+
+### 4.2 Use Managed Accounts for fund isolation
+
+Brale supports **Managed Accounts** — sub-accounts the partner creates via `POST /accounts`. Each gets its own KYB review and its own isolated custodial wallets per chain.
+
+Use one Managed Account per end user (or per logical "tenant" — e.g. per partner's organization customer). The token is still partner-account-wide, but the **funds** of User A are physically separated from User B at the chain level. A leaked token still has wide read access, but there is no shared custodial wallet to drain across users.
+
+Trade-off: each Managed Account requires KYB. Cost and onboarding friction grow with the number of end users. Discuss with Brale whether KYB-lite or KYC-only sub-accounts are an option for your use case.
+
+### 4.3 Apply your own short TTL and binding at the partner backend
+
+Brale's token TTL is currently fixed at ~60 minutes. You can layer additional controls server-side:
+
+- **Cache and re-issue.** Cache the Brale token for the user's lifetime of activity (e.g. 5–10 minutes, refreshed on demand) rather than re-fetching from Brale every time. The browser still gets the same token; reducing fetches reduces the credentials' exposure surface on your side.
+- **Bind to IP / User-Agent.** Store the IP and UA of the session at login. On every `/api/token` call, reject if either changed materially. This raises the cost of token theft via XSS or extension exfiltration (the stolen token still works from the victim's IP, but not from the attacker's).
+- **Short partner session.** Keep your partner session cookie short-lived. When the partner session expires, `/api/token` returns 401, the SDK surfaces a `BraleAuthError`, and the page falls back to sign-in. This bounds the period during which a leaked token can be re-minted.
+- **Audit and rate-limit.** Log every `/api/token` mint with user id, IP, and UA. Rate-limit per user. Alert on anomalies.
+
+### 4.4 Refuse anonymous + multi-user + on-chain configurations
+
+The combination "no end-user authentication" + "many users" + "on-chain funding" is the worst case: the token is a master key, deposits land in a shared wallet, and there is no identity to attribute fraud against. If you cannot authenticate end users (your product is anonymous by design), either:
+
+- Restrict the SDK to a single-tenant deployment (one partner, one operator, no shared custodial activity), or
+- Wait for a Brale-hosted flow where Brale owns end-user identity directly (not currently exposed as an SDK primitive).
+
+## 5. What to do today — recommended posture
+
+For most partners shipping in the current platform, the safe configuration is:
+
+1. **Run `/api/token` behind your existing partner-side authentication.** No exceptions. Read [Backend Setup](/sdk/backend) for the reference implementation.
+2. **Use Managed Accounts** when serving more than one end user. This is the only platform-level control for per-user fund isolation today.
+3. **Add server-side rate-limiting and audit logging** on `/api/token`. Even if every call is authenticated, anomaly detection on mint volume catches token-mint loops triggered by browser-side compromise.
+4. **Bind sessions to IP / UA at the partner backend.** Optional but recommended for high-value flows.
+5. **Refresh your `BRALE_CLIENT_SECRET` on a schedule.** Treat it as a master credential — rotation is your last defensive line if anything else fails.
+6. **Read the [SDK Login Architecture deep analysis](https://github.com/Brale-xyz/onramp-sdk/blob/main/.pbs-framework/other/sdk-login-architecture-analysis.md) (in the SDK repo)** for a long-form treatment of why this design exists, the alternatives considered, and what would change if Brale ships the platform improvements in §2.
+
+## 6. A note on `destination.transaction_id`
+
+The widget's Success screen and the SDK's terminal `Transfer` payload expose `destination.transaction_id` — the on-chain transaction hash for completed on-chain transfers. **Brale's OpenAPI spec does not document this field**, but the API does return it for completed on-chain flows.
+
+The SDK reads the field defensively: when present, the widget renders an explorer deep-link (e.g. Etherscan, Solscan); when absent (testnet edge cases, intermediate flow states, future API changes), the link gracefully degrades to plain text and the rest of the Success screen still works. Partners building on top of `BraleOnramp.fundOnchain()` should treat `destination.transaction_id` as an optional string and not assume it exists in every response.
+
+This degradation is intentional. If Brale begins documenting the field in the OpenAPI spec, the SDK's typing tightens automatically through the regenerated client, and partner code that already treats it as optional keeps working unchanged.
+
+## 7. What the SDK does NOT promise
+
+Things the SDK is explicitly out of scope for, today:
+
+- **Fraud detection / sanctions screening on end users.** That is your responsibility, your existing KYC/KYB partner's, or — if you use Managed Accounts — Brale's per-account KYB pipeline.
+- **Detecting compromised browsers or extensions.** A successful XSS payload on a page mounting the SDK can read the in-memory token. Standard web defenses (CSP, Subresource Integrity, frame protection, Trusted Types) are your responsibility.
+- **Replay protection across partner backends.** The SDK uses idempotency keys on Brale API mutations to prevent double-creates within a flow, but there is no SDK-level mechanism to prevent a stolen token from being replayed against the Brale API from a different host.
+- **End-user PII storage or encryption.** The SDK does not persist user data; everything lives in memory for the duration of the page lifecycle.
+
+## Next steps
+
+<Columns cols={2}>
+  <Card icon="server" href="/sdk/backend" title="Backend Setup">
+    The auth-gated `/api/token` pattern and reference implementation.
+  </Card>
+  <Card icon="book" href="/sdk/quickstart" title="Quickstart">
+    Back to the five-minute overview.
+  </Card>
+  <Card icon="puzzle-piece" href="/sdk/widget" title="Widget Guide">
+    Mount the prebuilt UI in your stack.
+  </Card>
+  <Card icon="code" href="/sdk/headless" title="Headless Guide">
+    Build your own UI on the same auth-gated foundation.
+  </Card>
+</Columns>

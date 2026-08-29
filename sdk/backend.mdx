@@ -1,0 +1,140 @@
+---
+title: "Backend Setup"
+description: "The /api/token endpoint pattern: why a backend is required, the getAccessToken contract, and a reference implementation you can copy."
+---
+
+The Brale IO SDK requires a small partner-side backend. This page explains why, defines the contract, and walks through the shape of the `/api/token` route — using the SDK demo (Next.js 15) as the worked example. Framework alternatives (NextAuth.js / Clerk / Auth0 / Express + Passport) and a generic non-Node section follow.
+
+## Why a backend is required
+
+Brale issues OAuth2 access tokens via the `client_credentials` grant. To mint one you need a `client_id` and `client_secret`. Those credentials **must never reach the browser**.
+
+The SDK was designed around this constraint. Instead of accepting `client_id` / `client_secret`, it accepts a `getAccessToken` callback. The SDK asks **your backend** for a token whenever it needs one; the credentials never leave your server.
+
+<Steps>
+  <Step title="The SDK asks your backend">
+    From the browser, the SDK calls the `getAccessToken` you supplied. In practice that hits a route on your own origin — typically `/api/token` — with the partner session cookie attached.
+  </Step>
+  <Step title="Your backend verifies the user">
+    Your existing session middleware runs first. If the partner's user is not signed in, the route returns `401` and the SDK surfaces a `BraleAuthError`. Brale credentials are never even loaded.
+  </Step>
+  <Step title="Your backend mints a Brale token">
+    With the user verified, the server POSTs `client_credentials` to `auth.brale.xyz/oauth2/token` using your `BRALE_CLIENT_ID` / `BRALE_CLIENT_SECRET`. These secrets stay on your server.
+  </Step>
+  <Step title="The token reaches the SDK">
+    Your backend responds with `{ access_token }`. The SDK keeps it in memory for the lifetime of the instance and uses it as a Bearer token on every Brale API call.
+  </Step>
+</Steps>
+
+## The `getAccessToken` contract
+
+`BraleOnrampConfig.getAccessToken` has the signature:
+
+```ts
+getAccessToken: () => Promise<string>;
+```
+
+Rules:
+
+- **Resolve with a valid Brale Bearer token** (the raw `access_token` string — no `Bearer ` prefix).
+- **Reject** when the user's session is invalid; the SDK surfaces this as a `BraleAuthError` to the partner so the page can fall back to a sign-in flow.
+- **Always include credentials** when fetching from the browser (`credentials: 'include'`) so the partner session cookie is sent with the request.
+- **Cache when it helps.** The SDK keeps the token in memory for the lifetime of the instance, so `getAccessToken` is only called on first use, expiry, or rejection. You can cache further on your backend (Redis, memo) to reduce upstream OAuth calls.
+
+<Warning>
+Your `/api/token` endpoint **must** be authenticated by your existing session layer. A publicly callable endpoint lets anyone mint a token that can act over your entire Brale partner account. See [Security & Threat Model](/sdk/security) for the full risk profile.
+</Warning>
+
+## Reference implementation — Next.js 15 (App Router)
+
+The SDK demo at `packages/demo/` ships a working `/api/token` route. Read it for the full source. This page walks through the **lesson**, not the listing.
+
+### The shape of the route
+
+`/api/token` only needs to do three things, in order. If any step fails, return early — never fall through to the next.
+
+```
+GET /api/token
+  ├─ 1. requireSession()            ──▶ 401 if no valid partner session
+  ├─ 2. read BRALE_CLIENT_*         ──▶ 500 if env vars missing
+  ├─ 3. POST auth.brale.xyz/oauth2  ──▶ 502 if Brale rejects/unreachable
+  └─ return { access_token }
+```
+
+The skeleton you keep across every framework:
+
+```ts
+// src/app/api/token/route.ts
+export async function GET() {
+  const session = await requireSession();
+  if (!session) return json({ error: 'Unauthenticated' }, 401);
+
+  const token = await mintBraleToken();   // POST /oauth2/token, Basic auth
+  return json({ access_token: token });
+}
+```
+
+That's the entire contract. Everything else — how `requireSession()` is implemented, where `BRALE_CLIENT_*` come from, what your error response looks like — is a partner-side decision.
+
+### Choosing a session layer
+
+`requireSession()` is the only piece you must own. It answers one question: *is this request coming from an authenticated end user?*
+
+The demo uses a hand-rolled signed-cookie session (HMAC-SHA256, base64url-encoded payload) so the source is short enough to audit in one sitting. You almost certainly **shouldn't** copy it into production — drop in whatever you already run instead. See [Framework alternatives](#framework-alternatives).
+
+If you do build your own, the non-obvious bits the demo handles are:
+
+- **Constant-time comparison** of the HMAC (`timingSafeEqual`) so signature checks don't leak a timing oracle.
+- **Fail-closed on missing config**: if `SESSION_SECRET` is unset, throw — never silently grant *or* deny.
+- **`Secure` only in production**: localhost `http://` can't accept `Secure` cookies, so gate the flag on `NODE_ENV`.
+
+### Environment variables
+
+```bash
+# .env.local
+BRALE_CLIENT_ID=your_brale_client_id
+BRALE_CLIENT_SECRET=your_brale_client_secret
+BRALE_AUTH_URL=https://auth.brale.xyz   # optional override
+SESSION_SECRET=<openssl rand -hex 32>   # only if you use the demo's signed cookie
+```
+
+## Framework alternatives
+
+The shape of the route never changes — only the line that asks "is this request authenticated?" Swap the demo's signed cookie for whatever you already run:
+
+| Stack | The auth check |
+|---|---|
+| **NextAuth.js (Auth.js)** | `const session = await auth(); if (!session?.user) → 401` |
+| **Clerk** | `const { userId } = await auth(); if (!userId) → 401` |
+| **Auth0 (Next.js SDK)** | `const session = await getSession(); if (!session?.user) → 401` |
+| **Express + Passport** | `passport.authenticate('session')` middleware, then `if (!req.user) → 401` |
+| **Plain JWT** | `jwt.verify(bearerToken, publicKey)` in a try/catch |
+
+In every case, the rest of the handler — POSTing `client_credentials` to `auth.brale.xyz/oauth2/token` and returning `{ access_token }` — is identical.
+
+## Non-Node backends
+
+The SDK does not care what language your backend speaks. The contract is the same three steps:
+
+1. **Authenticate the request.** Reject with `401` if the session is missing or invalid. Cookie, JWT, mTLS — whatever you run.
+2. **Mint a Brale token.** POST `https://auth.brale.xyz/oauth2/token` with `grant_type=client_credentials` and `Basic` auth using `BRALE_CLIENT_ID:BRALE_CLIENT_SECRET`.
+3. **Return JSON.** `200 { "access_token": "<token>" }`, `401` if the session is invalid, `502` if Brale is unreachable.
+
+Any HTTP client in any language can do that. The reference implementation in the demo (Next.js) is the most documented path; pattern-match it onto FastAPI, Rails, Go, etc.
+
+## Next steps
+
+<Columns cols={2}>
+  <Card icon="shield" href="/sdk/security" title="Security & Threat Model">
+    What a leaked token can do, the platform limits Brale ships today, and the mitigations available.
+  </Card>
+  <Card icon="puzzle-piece" href="/sdk/widget" title="Widget Guide">
+    Mount the prebuilt UI once your backend is ready.
+  </Card>
+  <Card icon="code" href="/sdk/headless" title="Headless Guide">
+    Build your own UI on top of the auth-gated backend.
+  </Card>
+  <Card icon="book" href="/sdk/quickstart" title="Quickstart">
+    Back to the five-minute overview.
+  </Card>
+</Columns>
