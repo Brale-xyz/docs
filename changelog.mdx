@@ -3,6 +3,23 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-08-10" description="Week of August 3" tags={["New", "Update", "Fix"]}>
+  This week we shipped KYC-verified individual accounts, a new webhook event for verification declines, and a couple of fixes to individual account fields.
+
+  ## Individual (KYC) accounts
+
+  `POST /accounts` now supports creating KYC-verified individual accounts for natural persons who receive value on-chain but don't hold custody at Brale. Set `entity_type: individual` and `account_type: transactional` on account creation. External addresses on these accounts are destination-only, and the account itself cannot originate on-chain transfers. Existing business (KYB) integrations don't need to change — omitting the new dimension fields preserves today's behavior. See [account types](/key-concepts/account-types) and the [individual accounts guide](/guides/individual-accounts).
+
+  ## `account.verification.rejected` webhook
+
+  A new [`account.verification.rejected`](/webhooks/webhook-events#account-verification-rejected) event fires when account verification is declined. It's a terminal state — no further verification events follow, and uploading more documents will not reopen the account. Subscribers to the `account.verification.*` wildcard receive it automatically; subscribers pinned to `account.verification.completed` should add the new event by name.
+
+  ## Fixes
+
+  - The identity type for Colombia is now `COLOMBIA_PPT` (previously `COLOMBIA_PPT_NUMBER`). See [create account](/api-reference/brale/create-account).
+  - On individual account addresses, `state` is now optional for non-US countries and required only when `country` is `US`/`USA`.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
