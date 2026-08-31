@@ -3,6 +3,16 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-08-28" description="Week of August 24" tags={["New"]}>
+  ## Business transactional accounts
+
+  Businesses can now create non-custodial transactional accounts by setting `account_type` to `transactional` on [`POST /accounts`](/api-reference/brale/create-account). These accounts are KYB-verified but hold no balances at Brale and receive no Brale-managed wallets. Instead, they register external, self-custody destination addresses. Existing integrations are unaffected: omitting the field still defaults to a custodial account. See [account types](/key-concepts/account-types) for the full matrix of supported combinations.
+
+  ## Account availability by U.S. state
+
+  A new [account availability](/coverage/account-availability) page documents where each customer and account type combination is available in the United States, including Washington, D.C. and Puerto Rico, and which address determines eligibility.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
