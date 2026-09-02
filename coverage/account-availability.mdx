@@ -1,11 +1,11 @@
 ---
 title: "Account availability"
-description: "U.S. state availability for Brale business and individual accounts, custodial and transactional."
+description: "Geographic availability for Brale business and individual accounts, custodial and transactional, in the United States and internationally."
 ---
 
-This page is the canonical source for geographic account eligibility. It states where each customer type and account type combination is available in the United States.
+This page is the canonical source for geographic account eligibility. It states where each customer type and account type combination is available, in the United States and internationally.
 
-## Availability by customer and account type
+## U.S. availability by customer and account type
 
 | Customer type | Account type | Availability |
 | --- | --- | --- |
@@ -14,9 +14,78 @@ This page is the canonical source for geographic account eligibility. It states 
 | Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
 | Individual | Custodial | Not currently supported. |
 
+Custodial accounts are U.S.-only. They are not available outside the United States.
+
 <Note>
-All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's restricted-business policies. Availability in a state does not guarantee approval.
+All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's restricted-business policies. Availability in a state or country does not guarantee approval.
 </Note>
+
+## International transactional availability
+
+Business transactional and individual transactional accounts are available in the same set of 131 approved countries outside the United States, listed below. Transactional accounts are non-custodial: they receive no Brale-managed internal wallets, hold no balances at Brale, and register external destination-only addresses.
+
+Coverage remains subject to identity verification, sanctions screening, program approval, product support, applicable law, and Brale's restricted-business policies. A country appearing in this list does not guarantee that an applicant from that country is approved.
+
+<Note>
+Country eligibility and verification method are separate. In some countries Brale can verify an identity number against a government registry; in others, no registry check is available and verification is completed through identity document collection instead. An eligible applicant may therefore be asked for documents even though their country is approved. The document request flow is the same as for U.S. accounts — see [Verification](/key-concepts/accounts#verification).
+</Note>
+
+Individual transactional accounts in these countries are created through the standard API flow: set the top-level `individual.country` and send a matching identity document type. See [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account).
+
+<Warning>
+`POST /accounts` does not yet accept a non-U.S. business. The business creation schema requires an EIN and a U.S. address with a valid U.S. state. Until the API supports non-U.S. business creation, business transactional accounts can only be created with a U.S. principal operating address; the country list below defines approved eligibility for business transactional accounts ahead of that API support. Non-U.S. controllers and beneficial owners of a U.S. business are already supported — see [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners).
+</Warning>
+
+### Approved countries (131)
+
+| Country | Code | Country | Code | Country | Code |
+| --- | --- | --- | --- | --- | --- |
+| Andorra | AD | Guinea | GN | Paraguay | PY |
+| Antigua and Barbuda | AG | Guyana | GY | Peru | PE |
+| Argentina | AR | Honduras | HN | Philippines | PH |
+| Armenia | AM | Hungary | HU | Poland | PL |
+| Australia | AU | Iceland | IS | Portugal | PT |
+| Austria | AT | Ireland | IE | Romania | RO |
+| Azerbaijan | AZ | Israel | IL | Rwanda | RW |
+| Bahamas | BS | Italy | IT | Saint Kitts and Nevis | KN |
+| Bahrain | BH | Jamaica | JM | Saint Lucia | LC |
+| Belgium | BE | Japan | JP | Saint Vincent and the Grenadines | VC |
+| Belize | BZ | Kazakhstan | KZ | Samoa | WS |
+| Benin | BJ | Kiribati | KI | San Marino | SM |
+| Brazil | BR | Korea, South | KR | Sao Tome and Principe | ST |
+| Brunei | BN | Kuwait | KW | Senegal | SN |
+| Bulgaria | BG | Latvia | LV | Seychelles | SC |
+| Cabo Verde | CV | Lesotho | LS | Sierra Leone | SL |
+| Canada | CA | Liberia | LR | Singapore | SG |
+| Chad | TD | Liechtenstein | LI | Slovakia | SK |
+| Chile | CL | Lithuania | LT | Slovenia | SI |
+| Colombia | CO | Luxembourg | LU | Solomon Islands | SB |
+| Comoros | KM | Madagascar | MG | South Africa | ZA |
+| Congo, Republic of the | CG | Malawi | MW | Spain | ES |
+| Costa Rica | CR | Malaysia | MY | Sri Lanka | LK |
+| Cyprus | CY | Maldives | MV | Suriname | SR |
+| Czech Republic | CZ | Malta | MT | Sweden | SE |
+| Denmark | DK | Marshall Islands | MH | Switzerland | CH |
+| Djibouti | DJ | Mauritania | MR | Taiwan | TW |
+| Dominica | DM | Mauritius | MU | Tajikistan | TJ |
+| Dominican Republic | DO | Mexico | MX | Tanzania | TZ |
+| El Salvador | SV | Micronesia | FM | Thailand | TH |
+| Equatorial Guinea | GQ | Moldova | MD | Timor-Leste | TL |
+| Estonia | EE | Monaco | MC | Togo | TG |
+| Eswatini | SZ | Mongolia | MN | Tonga | TO |
+| Fiji | FJ | Namibia | NA | Trinidad and Tobago | TT |
+| Finland | FI | Nauru | NR | Turkmenistan | TM |
+| France | FR | Netherlands | NL | Tuvalu | TV |
+| Gabon | GA | New Zealand | NZ | Uganda | UG |
+| Gambia | GM | Nigeria | NG | United Kingdom | GB |
+| Georgia | GE | North Macedonia | MK | Uruguay | UY |
+| Germany | DE | Norway | NO | Uzbekistan | UZ |
+| Ghana | GH | Oman | OM | Vanuatu | VU |
+| Greece | GR | Palau | PW | Vatican City | VA |
+| Grenada | GD | Panama | PA | Zambia | ZM |
+| Guatemala | GT | Papua New Guinea | PG |  |  |
+
+Countries not in this list are not currently eligible for transactional account creation. Requests for individuals in unapproved countries are rejected before verification begins.
 
 ## Custodial vs. transactional
 

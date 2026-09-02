@@ -5,7 +5,7 @@ description: "Create a KYC-verified individual account that receives value on-ch
 
 Individual accounts are transactional: they are verified with KYC, they do not hold custody with Brale, and they are shaped for inbound value. Use them when your end user is a natural person who needs to receive stablecoins on-chain or be the destination of an on-ramp, but should not hold a Brale-custodied wallet.
 
-For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types). For the U.S. states where individual transactional accounts can be created, see [Account availability](/coverage/account-availability). Eligibility is based on the individual's principal residential address. Individual custodial accounts are not currently supported.
+For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types). For the U.S. states and approved countries where individual transactional accounts can be created, see [Account availability](/coverage/account-availability). Eligibility is based on the individual's principal residential address. Individual custodial accounts are not currently supported.
 
 ## What it does
 
@@ -83,7 +83,7 @@ A transactional account is inbound by design. It does not get a Brale-custodied 
 
    The created account's `name` is derived from the individual's first and last name.
 
-   Non-US individuals are supported. `individual.address.state` is optional and free-form, and the postal code accepts any format; send the identity document type that matches the individual's country. See [Identity types](/key-concepts/accounts#identity-types) for the accepted values and [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account) for an example.
+   Non-US individuals in approved countries are supported; see [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. `individual.address.state` is optional and free-form, and the postal code accepts any format; send the identity document type that matches the individual's country. See [Identity types](/key-concepts/accounts#identity-types) for the accepted values and [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account) for an example.
 
 2. **Wait for verification.**\
    Brale runs identity verification asynchronously. On approval the account is enabled, `status` becomes `complete`, and `account.verification.completed` fires. This is typically fast — on the order of seconds. If more documents are needed, `account.verification.documents_required` fires with the required documents; stage and link them exactly as [documented for business accounts](/key-concepts/accounts#verification). Polling is also supported.
