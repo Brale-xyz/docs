@@ -11,7 +11,7 @@ Three shapes are supported today:
 - **Business, transactional (KYB)** — a KYB-verified business that is non-custodial. It has no internal Brale wallet and no stored balance at Brale, and it registers external, self-custody destination addresses.
 - **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
 
-Individual custodial accounts are not currently supported. Geographic eligibility for each shape depends on the account's U.S. state — see [Account availability](/coverage/account-availability) for the canonical state table.
+Individual custodial accounts are not currently supported. Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts.
 
 Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
 
@@ -127,7 +127,7 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.street_line_1` | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.street_line_2` | string | No       | Apt / Suite / Floor.                                                                                                                                                                              |
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
-| `business.address.state`         | string | Yes      | Abbreviated format (NY, FL)                                                                                                                                                                       |
+| `business.address.state`         | string | Yes      | Abbreviated format (IA, FL)                                                                                                                                                                       |
 | `business.address.zip`           | string | Yes      |                                                                                                                                                                                                   |
 | `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
 | `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
@@ -148,7 +148,7 @@ A controller or beneficial owner outside the US is created through the same `POS
 
 `ssn` and `identity` are mutually exclusive and exactly one is required. Sending `ssn` for a party outside the US returns `400`, because an SSN has no meaning there. Use the [identity type](#identity-types) that matches the document.
 
-The business itself is still US-only. This covers a US business whose controller or owners live elsewhere, not a foreign entity.
+The business itself must still have a US principal operating address on this endpoint: the business address schema requires a US state, and an EIN is required. This covers a US business whose controller or owners live elsewhere, not a foreign entity. For the approved countries where business transactional accounts are eligible, see [Account availability](/coverage/account-availability#international-transactional-availability).
 
 ```json Request
 {
@@ -296,7 +296,7 @@ The region column is guidance on which value to send, not a separate validation:
 
 ### Creating a non-US individual account
 
-Non-US individuals are supported. `individual.address.state` is optional and free-form, and the postal code accepts any format, so only the identity type and country change. Omit `state` for countries that have no state or province:
+Non-US individuals in approved countries are supported. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. `individual.address.state` is optional and free-form, and the postal code accepts any format, so only the identity type and country change. Omit `state` for countries that have no state or province:
 
 ```json Request
 {
