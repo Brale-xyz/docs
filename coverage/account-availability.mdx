@@ -9,16 +9,46 @@ This page is the canonical source for geographic account eligibility. It states 
 
 | Customer type | Account type | Availability |
 | --- | --- | --- |
-| Business | Custodial | Available in every U.S. state except New York, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
-| Business | Transactional | Available in every U.S. state except New York, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Business | Custodial | Available in 44 states and territories, plus California, Massachusetts, Montana, and North Carolina. Unavailable in New York, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
+| Business | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Individual | Custodial | Available in 44 states and territories. Unavailable in California, Massachusetts, Montana, New York, North Carolina, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
 | Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
-| Individual | Custodial | Not currently supported. |
 
-Custodial accounts are U.S.-only. They are not available outside the United States.
+Custodial accounts (business and individual) are U.S.-only. They are not available outside the United States: a non-US country on a custodial request is refused with `422 unsupported_jurisdiction`.
+
+A request from a jurisdiction Brale does not serve for the requested account type returns `422 unsupported_jurisdiction`. The rejection is permanent, so retrying the same request will not succeed and it is safe to cache the error against an idempotency key.
 
 <Note>
 All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's restricted-business policies. Availability in a state or country does not guarantee approval.
 </Note>
+
+## Custodial availability by state
+
+Individual custodial accounts are supported in these 44 states and territories:
+
+| | | | |
+| --- | --- | --- | --- |
+| Alaska (AK) | Idaho (ID) | Missouri (MO) | Pennsylvania (PA) |
+| Alabama (AL) | Illinois (IL) | Mississippi (MS) | Puerto Rico (PR) |
+| Arkansas (AR) | Indiana (IN) | North Dakota (ND) | Rhode Island (RI) |
+| Arizona (AZ) | Kansas (KS) | Nebraska (NE) | South Carolina (SC) |
+| Colorado (CO) | Kentucky (KY) | New Hampshire (NH) | South Dakota (SD) |
+| Connecticut (CT) | Louisiana (LA) | New Jersey (NJ) | Utah (UT) |
+| Washington, D.C. (DC) | Maryland (MD) | New Mexico (NM) | Vermont (VT) |
+| Delaware (DE) | Maine (ME) | Nevada (NV) | Washington (WA) |
+| Florida (FL) | Michigan (MI) | Ohio (OH) | Wisconsin (WI) |
+| Georgia (GA) | Minnesota (MN) | Oklahoma (OK) | West Virginia (WV) |
+| Hawaii (HI) | Iowa (IA) | Oregon (OR) | Wyoming (WY) |
+
+Individual custodial accounts are **not** available in California (CA), Massachusetts (MA), Montana (MT), North Carolina (NC), New York (NY), Tennessee (TN), Texas (TX), Virginia (VA), or the territories American Samoa (AS), Guam (GU), the Northern Mariana Islands (MP), and the U.S. Virgin Islands (VI).
+
+Business custodial accounts are supported in the 44 jurisdictions above plus California (CA), Massachusetts (MA), Montana (MT), and North Carolina (NC). They are unavailable in New York (NY), Tennessee (TN), Texas (TX), Virginia (VA), and the territories American Samoa (AS), Guam (GU), the Northern Mariana Islands (MP), and the U.S. Virgin Islands (VI).
+
+### US states and territories in requests
+
+- When the individual's `country` is `US`, `address.state` is required and must be a US state or territory, as an abbreviation or full name (`"CA"`, `"California"`, and `"PR"` all work). Otherwise the request returns `422 invalid_us_state`.
+- A US territory is a US jurisdiction, not a separate country. Send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`), which is how a territory address is normally written. Do not put a territory in a country field.
+- For a non-US individual, `address.state` is optional and free-form (a province or region).
 
 ## International transactional availability
 

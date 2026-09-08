@@ -1193,8 +1193,12 @@ components:
           type: string
           enum:
             - standard
+            - reliance
           description: >
-            Optional. When omitted, defaults to `standard`.
+            Optional. When omitted, defaults to `standard`. `reliance` is
+            enabled per managing account by Brale and is not self-serve; a
+            caller without it enabled receives
+            `422 unsupported_account_combination`.
           example: standard
         business_name:
           type: string
@@ -1244,7 +1248,11 @@ components:
       description: >
         Residential address for an individual account. When
         `individual.country` is `US` or `USA`, `state` is required and must be a
-        valid US state or territory abbreviation. For non-US individuals it is
+        US state or territory, as an abbreviation or full name (`CA`,
+        `California`, and `PR` all work); otherwise the request returns
+        `422 invalid_us_state`. A US territory is a US jurisdiction, not a
+        separate country: send `country: US` with the territory in `state`
+        (`PR`, `GU`, `AS`, `VI`, `MP`). For non-US individuals `state` is
         optional and free-form, since many countries have no state or province.
 
 
@@ -1268,8 +1276,9 @@ components:
           type: string
           description: >
             State, province, or region. Required when `individual.country` is
-            `US` or `USA`, optional otherwise. A blank value is treated as
-            absent.
+            `US` or `USA`, and accepted as an abbreviation or full name (`CA`,
+            `California`, `PR`); optional and free-form otherwise. A blank
+            value is treated as absent.
           example: IA
         zip:
           type: string
@@ -1366,9 +1375,11 @@ components:
       additionalProperties: false
       title: CreateIndividualAccountRequest
       description: >
-        Individual (KYC) transactional account creation payload. Business-only
+        Individual (KYC) account creation payload, custodial or transactional.
+        The request shape is identical for both account types. Business-only
         fields (`business_name`, `ein`, `website`, `business_controller`,
-        `beneficial_owners`) must not be sent on this path.
+        `beneficial_owners`) must not be sent on this path; they are rejected
+        with `400 unexpected_business_fields`.
       required:
         - entity_type
         - account_type
@@ -1383,7 +1394,13 @@ components:
         account_type:
           type: string
           enum:
+            - custodial
             - transactional
+          description: >
+            `custodial` accounts receive Brale-custodied internal wallets and
+            can hold balances at Brale; they are US-only. `transactional`
+            accounts are non-custodial: they receive no custodial wallets and
+            cannot create custodial addresses.
           example: transactional
         verification_mode:
           type: string
@@ -1393,7 +1410,9 @@ components:
           description: >
             `standard` (default) or `reliance`. Use `reliance` when your
             integration operates under an agreement with Brale that specifies
-            a reliance model.
+            a reliance model. Reliance is enabled per managing account by
+            Brale and is not self-serve; a caller without it enabled receives
+            `422 unsupported_account_combination`.
           example: standard
         individual:
           $ref: '#/components/schemas/Individual'
@@ -1415,20 +1434,16 @@ components:
       description: >
         Request body for `POST /accounts`. The three optional dimension fields
         `entity_type`, `account_type`, and `verification_mode` select which
-        shape is validated. Supported combinations:
+        shape is validated. All eight combinations of `entity_type`
+        (`business`, `individual`), `account_type` (`custodial`,
+        `transactional`), and `verification_mode` (`standard`, `reliance`) are
+        supported. Omitting all three fields creates a business custodial
+        account with `standard` verification.
 
-        - `business` + `custodial` + `standard` (KYB, default when all three
-          are omitted)
-
-        - `business` + `transactional` + `standard` (KYB, non-custodial)
-
-        - `individual` + `transactional` + `standard` (KYC)
-
-        - `individual` + `transactional` + `reliance` (KYC under a reliance
-          model)
-
-        `individual` + `custodial` is not currently supported. Any other
-        combination returns `422 unsupported_account_combination`.
+        `verification_mode: bypass` is not supported for any combination and
+        returns `422 unsupported_account_combination`. `reliance` is enabled
+        per managing account by Brale and is not self-serve; a caller without
+        it enabled receives `422 unsupported_account_combination`.
 
 
         No `discriminator` is declared, because `entity_type` is optional: a
@@ -1808,6 +1823,31 @@ paths:
                     version: '2025-04-01'
                     ip: 203.0.113.42
                     user_agent: Mozilla/5.0 ...
+              create_individual_custodial_account:
+                summary: Individual (KYC) custodial account
+                value:
+                  entity_type: individual
+                  account_type: custodial
+                  verification_mode: standard
+                  individual:
+                    first_name: Jane
+                    last_name: Doe
+                    date_of_birth: '1990-01-01'
+                    email: jane@example.com
+                    phone_number: '2125550182'
+                    country: US
+                    address:
+                      street_line_1: 123 Main St
+                      street_line_2: Apt 4
+                      city: Des Moines
+                      state: IA
+                      zip: '50309'
+                    identity:
+                      number: 222-22-2222
+                      type: SSN9
+                  tos_attestation:
+                    accepted_at: '2026-05-13T20:45:15Z'
+                    version: '2025-04-01'
               create_individual_account_non_us:
                 summary: Individual (KYC) transactional account, non-US
                 value:
@@ -1867,13 +1907,19 @@ paths:
 
             - `unsupported_account_combination` — the combination of
               `entity_type`, `account_type`, and `verification_mode` is
-              outside the supported rows (for example, individual +
-              custodial). Permanent; safe to cache against an idempotency
-              key.
+              not supported: any `verification_mode: bypass`, or
+              `verification_mode: reliance` from a caller without reliance
+              enabled. Permanent; safe to cache against an idempotency key.
+
+            - `unsupported_jurisdiction` — Brale does not serve the
+              applicant's jurisdiction for the requested account type (for
+              example, a non-US country for a custodial account, or a US
+              state where the combination is unavailable). Permanent; safe to
+              cache against an idempotency key.
 
             - `invalid_us_state` — `individual.country` is `US` or `USA` and
-              `individual.address.state` is not a recognized US state or
-              territory.
+              `individual.address.state` is missing, blank, or not a
+              recognized US state or territory (abbreviation or full name).
           content:
             application/json:
               schema:

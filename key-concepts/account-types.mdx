@@ -17,16 +17,18 @@ Omitting all three dimension fields produces exactly today's behavior. Existing 
 
 ## Supported combinations
 
-| `entity_type` | `account_type` | Status | Verification |
+All eight combinations of the three dimension fields are supported:
+
+| `entity_type` | `account_type` | `verification_mode` | Verification |
 | --- | --- | --- | --- |
-| `business` | `custodial` | Supported | KYB (existing behavior) |
-| `business` | `transactional` | Supported | KYB |
-| `individual` | `transactional` | Supported | KYC (`verification_mode` may be `standard` or `reliance`) |
-| `individual` | `custodial` | Not currently supported | — |
+| `business` | `custodial` | `standard` or `reliance` | KYB (default when all three fields are omitted) |
+| `business` | `transactional` | `standard` or `reliance` | KYB |
+| `individual` | `custodial` | `standard` or `reliance` | KYC |
+| `individual` | `transactional` | `standard` or `reliance` | KYC |
+
+`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
 
 An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
-
-Individual + custodial is not currently supported. The enum values can represent the combination, but requests that send it are rejected.
 
 Where each combination is geographically available depends on the account's location: the U.S. state for custodial accounts, and the U.S. state or approved country for transactional accounts. See [Account availability](/coverage/account-availability) for the canonical state table and the approved country list.
 
@@ -34,8 +36,10 @@ Where each combination is geographically available depends on the account's loca
 
 - **Business, custodial** — a business entity that will hold stablecoin balances in Brale-custodied wallets, initiate transfers, and use Brale as its record of funds. See [Custodial Accounts](/guides/managed-accounts).
 - **Business, transactional** — a KYB-verified business that is non-custodial: it has no internal Brale wallet and no stored balance at Brale. It can register external, self-custody destination addresses, which are destination-only. Subject to the business state-availability perimeter in [Account availability](/coverage/account-availability).
-- **Individual, transactional, standard** — a natural person who receives value on-chain (for example, as the destination of an on-ramp) but does not hold custody with Brale. See [Individual accounts](/guides/individual-accounts).
-- **Individual, transactional, reliance** — the same shape as the standard individual path, verified under a reliance model. Use this when your integration operates under an agreement with Brale that specifies reliance.
+- **Individual, custodial** — a natural person who holds stablecoin balances in Brale-custodied wallets. The request shape is identical to the individual transactional path; only `account_type` changes. U.S.-only, with a narrower state list than business custodial — see [Account availability](/coverage/account-availability).
+- **Individual, transactional** — a natural person who receives value on-chain (for example, as the destination of an on-ramp) but does not hold custody with Brale. See [Individual accounts](/guides/individual-accounts).
+
+On any of these rows, `verification_mode` is `standard` by default. Use `reliance` only when your integration operates under an agreement with Brale that specifies a reliance model and Brale has enabled it for your managing account.
 
 ## Backward compatibility
 
@@ -45,5 +49,5 @@ The dimension fields are optional and default to the values that describe today'
 
 - [Account availability](/coverage/account-availability) — where each customer and account type is available.
 - [Accounts](/key-concepts/accounts) — the full account resource, fields, and lifecycle.
-- [Individual accounts](/guides/individual-accounts) — end-to-end workflow for creating and using a transactional account.
+- [Individual accounts](/guides/individual-accounts) — end-to-end workflow for creating and using an individual account.
 - [`POST /accounts`](/api-reference/brale/create-account) — API reference.
