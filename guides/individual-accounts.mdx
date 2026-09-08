@@ -1,26 +1,37 @@
 ---
 title: "Individual accounts"
-description: "Create a KYC-verified individual account that receives value on-chain without holding custody at Brale."
+description: "Create a KYC-verified individual account, custodial or transactional."
 ---
 
-Individual accounts are transactional: they are verified with KYC, they do not hold custody with Brale, and they are shaped for inbound value. Use them when your end user is a natural person who needs to receive stablecoins on-chain or be the destination of an on-ramp, but should not hold a Brale-custodied wallet.
+Individual accounts register a natural person as a Brale account, verified with KYC. They come in two shapes, selected by `account_type`:
 
-For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types). For the U.S. states and approved countries where individual transactional accounts can be created, see [Account availability](/coverage/account-availability). Eligibility is based on the individual's principal residential address. Individual custodial accounts are not currently supported.
+- **Custodial** — the account receives Brale-custodied wallets and can hold stablecoin balances at Brale. U.S.-only, with a narrower state list than business custodial accounts.
+- **Transactional** — the account is non-custodial: it receives no custodial wallets, cannot create custodial addresses, and is shaped for inbound value. Use it when your end user needs to receive stablecoins on-chain or be the destination of an on-ramp, but should not hold a Brale-custodied wallet.
+
+The request shape is identical for both; only `account_type` changes. For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types). For the U.S. states where individual custodial accounts can be created, and the U.S. states and approved countries for individual transactional accounts, see [Account availability](/coverage/account-availability). Eligibility is based on the individual's principal residential address.
 
 ## What it does
 
-- Registers a natural person as a Brale account (`entity_type: individual`, `account_type: transactional`).
+- Registers a natural person as a Brale account (`entity_type: individual`, with `account_type: custodial` or `account_type: transactional`).
 - Runs KYC identity verification on the individual.
 - Emits the same `account.verification.*` webhook events as business KYB.
-- Lets you register external on-chain destination addresses so the account can receive value.
+- Custodial: provisions Brale-custodied (`type=internal`) wallets the account can hold balances in.
+- Transactional: lets you register external on-chain destination addresses so the account can receive value.
 
 ## Who it's for
 
 Use cases include:
 
-- Payout recipients who need to receive stablecoins on-chain but do not hold balances at Brale.
-- End users of a wallet or fintech app who receive on-ramps to their own self-custody wallet.
-- Any natural person your platform needs to identify and pay, without provisioning custody.
+- End users of a wallet or fintech app who hold stablecoin balances in Brale-custodied wallets (custodial).
+- Payout recipients who need to receive stablecoins on-chain but do not hold balances at Brale (transactional).
+- End users of a wallet or fintech app who receive on-ramps to their own self-custody wallet (transactional).
+- Any natural person your platform needs to identify and pay, without provisioning custody (transactional).
+
+## Choosing custodial or transactional
+
+Set `account_type: "custodial"` to create an individual custodial account. Everything else in the request is the same as the transactional path below: the `individual` object and `tos_attestation` are required, and business-only fields are rejected. A custodial individual account receives Brale-custodied wallets on supported chains, like a business custodial account.
+
+Individual custodial accounts are U.S.-only and are available in 44 states and territories — a narrower list than business custodial. See [Account availability](/coverage/account-availability#custodial-availability-by-state) for the state table. A request from an unsupported jurisdiction returns `422 unsupported_jurisdiction`.
 
 ## What a transactional account cannot do
 
@@ -34,6 +45,8 @@ A transactional account is inbound by design. It does not get a Brale-custodied 
 - **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
 
 ## How it works
+
+The workflow below shows the transactional flow. For a custodial account, set `account_type: custodial` in step 1; on approval the account receives Brale-custodied wallets automatically, and steps 3–5 do not apply — work with its internal addresses instead, as described in [Custodial Accounts](/guides/managed-accounts).
 
 1. **Create the account.**\
    Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.

@@ -23,7 +23,7 @@ For the full account creation payload (business details, controller, beneficial 
 
 ## Choosing between a business and an individual account
 
-`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select the account shape. Supported combinations are business custodial, business transactional, and individual transactional. Individual custodial is not currently supported. Omitting all three fields preserves today's business custodial behavior. See [Account types](/key-concepts/account-types) for the full matrix and [Account availability](/coverage/account-availability) for the U.S. states and approved countries where each combination can be created.
+`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select the account shape. All eight combinations are supported: business or individual, custodial or transactional, `standard` or `reliance`. Reliance is enabled per managing account by Brale and is not self-serve; `verification_mode: "bypass"` is not supported for any combination. Omitting all three fields preserves the default business custodial behavior. See [Account types](/key-concepts/account-types) for the full matrix and [Account availability](/coverage/account-availability) for the U.S. states and approved countries where each combination can be created.
 
 ## Example request with documents (business)
 
@@ -83,7 +83,7 @@ Linked documents are uploaded asynchronously after the account is created. The a
 
 ## Example request (individual)
 
-Create a KYC-verified individual account. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent on this path.
+Create a KYC-verified individual account. Set `account_type` to `transactional` (shown below) or `custodial` — the request shape is identical for both. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent on this path; they are rejected with `400 unexpected_business_fields`.
 
 ```json
 {

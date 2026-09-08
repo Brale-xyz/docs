@@ -1,17 +1,18 @@
 ---
 title: "Accounts"
-description: "Accounts represent verified entities identified by `account_id`: KYB-verified businesses (custodial or transactional) and KYC-verified individuals (transactional)."
+description: "Accounts represent verified entities identified by `account_id`: KYB-verified businesses and KYC-verified individuals, each custodial or transactional."
 ---
 
 Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users.
 
-Three shapes are supported today:
+Four shapes are supported:
 
 - **Business, custodial (KYB)** — the existing behavior. The account holds one or more Brale-custodied (`type=internal`) on-chain wallets, can originate transfers, and can hold off-chain bank Addresses.
 - **Business, transactional (KYB)** — a KYB-verified business that is non-custodial. It has no internal Brale wallet and no stored balance at Brale, and it registers external, self-custody destination addresses.
+- **Individual, custodial (KYC)** — a natural person verified with KYC whose account receives Brale-custodied (`type=internal`) wallets. The request shape is identical to the individual transactional path; only `account_type` differs. See [Individual accounts](/guides/individual-accounts).
 - **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
 
-Individual custodial accounts are not currently supported. Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts.
+Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts.
 
 Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
 
@@ -35,12 +36,14 @@ To KYB and approve a business account, we collect key details such as business n
 
 Supported combinations:
 
-| `entity_type` | `account_type` | Status | Verification |
+| `entity_type` | `account_type` | `verification_mode` | Verification |
 | --- | --- | --- | --- |
-| `business` | `custodial` | Supported | KYB (existing behavior) |
-| `business` | `transactional` | Supported | KYB |
-| `individual` | `transactional` | Supported | KYC (`verification_mode` may be `standard` or `reliance`) |
-| `individual` | `custodial` | Not currently supported | — |
+| `business` | `custodial` | `standard` or `reliance` | KYB (default when all three fields are omitted) |
+| `business` | `transactional` | `standard` or `reliance` | KYB |
+| `individual` | `custodial` | `standard` or `reliance` | KYC |
+| `individual` | `transactional` | `standard` or `reliance` | KYC |
+
+`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
 
 An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
 
@@ -216,7 +219,9 @@ Owners and controllers can be mixed: a US controller sending `ssn` alongside an 
 
 ## Creating an individual account
 
-On the individual path, set `entity_type` to `individual` and `account_type` to `transactional`. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent — they are rejected on this path.
+On the individual path, set `entity_type` to `individual` and `account_type` to `custodial` or `transactional`. The request shape is identical for both account types. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent — they are rejected with `400 unexpected_business_fields`.
+
+A custodial individual account receives Brale-custodied (`type=internal`) wallets. A transactional individual account is non-custodial: it receives no custodial wallets and cannot create custodial addresses. Custodial individual accounts are U.S.-only and available in a narrower set of states than business custodial accounts — see [Account availability](/coverage/account-availability).
 
 **POST** `https://api.brale.xyz/accounts`
 
@@ -260,8 +265,8 @@ The created account's `name` is derived from the individual's first and last nam
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `entity_type` | string | Yes (for this path) | Must be `individual`. |
-| `account_type` | string | Yes (for this path) | Must be `transactional`. |
-| `verification_mode` | string | No | `standard` (default) or `reliance`. |
+| `account_type` | string | Yes (for this path) | `custodial` or `transactional`. |
+| `verification_mode` | string | No | `standard` (default) or `reliance`. Reliance is enabled per managing account by Brale and is not self-serve. |
 | `individual.first_name` | string | Yes | Legal first name. |
 | `individual.last_name` | string | Yes | Legal last name. |
 | `individual.date_of_birth` | string | Yes | ISO date, `YYYY-MM-DD`. |
@@ -271,7 +276,7 @@ The created account's `name` is derived from the individual's first and last nam
 | `individual.address.street_line_1` | string | Yes | |
 | `individual.address.street_line_2` | string | No | Apt / Suite / Floor. |
 | `individual.address.city` | string | Yes | |
-| `individual.address.state` | string | US only | Required when `individual.country` is `US` or `USA`, and must be a valid state or territory (abbreviated, e.g. `NY`). Optional for non-US individuals, since many countries have no state or province; free-form and not validated when supplied. A blank value is treated as absent. |
+| `individual.address.state` | string | US only | Required when `individual.country` is `US` or `USA`, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, and `PR` all work). Otherwise the request returns `422 invalid_us_state`. A US territory is a US jurisdiction, not a separate country: send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`). Optional for non-US individuals, since many countries have no state or province; free-form and not validated when supplied. A blank value is treated as absent. |
 | `individual.address.zip` | string | Yes | Postal code. Any format is accepted, so non-US postal codes are supported. |
 | `individual.address.country` | string | No | Optional. The verification jurisdiction comes from the top-level `individual.country`, not from this field. |
 | `individual.identity.number` | string | Yes | The government identifier value. For US individuals with `type: SSN9`, the 9-digit Social Security number. |
@@ -360,11 +365,12 @@ The supported shape today is inbound: the account receives value on chain and ca
 
 | HTTP | Error type | Cause |
 | --- | --- | --- |
-| `422` | `unsupported_account_combination` | Dimension combination outside the supported rows (for example, individual + custodial). Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_account_combination` | Dimension combination outside the supported rows: any `verification_mode: bypass`, or `verification_mode: reliance` from a caller without reliance enabled. Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_jurisdiction` | Brale does not serve the applicant's jurisdiction for the requested account type (for example, a non-US country for a custodial account, or a state where the combination is unavailable). Permanent; safe to cache against an idempotency key. See [Account availability](/coverage/account-availability). |
 | `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
 | `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
 | `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`). |
-| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is missing, blank, or not a recognized state or territory. |
+| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is missing, blank, or not a recognized state or territory (abbreviation or full name). |
 | `400` | `invalid_attestation_timestamp` | `tos_attestation.accepted_at` is not an ISO-8601 timestamp. |
 
 ## Account Status
