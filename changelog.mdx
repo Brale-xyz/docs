@@ -3,6 +3,20 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-09-14" description="Week of September 8" tags={["New", "Update"]}>
+  This week added individual custodial accounts and expanded USDT network coverage.
+
+  ## Individual custodial accounts
+
+  You can now create custodial accounts for natural persons, not just businesses. An individual custodial account is KYC-verified and receives Brale-custodied wallets that can hold stablecoin balances. Create one by calling [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual` and `account_type: custodial`.
+
+  Individual custodial accounts are U.S.-only and available in 44 states and territories — a narrower list than business custodial. See [Account availability](/coverage/account-availability#custodial-availability-by-state) for the full state table, and [Individual accounts](/guides/individual-accounts) for the end-to-end workflow.
+
+  ## USDT on Ethereum and Solana
+
+  USDT is now supported on Ethereum and Solana, in addition to Tron. Use `ethereum` or `solana` as the `transfer_type` when moving USDT. See [Transfer types](/coverage/transfer-types) for the full network matrix.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
