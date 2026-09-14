@@ -81,15 +81,22 @@ When an automation becomes active, the `source.funding_instructions` object is p
 
 ## Branded Automations
 
-Branded Automations let you control the beneficiary name shown on funding instructions for a virtual account.
+Branded Automations let you select the verified identity (business or individual) shown as the beneficiary on funding instructions for a virtual account.
 
-With Branded Automations, you can control which business name appears on funding instructions by adding a `brand` object to the create request:
+Add a `brand` object to the create request to control which account name appears on funding instructions:
 
-| Field   | Where | Type   | Description                                                                                                                                                                     |
-| :------ | :---- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account whose business name and address will appear as the beneficiary on wire and ACH funding instructions. |
+| Field   | Where | Type   | Description                                                                                                                                                                                                                                                                                       |
+| :------ | :---- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account (business or individual) whose verified identity will appear as the beneficiary on wire and ACH funding instructions. |
 
-```json Request
+Behavior:
+
+- If `brand` is omitted, the beneficiary on funding instructions remains Brale.
+- If `brand.account_id` references a business account, `beneficiary_name` and `beneficiary_address` show the business name and address.
+- If `brand.account_id` references an individual account, `beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
+- The automation is still created under the account in the request path. `brand.account_id` selects the identity rendered on the funding instructions; it does not change which account owns the automation.
+
+```json Request (business brand)
 {
   "name": "XYZ Onramp",
   "source": { "value_type": "USD" },
@@ -98,11 +105,24 @@ With Branded Automations, you can control which business name appears on funding
     "value_type": "SBC",
     "transfer_type": "Solana"
   },
-  "brand": { "account_id": "<ACCOUNT_ID>" }
+  "brand": { "account_id": "<BUSINESS_ACCOUNT_ID>" }
 }
 ```
 
-When the automation becomes active, `beneficiary_name` in `source.funding_instructions` will reflect that account’s business name.
+```json Request (individual brand)
+{
+  "name": "Jane Doe Onramp",
+  "source": { "value_type": "USD" },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "Solana"
+  },
+  "brand": { "account_id": "<INDIVIDUAL_ACCOUNT_ID>" }
+}
+```
+
+When the automation becomes active, `beneficiary_name` and `beneficiary_address` in `source.funding_instructions` reflect that account's verified identity — the business name and address for a business account, or the individual's legal name and address for an individual account. See [Individual accounts](/guides/individual-accounts) for how to create an individual account whose identity can be used as a brand.
 
 ## Testnet Behavior
 
