@@ -122,6 +122,25 @@ The workflow below shows the transactional flow. For a custodial account, set `a
 
 An individual account created through the API is automatically managed by the account that owns the API key. The managing account's credentials authorize requests scoped to it. These accounts are managed entirely through the API — there is no end-user dashboard for them. See [Custodial Accounts](/guides/managed-accounts) for the sibling business flow.
 
+## Use an individual account as an Automation brand
+
+A verified individual account can be used as the `brand.account_id` on an onramp automation. The automation is still created under the managing account; `brand.account_id` selects the identity that appears on the funding instructions. When you pass an individual account, `source.funding_instructions.beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
+
+```json Request
+{
+  "name": "Jane Doe Onramp",
+  "source": { "value_type": "USD" },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "Solana"
+  },
+  "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
+}
+```
+
+See [Branded Automations](/key-concepts/automations#branded-automations) for the full behavior and business-account example.
+
 ## Related API references
 
 - [`POST /accounts`](/api-reference/brale/create-account) — create an individual account.

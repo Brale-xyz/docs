@@ -7,18 +7,20 @@ Use the playground below to try this endpoint directly, or review the OpenAPI de
 
 ## Branded Automations
 
-You can optionally include a `brand` object in the request body to control which business name appears as the beneficiary on funding instructions.
+You can optionally include a `brand` object in the request body to select the verified identity (business or individual) that appears as the beneficiary on the automation's funding instructions.
 
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
-| `brand` | object | No | Controls the beneficiary name on the Automation's funding instructions. |
-| `brand.account_id` | string | Yes (if `brand` is provided) | The account whose business name and address appear as the beneficiary. Can be the caller's own account or a managed account. |
+| `brand` | object | No | Controls the beneficiary shown on the Automation's funding instructions. |
+| `brand.account_id` | string | Yes (if `brand` is provided) | The account whose verified identity appears as the beneficiary. Can be the caller's own account or a managed account. If the account is a business, its business name and address are used. If the account is an individual, the individual's legal name and address are used. |
 
 <Note>
-  **Default behavior is unchanged.** If you omit `brand`, the beneficiary on funding instructions defaults to Brale. If you include `brand.account_id`, the beneficiary reflects that account's business name instead.
+  **Default behavior is unchanged.** If you omit `brand`, the beneficiary on funding instructions defaults to Brale. If you include `brand.account_id`, the beneficiary reflects that account's verified business or individual identity instead.
 </Note>
 
-### Example: branded automation request
+The automation is still created under the account in the request path (`/accounts/{account_id}/automations`). `brand.account_id` does not change which account owns the automation — it only selects the identity shown on the funding instructions.
+
+### Example: branded automation request (business account)
 
 ```json
 {
@@ -36,6 +38,26 @@ You can optionally include a `brand` object in the request body to control which
 }
 ```
 
-Once the Automation becomes active, `source.funding_instructions.beneficiary_name` in the response will reflect the branded account's business name.
+### Example: branded automation request (individual account)
+
+Pass the `account_id` of a KYC-verified individual account to render that person's legal name and address as the beneficiary. See [Individual accounts](/guides/individual-accounts) for how to create one.
+
+```json
+{
+  "name": "Jane Doe Onramp",
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "wire"
+  },
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
+}
+```
+
+Once the Automation becomes active, `source.funding_instructions.beneficiary_name` and `beneficiary_address` in the response reflect the branded account's verified identity (business name and address, or individual legal name and address).
 
 For more details on how branded Automations work, see the [Automations concept page](/key-concepts/automations#branded-automations).
