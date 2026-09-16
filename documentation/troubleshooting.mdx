@@ -84,6 +84,26 @@ Use this checklist when integrating and operating at volume.
 - The rejection is permanent, so it is safe to cache this error against your idempotency key.
 - Fix: check [Account availability](/coverage/account-availability) for where each customer and account type combination is available.
 
+### 422 `external_address_disabled`
+
+- Cause: the submitted `account_number` and `routing_number` combination matches bank details that Brale has previously disabled — for example, after certain terminal ACH returns such as `R03` ("No Account / Unable to Locate Account"). Not every ACH failure disables a bank address, and Brale does not publish an exhaustive list of disabling return codes.
+- Returned by [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). The response uses the standard error envelope:
+
+  ```json
+  {
+    "code": "ValidationError",
+    "status": 422,
+    "type": "external_address_disabled",
+    "values": [],
+    "detail": "This external address has been disabled due to a failed ACH transfer."
+  }
+  ```
+
+- Re-registering the same bank details does not create a usable replacement address or restore the existing address. Retrying with a different idempotency key does not bypass the restriction.
+- A disabled bank address cannot be reactivated through the API. `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "active" }` only unarchives an `archived` external address.
+- Under current behavior, an ACH-triggered disablement may also prevent the underlying bank details from being used for other rails, including wire.
+- Fix: if the bank information has genuinely changed, register the corrected bank details as a new external address. If the existing details are believed to remain valid, [contact Brale support](mailto:support@brale.xyz) to review the restriction. See [Address lifecycle → Disabled external bank addresses](/key-concepts/addresses#disabled-external-bank-addresses).
+
 ### 422 `invalid_us_state`
 
 - Cause: the individual's `country` is `US` and `address.state` is missing, blank, or not a recognized US state or territory. Abbreviations and full names are both accepted (`CA`, `California`, `PR`).
