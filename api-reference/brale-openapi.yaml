@@ -592,10 +592,20 @@ components:
           $ref: '#/components/schemas/Ksuid'
         status:
           type: string
+          description: >-
+            Lifecycle state of the address. `pending` and `active` are set by
+            Brale. `archived` is customer-controlled through
+            `PATCH /accounts/{account_id}/addresses/{address_id}` on external
+            addresses. `disabled` is a Brale-enforced state applied to the
+            underlying bank details of an external bank address (for example,
+            after certain terminal ACH returns such as `R03`). A `disabled`
+            address cannot be used for new transfers and cannot be reactivated
+            through the API — contact Brale support to review the restriction.
           enum:
             - pending
             - active
             - archived
+            - disabled
           example: active
         name:
           type: string
@@ -1465,15 +1475,38 @@ components:
       required:
         - type
       properties:
+        code:
+          type: string
+          description: Error class (for example, `ValidationError`).
+          example: ValidationError
+        status:
+          type: integer
+          description: HTTP status code duplicated in the body for convenience.
+          example: 422
         type:
           type: string
           description: Machine-readable error type identifier.
           example: unsupported_account_combination
-        message:
+        detail:
           type: string
           description: Human-readable explanation of the error.
+          example: This external address has been disabled due to a failed ACH transfer.
+        message:
+          type: string
+          description: >-
+            Human-readable explanation of the error. Some endpoints return
+            `detail` in place of `message` — clients should read whichever is
+            present.
           example: The combination of entity_type, account_type, and verification_mode
             is not supported.
+        values:
+          type: array
+          description: >-
+            Optional list of offending field paths or values that produced
+            the error. Empty when not applicable.
+          items:
+            type: string
+          example: []
     BrandData:
       type: object
       nullable: true
@@ -2296,6 +2329,36 @@ paths:
                     needs_update: false
                     last_updated: '2026-06-02T20:01:03.321461Z'
                     routingNumber: '063108680'
+        '422':
+          description: >
+            Unprocessable entity. Possible `type` values on external address
+            creation:
+
+
+            - `external_address_disabled` — the submitted `account_number`
+              and `routing_number` combination matches bank details that
+              Brale has previously disabled (for example, after certain
+              terminal ACH returns such as `R03`, "No Account / Unable to
+              Locate Account"). Re-registering the same bank details does
+              not create a usable replacement address or restore the
+              existing address, and retrying with a different idempotency
+              key does not bypass the restriction. If the bank information
+              has genuinely changed, register the corrected bank details.
+              If the existing details are believed to remain valid, contact
+              Brale support to review the restriction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                external_address_disabled:
+                  summary: External address disabled
+                  value:
+                    code: ValidationError
+                    status: 422
+                    type: external_address_disabled
+                    values: []
+                    detail: This external address has been disabled due to a failed ACH transfer.
   /accounts/{account_id}/addresses/internal:
     post:
       tags:

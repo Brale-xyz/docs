@@ -19,7 +19,7 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 | Field | Type | Description |
 | --- | --- | --- |
 | `name` | string | Rename the address. |
-| `status` | string | `"archived"` to archive, `"active"` to unarchive (external addresses only — custodial addresses cannot be unarchived). |
+| `status` | string | `"archived"` to archive, `"active"` to unarchive an archived external address. Only external addresses support `status` changes; custodial addresses cannot be archived or unarchived through this endpoint. `{"status": "active"}` does not restore a Brale-disabled address — see [Address lifecycle → Disabled external bank addresses](/key-concepts/addresses#disabled-external-bank-addresses). |
 | `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
 | `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
 | `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
@@ -44,5 +44,9 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 
 - `400` — invalid or incompatible transfer types, attempting to archive a pending address, attempting to unarchive a custodial address, or invalid status value.
 - `404` — address not found or not owned by the account.
+
+<Note>
+Sending `{ "status": "active" }` against an address that is `disabled` does not reactivate it. `disabled` is a Brale-enforced state on the underlying bank details and can only be reviewed by [Brale support](mailto:support@brale.xyz). See [Address lifecycle → Disabled external bank addresses](/key-concepts/addresses#disabled-external-bank-addresses).
+</Note>
 
 Required scope: `addresses:write`

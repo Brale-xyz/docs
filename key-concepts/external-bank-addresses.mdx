@@ -69,3 +69,11 @@ If you need to stop using a previously linked external bank address without dele
 - Unarchive: `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "status": "active" }`
 
 Archive and unarchive apply only to external addresses. See [Address lifecycle](/key-concepts/addresses#address-lifecycle) for details.
+
+## Disabled bank addresses
+
+`archived` and `disabled` are different states. `archived` is customer-controlled and reversible through the API. `disabled` is a Brale-enforced state applied to the underlying bank details (for example, after certain terminal ACH returns such as `R03`, "No Account / Unable to Locate Account"). A disabled external bank address cannot be used for new transfers and cannot be restored through the API.
+
+Re-registering the same account-number and routing-number combination through [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address) returns `422 external_address_disabled`. Retrying with a different idempotency key does not bypass the restriction. If the bank information has genuinely changed, register the corrected bank details. If the existing details are believed to remain valid, [contact Brale support](mailto:support@brale.xyz) to review the restriction.
+
+See [Address lifecycle → Disabled external bank addresses](/key-concepts/addresses#disabled-external-bank-addresses) for the full behavior.
