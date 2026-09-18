@@ -1,0 +1,30 @@
+---
+title: "Integrations"
+description: "Connect Brale to blockchain networks and their native standards, such as the Canton Token Standard."
+---
+
+## Overview
+
+Integrations covers how Brale connects to blockchain networks and partner-specific standards so stablecoins move correctly on each chain. Beyond standard account-based transfers on EVM chains and Solana, some networks have their own transfer and permissioning models — Brale implements those natively so you don't have to.
+
+## Core capabilities
+
+- **Chain-native standards**: support for network-specific transfer interfaces, such as the Canton Token Standard's offer/accept model.
+- **Automatic handling for Brale-custodied parties**: transfers between parties both custodied by Brale complete automatically, without manual acceptance steps.
+- **External party support**: transfers to parties not custodied by Brale follow that network's standard acceptance flow (e.g., a Canton Ledger API `Accept` action, or a Token Standard-compliant wallet).
+
+## Typical flows
+
+- **Token standard transfer**: send a stablecoin to a Canton party using the Token Standard's offer/accept flow.
+- **Transfer to an externally-custodied party**: the recipient (or their wallet application) accepts the transfer using the network's native tooling.
+
+## Implementation checkpoints
+
+- Confirm the destination chain and whether it requires a network-specific standard — see [Transfer Types](/coverage/transfer-types).
+- For Canton, understand the two-step offer/accept model before building transfer flows to parties not custodied by Brale.
+
+## Related docs
+
+- [Canton Token Standard](/guides/canton-token-standard)
+- [Canton token transfers to EOAs](/guides/canton-token-transfers-to-eoas)
+- [Transfer Types](/coverage/transfer-types)
