@@ -73,6 +73,166 @@
         ]
       },
       {
+        "tab": "Products",
+        "icon": "boxes-stacked",
+        "groups": [
+          {
+            "group": "Orchestration",
+            "icon": "route",
+            "pages": [
+              "documentation/platform/stablecoin-orchestration",
+              {
+                "group": "Guides",
+                "pages": [
+                  "guides/fiat-to-stablecoin-onramp",
+                  "guides/ach-on-ramp",
+                  "guides/stablecoin-to-fiat-offramp",
+                  "guides/stablecoin-to-stablecoin-swap",
+                  "guides/stablecoin-payouts",
+                  "guides/2nd-and-3rd-party-transfers"
+                ]
+              },
+              {
+                "group": "Key concepts",
+                "pages": [
+                  "key-concepts/transfers",
+                  "key-concepts/automations"
+                ]
+              },
+              {
+                "group": "API reference",
+                "pages": [
+                  "api-reference/brale/list-transfers",
+                  "api-reference/brale/create-transfer",
+                  "api-reference/brale/get-transfer",
+                  "api-reference/brale/list-automations",
+                  "api-reference/brale/create-automations",
+                  "api-reference/brale/get-automations",
+                  "api-reference/brale/archive-automation"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Issuance",
+            "icon": "money-bill-wave",
+            "pages": [
+              "documentation/platform/stablecoin-issuance",
+              {
+                "group": "Guides",
+                "pages": [
+                  "guides/stablecoin-issuance",
+                  "guides/managed-accounts",
+                  "guides/individual-accounts"
+                ]
+              },
+              {
+                "group": "Key concepts",
+                "pages": [
+                  "key-concepts/accounts",
+                  "key-concepts/account-types"
+                ]
+              },
+              {
+                "group": "Coverage",
+                "pages": [
+                  "coverage/account-availability"
+                ]
+              },
+              {
+                "group": "API reference",
+                "pages": [
+                  "api-reference/brale/list-accounts",
+                  "api-reference/brale/create-account",
+                  "api-reference/brale/get-account",
+                  "api-reference/brale/stage-verification-document",
+                  "api-reference/brale/list-verification-documents",
+                  "api-reference/brale/link-verification-documents"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Wallets",
+            "icon": "wallet",
+            "pages": [
+              "guides/self-custody-wallets",
+              {
+                "group": "Wallet integrations",
+                "pages": [
+                  "guides/integrations/para-wallet",
+                  "guides/integrations/turnkey"
+                ]
+              },
+              {
+                "group": "Key concepts",
+                "pages": [
+                  "key-concepts/addresses",
+                  "key-concepts/external-bank-addresses"
+                ]
+              },
+              {
+                "group": "API reference",
+                "pages": [
+                  "api-reference/brale/list-addresses",
+                  "api-reference/brale/get-address",
+                  "api-reference/brale/create-address",
+                  "api-reference/brale/create-internal-address",
+                  "api-reference/brale/update-address",
+                  "api-reference/brale/get-address-balance"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tokenization",
+            "icon": "coins",
+            "pages": [
+              "documentation/platform/tokenization",
+              {
+                "group": "Guides",
+                "pages": [
+                  "guides/tokenization"
+                ]
+              },
+              {
+                "group": "API reference",
+                "pages": [
+                  "api-reference/brale/create-token-mint",
+                  "api-reference/brale/list-token-mints",
+                  "api-reference/brale/get-token-mint",
+                  "api-reference/brale/create-token-burn",
+                  "api-reference/brale/list-token-burns",
+                  "api-reference/brale/get-token-burn",
+                  "api-reference/brale/create-token-transfer",
+                  "api-reference/brale/list-token-transfers",
+                  "api-reference/brale/get-token-transfer"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Integrations",
+            "icon": "link",
+            "pages": [
+              {
+                "group": "Blockchain partners",
+                "pages": [
+                  "guides/canton-token-standard",
+                  "guides/canton-token-transfers-to-eoas"
+                ]
+              },
+              {
+                "group": "Coverage",
+                "pages": [
+                  "coverage/transfer-types"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Tools",
         "groups": [
           {
