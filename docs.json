@@ -90,13 +90,6 @@
             ]
           },
           {
-            "group": "IO",
-            "hidden": true,
-            "pages": [
-              "io/introduction"
-            ]
-          },
-          {
             "group": "MCP",
             "pages": [
               "mcp/api",
