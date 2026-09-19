@@ -3,6 +3,41 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-06-15" description="Week of June 8" tags={["New", "Update", "Fixed"]}>
+  This week brings programmatic onboarding endpoints, custodial wallet provisioning, Worldchain support, and a broader set of webhook events.
+
+  ## Programmatic verification document upload
+
+  New endpoints let you stage KYB/KYC documents and link them to an account without manual dashboard upload. Use [Stage a Verification Document](/api-reference/brale/stage-verification-document) to upload a file (PDF, PNG, or JPG up to 25 MB), [Link Verification Documents](/api-reference/brale/link-verification-documents) to attach them to an account, and [List Verification Documents](/api-reference/brale/list-verification-documents) to poll which documents are still required.
+
+  ## Provision additional custodial wallets
+
+  [Create a new internal address](/api-reference/brale/create-internal-address) provisions an extra custodial wallet on an account for fund segmentation. Deterministic chains (Solana, Stellar, EVM) return `active` synchronously; non-deterministic chains return `pending` until provisioning completes.
+
+  ## Archive automations
+
+  Automations can now be archived via the [Archive an Automation](/api-reference/brale/archive-automation) endpoint, permanently closing the virtual account so no further deposits are processed.
+
+  ## Worldchain support
+
+  Brale now supports **Worldchain** mainnet and **Worldchain Sepolia** testnet. Use `worldchain` and `worldchain_testnet` as `transfer_type` values. See [transfer types](/coverage/transfer-types) for the full list of supported networks.
+
+  ## New webhook event types
+
+  Webhook subscriptions now support `transfer.created`, `transfer.canceled`, `account.verification.documents_required`, and `account.verification.completed`, making it easier to drive onboarding and transfer flows from real-time events. See [webhook events](/webhooks/webhook-events) for the full list.
+
+  ## Updates
+
+  - **Update a webhook subscription.** Change a subscription's destination URL or replace its subscribed events without recreating it. See [Update a Webhook Subscription](/api-reference/brale/update-webhook-subscription).
+  - **Update an address.** Rename an address, archive or unarchive it, or add new transfer rails (for example, enabling wire on an existing external bank). See [Update an Address](/api-reference/brale/update-address).
+  - **Retrieve an address.** Fetch a single address by ID to poll for asynchronous capability updates such as RTP eligibility. See [Retrieve an Address](/api-reference/brale/get-address).
+  - **Full external address responses.** Creating an external address now returns the complete address object, including resolved transfer types and status, so integrations no longer need a follow-up read.
+
+  ## Fixed
+
+  - The offchain `value_type` is now consistently documented as uppercase `USD` to match API responses. See [value types](/coverage/value-types).
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
