@@ -3,6 +3,16 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-09-19" description="Week of September 14" tags={["New", "Update"]}>
+  ## Robinhood Chain support
+
+  Brale now supports **Robinhood Chain** as a transfer type on mainnet and testnet. Use `robinhood` and `robinhood_testnet` as `transfer_type` values in the API. See [transfer types](/coverage/transfer-types) for the full list of supported networks.
+
+  ## Individual accounts as Automation brands
+
+  Branded Automations now accept a verified individual account as `brand.account_id`, not just a business account. When you brand an onramp automation with an individual account, `source.funding_instructions.beneficiary_name` and `beneficiary_address` show that individual's legal name and address. See [Branded Automations](/key-concepts/automations#branded-automations) and [Individual accounts](/guides/individual-accounts#use-an-individual-account-as-an-automation-brand).
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
