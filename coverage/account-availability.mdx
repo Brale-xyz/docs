@@ -49,6 +49,7 @@ Business custodial accounts are supported in the 44 jurisdictions above plus Cal
 - When the individual's `country` is `US`, `address.state` is required and must be a US state or territory, as an abbreviation or full name (`"CA"`, `"California"`, and `"PR"` all work). Otherwise the request returns `422 invalid_us_state`.
 - A US territory is a US jurisdiction, not a separate country. Send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`), which is how a territory address is normally written. Do not put a territory in a country field.
 - For a non-US individual, `address.state` is optional and free-form (a province or region).
+- The same rules apply to a business `address.state`, based on the business's `address.country`: a US state or territory is required when `address.country` is `US` or omitted, and `address.state` is optional and free-form otherwise. A business postal code accepts any format.
 
 ## International transactional availability
 
@@ -62,9 +63,7 @@ Country eligibility and verification method are separate. In some countries Bral
 
 Individual transactional accounts in these countries are created through the standard API flow: set the top-level `individual.country` and send a matching identity document type. See [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account).
 
-<Warning>
-`POST /accounts` does not yet accept a non-U.S. business. The business creation schema requires an EIN and a U.S. address with a valid U.S. state. Until the API supports non-U.S. business creation, business transactional accounts can only be created with a U.S. principal operating address; the country list below defines approved eligibility for business transactional accounts ahead of that API support. Non-U.S. controllers and beneficial owners of a U.S. business are already supported — see [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners).
-</Warning>
+Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. A non-US business can only be created as a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
 
 ### Approved countries (131)
 

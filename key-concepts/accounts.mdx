@@ -130,8 +130,9 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.street_line_1` | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.street_line_2` | string | No       | Apt / Suite / Floor.                                                                                                                                                                              |
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
-| `business.address.state`         | string | Yes      | Abbreviated format (IA, FL)                                                                                                                                                                       |
-| `business.address.zip`           | string | Yes      |                                                                                                                                                                                                   |
+| `business.address.state`         | string | US only  | Required when the business's country is `US` or omitted, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, `PR`). Optional and free-form for a non-US business. |
+| `business.address.zip`           | string | Yes      | Postal code. Any format is accepted.                                                                                                                                                              |
+| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. A non-US business can only be created as a transactional account; see [Creating a non-US business account](#creating-a-non-us-business-account). |
 | `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
 | `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
@@ -151,7 +152,7 @@ A controller or beneficial owner outside the US is created through the same `POS
 
 `ssn` and `identity` are mutually exclusive and exactly one is required. Sending `ssn` for a party outside the US returns `400`, because an SSN has no meaning there. Use the [identity type](#identity-types) that matches the document.
 
-The business itself must still have a US principal operating address on this endpoint: the business address schema requires a US state, and an EIN is required. This covers a US business whose controller or owners live elsewhere, not a foreign entity. For the approved countries where business transactional accounts are eligible, see [Account availability](/coverage/account-availability#international-transactional-availability).
+The business address follows its own `address.country`. For a business outside the US, see [Creating a non-US business account](#creating-a-non-us-business-account).
 
 ```json Request
 {
@@ -216,6 +217,59 @@ The business itself must still have a US principal operating address on this end
 The Singaporean owner above omits `state` entirely, which is what to do for a country with no subdivision to give.
 
 Owners and controllers can be mixed: a US controller sending `ssn` alongside an owner outside the US sending `identity` is a valid request.
+
+### Creating a non-US business account
+
+A business in an approved country outside the US can be created only as a transactional account. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. Custodial accounts are U.S.-only, so a non-US business sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
+
+Send the same business payload with these changes:
+
+- `entity_type`: `"business"`
+- `account_type`: `"transactional"`
+- `address.country`: the business's ISO 3166-1 alpha-2 country code, for example `GB`
+- `address.state`: optional and free-form (a state, province, or region)
+- `address.zip`: any postal-code format
+- `ein`: the business identifier field, the same field used for a US business
+
+```json Request
+{
+  "entity_type": "business",
+  "account_type": "transactional",
+  "business_name": "Example Trading Ltd",
+  "ein": "12345678",
+  "address": {
+    "street_line_1": "10 Example Street",
+    "city": "London",
+    "zip": "EC1A 1BB",
+    "country": "GB"
+  },
+  "phone_number": "+442071234567",
+  "email": "ops@example.co.uk",
+  "website": "https://example.co.uk",
+  "business_controller": {
+    "first_name": "Oliver",
+    "last_name": "Smith",
+    "dob": "1985-03-14",
+    "email": "oliver@example.co.uk",
+    "phone_number": "+447700900123",
+    "identity": {
+      "number": "123456789",
+      "type": "PASSPORT"
+    },
+    "address": {
+      "street_line_1": "10 Example Street",
+      "city": "London",
+      "zip": "EC1A 1BB",
+      "country": "GB"
+    }
+  },
+  "beneficial_owners": [],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
 
 ## Creating an individual account
 

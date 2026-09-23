@@ -1029,14 +1029,55 @@ components:
         zip:
           type: string
           example: '90001'
+    BusinessAddress:
+      type: object
+      additionalProperties: false
+      title: BusinessAddress
+      description: >
+        Business address. `state` is absent from `required` because whether it
+        is required depends on `country`: a US business must supply a recognized
+        US state or territory, and elsewhere it is optional and free-form.
+      required:
+        - street_line_1
+        - city
+        - zip
+      properties:
+        street_line_1:
+          type: string
+          example: 100 Example St.
+        street_line_2:
+          type: string
+          example: Suite 500
+        city:
+          type: string
+          example: Springfield
+        state:
+          type: string
+          description: >
+            State, province, or region. When the business's country is US or
+            omitted this is required and must be a US state or territory, by
+            abbreviation or full name (`CA`, `California`, `PR`). Optional and
+            free-form otherwise.
+          example: CA
+        zip:
+          type: string
+          description: Postal code (any format).
+          example: '90001'
+        country:
+          type: string
+          description: >
+            ISO 3166-1 alpha-2 country code of the business. Defaults to `US`
+            when omitted. Determines jurisdiction coverage for the account. A
+            non-US business can only be created as a transactional account.
+          example: US
     ControllingPartyAddress:
       type: object
       additionalProperties: false
       title: ControllingPartyAddress
       description: >
-        Postal address for a business controller or beneficial owner. Unlike the
-        business `USStreetAddress`, `state` is free-form and the postal code
-        accepts any format, so controlling parties outside the US are supported.
+        Postal address for a business controller or beneficial owner. `state` is
+        free-form and the postal code accepts any format, so controlling parties
+        outside the US are supported.
 
 
         `state` is absent from `required` because whether it is required depends
@@ -1163,7 +1204,9 @@ components:
         Business (KYB) account creation payload. This is the default path when
         `entity_type` is omitted, or when it is explicitly set to `business`.
         `account_type` selects between a custodial account (the default) and a
-        non-custodial transactional account.
+        non-custodial transactional account. A business outside the US can only
+        be created as a transactional account, with its country in
+        `address.country`; see `BusinessAddress`.
       required:
         - business_name
         - ein
@@ -1211,7 +1254,7 @@ components:
           type: string
           example: '123456789'
         address:
-          $ref: '#/components/schemas/USStreetAddress'
+          $ref: '#/components/schemas/BusinessAddress'
         beneficial_owners:
           type: array
           nullable: true
@@ -1800,6 +1843,39 @@ paths:
                     user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
                       ...
                   name: My Account
+              create_business_transactional_account_non_us:
+                summary: Business (KYB) transactional account, non-US
+                value:
+                  entity_type: business
+                  account_type: transactional
+                  business_name: Example Trading Ltd
+                  ein: '12345678'
+                  address:
+                    street_line_1: 10 Example Street
+                    city: London
+                    zip: EC1A 1BB
+                    country: GB
+                  phone_number: '+442071234567'
+                  email: ops@example.co.uk
+                  website: https://example.co.uk
+                  beneficial_owners: []
+                  business_controller:
+                    first_name: Oliver
+                    last_name: Smith
+                    dob: '1985-03-14'
+                    email: oliver@example.co.uk
+                    phone_number: '+447700900123'
+                    address:
+                      street_line_1: 10 Example Street
+                      city: London
+                      zip: EC1A 1BB
+                      country: GB
+                    identity:
+                      number: '123456789'
+                      type: PASSPORT
+                  tos_attestation:
+                    accepted_at: '2026-05-13T20:45:15Z'
+                    version: '2025-04-01'
               create_individual_account:
                 summary: Individual (KYC) transactional account
                 value:
