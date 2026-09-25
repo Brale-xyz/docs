@@ -11,6 +11,8 @@ Transactional Accounts are a managed-account configuration. For the account-mode
 
 A transactional account is a verified business (KYB) or individual (KYC) account that your platform creates and operates through the API. Each one has its own `account_id`.
 
+This guide applies to both business and individual managed accounts. The account-creation payload and verification requirements differ by entity type; see [Accounts](/key-concepts/accounts) and [Individual Accounts](/guides/individual-accounts) for those details.
+
 Transactional accounts are non-custodial. They receive no internal wallet addresses and hold no Brale-custodied balance. A transactional account is not a wallet or a stored-value account. It is a verified identity with one or more registered external destination addresses.
 
 ## When to use them
@@ -40,7 +42,7 @@ If your customer needs Brale-managed wallet addresses and a stablecoin balance, 
 3. **Register an external destination address.**\
    Add the customer's self-custody wallet with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). See [Addresses](/key-concepts/addresses).
 4. **Deliver value to the destination.**\
-   Use an eligible source account or a supported program flow to send value to the external address. For example, an on-ramp [automation](/key-concepts/automations) or a [transfer](/key-concepts/transfers) owned by your managing account can target it.
+   Use the external address as the destination in a transfer that originates elsewhere. For example, an on-ramp automation owned by the managing account can deliver value to the external address.
 5. **Attribute activity.**\
    Inbound events carry `data.account_id`. A webhook subscription on your managing account receives events for every account it manages, so you can attribute activity to the correct managed customer account. See [Webhook Events](/webhooks/webhook-events).
 
