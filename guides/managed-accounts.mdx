@@ -48,9 +48,13 @@ Transactional accounts do not receive internal wallet addresses, do not hold Bra
 | Your platform | Managed customer account | Brale |
 | --- | --- | --- |
 | Owns the product experience, customer relationship, and API integration | Is the verified business or individual represented by an `account_id` | Operates the applicable account, custody, verification, and compliance infrastructure |
-| Designs the end-user experience and collects information required for its approved program | Uses the custodial or transactional model approved for the program | Supports the account lifecycle and provisions internal addresses for custodial accounts |
+| Designs the end-user experience and collects information required for the selected account flow | Uses the selected custodial or transactional account model | Supports the account lifecycle and provisions internal addresses for custodial accounts |
 
-Before creating an account, review the applicable account-creation and end-user consent requirements in [Accounts](/key-concepts/accounts).
+<Note>
+Account availability depends on customer type, account type, jurisdiction, verification, and program approval. Availability in a jurisdiction does not guarantee approval for every customer, payment rail, transfer direction, or funds flow. See [Account availability](/coverage/account-availability).
+</Note>
+
+Before calling `POST /accounts`, your onboarding flow must present the current [Brale End User Agreement](https://brale.xyz/legal/end-user-agreement) to the end user and capture the required consent. See [Accounts](/key-concepts/accounts) for account-creation requirements.
 
 ## Before you build
 

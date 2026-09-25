@@ -42,7 +42,7 @@ If your customer needs Brale-managed wallet addresses and a stablecoin balance, 
 3. **Register an external destination address.**\
    Add the customer's self-custody wallet with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). See [Addresses](/key-concepts/addresses).
 4. **Deliver value to the destination.**\
-   Use the external address as the destination in a transfer that originates elsewhere. For example, an on-ramp automation owned by the managing account can deliver value to the external address.
+   Use the external address as the destination in a transfer that originates elsewhere. A transactional account itself cannot be the source of an on-chain transfer. See [Transfers](/key-concepts/transfers) and [Automations](/key-concepts/automations) for supported funding and delivery flows.
 5. **Attribute activity.**\
    Inbound events carry `data.account_id`. A webhook subscription on your managing account receives events for every account it manages, so you can attribute activity to the correct managed customer account. See [Webhook Events](/webhooks/webhook-events).
 
