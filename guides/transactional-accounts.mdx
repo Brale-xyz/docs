@@ -1,0 +1,66 @@
+---
+title: "Transactional Accounts"
+description: "Create verified managed accounts with external self-custody destinations, without Brale-managed wallet balances."
+---
+
+<Info>
+Transactional Accounts are a managed-account configuration. For the account-model comparison and platform-to-customer relationship, see [Managed Accounts](/guides/managed-accounts).
+</Info>
+
+## What transactional accounts are
+
+A transactional account is a verified business (KYB) or individual (KYC) account that your platform creates and operates through the API. Each one has its own `account_id`.
+
+Transactional accounts are non-custodial. They receive no internal wallet addresses and hold no Brale-custodied balance. A transactional account is not a wallet or a stored-value account. It is a verified identity with one or more registered external destination addresses.
+
+## When to use them
+
+Use a transactional account when:
+
+- Your end customer needs a verified identity and an external, self-custody destination.
+- Your platform does not need the end customer to hold a Brale-custodied balance.
+
+If your customer needs Brale-managed wallet addresses and a stablecoin balance, use [Custodial Accounts](/guides/custodial-accounts) instead.
+
+## Key limitations
+
+<Warning>
+- **No internal or custodial addresses.** A transactional account has no automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses.
+- **External addresses are destination-only.** An external address on a transactional account can receive value but cannot be the source of a transfer.
+- **The account cannot originate an on-chain transfer.** An attempt returns `422` with type `compatible_address_not_found`.
+- **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
+</Warning>
+
+## How it works
+
+1. **Create the account.**\
+   Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type` set to `business` or `individual` and `account_type: "transactional"`. See [Accounts](/key-concepts/accounts) for the request fields for each entity type.
+2. **Wait for verification.**\
+   Brale runs verification asynchronously. When it succeeds, `status` becomes `complete` and `account.verification.completed` fires. See [Accounts](/key-concepts/accounts#verification) for how to handle document requests.
+3. **Register an external destination address.**\
+   Add the customer's self-custody wallet with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). See [Addresses](/key-concepts/addresses).
+4. **Deliver value to the destination.**\
+   Use an eligible source account or a supported program flow to send value to the external address. For example, an on-ramp [automation](/key-concepts/automations) or a [transfer](/key-concepts/transfers) owned by your managing account can target it.
+5. **Attribute activity.**\
+   Inbound events carry `data.account_id`. A webhook subscription on your managing account receives events for every account it manages, so you can attribute activity to the correct managed customer account. See [Webhook Events](/webhooks/webhook-events).
+
+## Business and individual accounts
+
+Both business and individual entities can use the transactional model, subject to your configured program, eligibility, and availability. The request shape and geographic rules differ by entity type:
+
+- [Accounts](/key-concepts/accounts) covers the request fields for business and individual accounts.
+- [Account types](/key-concepts/account-types) explains the `entity_type`, `account_type`, and `verification_mode` combinations.
+- [Account availability](/coverage/account-availability) lists the U.S. states and approved countries where each account type can be created.
+- [Individual accounts](/guides/individual-accounts) walks through the end-to-end individual flow.
+
+## Related resources
+
+- [Accounts](/key-concepts/accounts)
+- [Account types](/key-concepts/account-types)
+- [Account availability](/coverage/account-availability)
+- [Individual accounts](/guides/individual-accounts)
+- [Addresses](/key-concepts/addresses)
+- [Transfers](/key-concepts/transfers)
+- [Automations](/key-concepts/automations)
+- [Webhook Events](/webhooks/webhook-events)
+- [`POST /accounts`](/api-reference/brale/create-account)

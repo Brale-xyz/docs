@@ -1,59 +1,76 @@
 ---
-title: "Custodial Accounts"
-description: "Hold fiat-backed stablecoins on behalf of end users with Brale-managed custodial wallets on supported chains."
+title: "Managed Accounts"
+sidebarTitle: "Overview"
+description: "Create and operate verified stablecoin accounts for your customers. Choose custodial accounts for Brale-managed wallet addresses and balances, or transactional accounts for approved self-custody destination flows."
 ---
 
-Brale enables businesses to hold fiat-backed stablecoins on behalf of their end users—unlocking powerful digital dollar experiences for wallets, marketplaces, fintech apps, and neobanks. Use stablecoins as account balances, enable fast transfers, or power embedded payouts.
+## Create stablecoin accounts for your customers
 
-Custodial accounts are available for businesses (KYB) and individuals (KYC). This guide covers the business flow. Custodial accounts are U.S.-only; see [Account availability](/coverage/account-availability) for the U.S. states where each can be created — the individual custodial state list is narrower than the business list.
+Managed accounts let your platform create and operate verified accounts for your end customers through Brale.
+
+Each managed account has its own `account_id`. Choose the account model that matches the customer experience you are building:
+
+- **Custodial accounts** include Brale-managed internal wallet addresses on supported chains and can hold stablecoin balances.
+- **Transactional accounts** are non-custodial. They use external destination addresses and do not hold Brale-custodied balances.
+
+Your platform owns the customer experience and uses the API to create accounts, check status, retrieve addresses and balances where applicable, and initiate supported activity. Brale operates the applicable account, custody, verification, and compliance infrastructure.
+
+<Columns cols={2}>
+  <Card title="Build with Custodial Accounts" icon="vault" href="/guides/custodial-accounts">
+    Give verified customers Brale-managed wallet addresses and stablecoin balances.
+  </Card>
+  <Card title="Build with Transactional Accounts" icon="arrow-right-to-bracket" href="/guides/transactional-accounts">
+    Support verified customers with self-custody destination flows, without a Brale-held balance.
+  </Card>
+</Columns>
+
+## Why use managed accounts?
+
+- **Give each customer an account structure.** Associate onboarding, addresses, balances, transfers, and events with one account ID.
+- **Avoid building wallet infrastructure.** Custodial accounts receive Brale-managed internal wallet addresses on supported chains.
+- **Embed stablecoin movement in your product.** Use the API to support account onboarding, balance visibility where applicable, and supported transfers or payouts.
+
+## Choose an account model
+
+| Customer need | Recommended model | What it provides |
+| --- | --- | --- |
+| A verified business needs a Brale-custodied stablecoin balance and supported movement | Business custodial | Internal wallet addresses and custodied balances |
+| A verified individual needs a Brale-custodied stablecoin balance and supported movement | Individual custodial | Internal wallet addresses and custodied balances |
+| A verified business needs a self-custody destination, not a Brale-held balance | Business transactional | External destination addresses; no internal wallet |
+| A verified individual needs a self-custody destination, not a Brale-held balance | Individual transactional | External destination addresses; no internal wallet |
 
 <Note>
-Need to onboard an individual end user? See [Individual accounts](/guides/individual-accounts) for the KYC-verified flow, custodial or transactional.
+Transactional accounts do not receive internal wallet addresses, do not hold Brale-custodied balances, and cannot originate on-chain transfers. See [Transactional Accounts](/guides/transactional-accounts).
 </Note>
 
-The business must be US-registered, but its controller and beneficial owners do not have to live in the US. See [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners) for what changes in the payload.
+## How the model works
 
-## What It Does
+| Your platform | Managed customer account | Brale |
+| --- | --- | --- |
+| Owns the product experience, customer relationship, and API integration | Is the verified business or individual represented by an `account_id` | Operates the applicable account, custody, verification, and compliance infrastructure |
+| Collects required information and presents required disclosures | Receives the account model approved for the program | Provisions internal addresses for custodial accounts and supports the account lifecycle |
 
-Custody lets you:
+## Before you build
 
-- Create and manage custodial wallets for end users on any blockchain Brale supports.
-- Hold stablecoin balances across all supported chains
-- Initiate transfers and payouts directly from custodied funds using any stablecoin supported at Brale.
+- [Compare account types](/key-concepts/account-types)
+- [Check account availability](/coverage/account-availability)
+- [Review the Accounts resource](/key-concepts/accounts)
+- [Create an account](/api-reference/brale/create-account)
 
-All supported custodial accounts receive Brale-managed internal wallets on supported chains out of the box—no custom wallet infrastructure required. Transactional accounts are non-custodial and do not receive internal wallets. When new custodial wallets are created they are instantly compatible with all transfer types on the platform.
+## Common questions
 
-## Who It's For
+### Is a managed account the same as a wallet?
 
-Use cases include:
+No. A managed account is the verified customer account identified by an `account_id`. A custodial managed account can have one or more internal wallet addresses on supported chains.
 
-- Wallets that want to show balances and enable transactions
-- Neobanks offering digital dollar accounts
-- Marketplaces holding funds for sellers or escrow
-- Fintech platforms embedding payments or savings
-- Custodial wallets bound to automations to automatically receive and mint stablecoins for end users.
+### What is the difference between custodial and transactional accounts?
 
-## How It Works
+Custodial accounts can hold Brale-custodied stablecoin balances in internal wallet addresses. Transactional accounts are non-custodial. They use external destination addresses and do not hold a Brale-custodied balance.
 
-1. **Create Wallets**\
-   When you [register a custodial Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains, so the default set is ready to use without any additional setup. You can also provision additional internal wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) — useful for segmenting funds within a single account.
-2. **Receive Deposits**\
-   You or your users can send stablecoins directly to custodial wallet addresses. Just [fetch wallet addresses](/key-concepts/addresses) and fund them.
-3. **Track Balances**\
-   Use the [Balances endpoint](/api-reference/brale/get-address-balance) to query stablecoin holdings across all wallets and chains.
-4. **Initiate Payouts**\
-   Send funds from any custodial wallet using the [Transfers](/key-concepts/transfers) endpoint. This supports on-chain transfers, off-chain payouts, and more.
-5. **Earn Revenue Share**\
-   When using your own stablecoin, you earn a share of revenue on all custodied assets.
+### Where are managed accounts available?
 
-## Related API References
+Availability depends on customer type, account type, and jurisdiction. See [Account availability](/coverage/account-availability).
 
-[`POST /accounts`](/api-reference/brale/create-account) - Register an account
+### Do I need to build separate wallet infrastructure?
 
-[`GET /addresses`](/api-reference/brale/list-addresses) - Fetch custodial wallet addresses. Custodial wallets have type `internal`
-
-[`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) - Provision an additional internal (custodial) address
-
-[`GET /balances`](/api-reference/brale/get-address-balance) - View wallet balances
-
-[`POST /transfers`](/api-reference/brale/create-transfer) - Initiate transfers and payouts
+Not for approved custodial account flows. Brale provisions internal wallet addresses on supported chains. You still build the customer experience and integrate through the API.
