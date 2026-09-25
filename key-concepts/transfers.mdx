@@ -89,6 +89,8 @@ Every request is scoped to an account, so the path always starts with:
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/transfers  // The ID of your or your customer's account`
 
+If the account is a managed customer account, note that [transactional accounts](/guides/transactional-accounts) cannot originate on-chain transfers. See [Managed Accounts](/guides/managed-accounts) to compare account models.
+
 ## USD to Stablecoin (Wire Transfer)
 
 Accept a USD deposit to mint stablecoins.

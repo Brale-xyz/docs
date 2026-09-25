@@ -3,7 +3,7 @@ title: "Accounts"
 description: "Accounts represent verified entities identified by `account_id`: KYB-verified businesses and KYC-verified individuals, each custodial or transactional."
 ---
 
-Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users.
+Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users. See [Managed Accounts](/guides/managed-accounts) for how your platform creates and operates accounts for its customers.
 
 Four shapes are supported:
 
@@ -397,7 +397,7 @@ Transactional accounts are inbound by design. The following constraints are enfo
 - **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
 </Warning>
 
-The supported shape today is inbound: the account receives value on chain and can be the destination of an on-ramp. See [Individual accounts](/guides/individual-accounts) for the end-to-end workflow.
+The supported shape today is inbound: the account receives value on chain and can be the destination of an on-ramp. See [Transactional Accounts](/guides/transactional-accounts) and [Individual accounts](/guides/individual-accounts) for the end-to-end workflow.
 
 ## Common Errors when creating Accounts
 

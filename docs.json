@@ -159,8 +159,15 @@
               "guides/stablecoin-issuance",
               "guides/stablecoin-payouts",
               "guides/2nd-and-3rd-party-transfers",
-              "guides/managed-accounts",
-              "guides/individual-accounts",
+              {
+                "group": "Managed Accounts",
+                "pages": [
+                  "guides/managed-accounts",
+                  "guides/custodial-accounts",
+                  "guides/transactional-accounts",
+                  "guides/individual-accounts"
+                ]
+              },
               "guides/self-custody-wallets",
               "guides/canton-token-standard",
               "guides/tokenization",

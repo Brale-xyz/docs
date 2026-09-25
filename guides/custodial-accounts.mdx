@@ -1,0 +1,61 @@
+---
+title: "Custodial Accounts"
+description: "Implementation guide for managed accounts that need Brale-managed wallet addresses and stablecoin balances on supported chains."
+---
+
+<Info>
+Custodial Accounts are a managed-account configuration for customers that need Brale-managed internal wallet addresses and stablecoin balances. For the account-model comparison and platform-to-customer relationship, see [Managed Accounts](/guides/managed-accounts).
+</Info>
+
+Brale enables businesses to hold fiat-backed stablecoins on behalf of their end users—unlocking powerful digital dollar experiences for wallets, marketplaces, fintech apps, and neobanks. Use stablecoins as account balances, enable fast transfers, or power embedded payouts.
+
+Custodial accounts are available for businesses (KYB) and individuals (KYC). This guide covers the business flow. Custodial accounts are U.S.-only; see [Account availability](/coverage/account-availability) for the U.S. states where each can be created — the individual custodial state list is narrower than the business list.
+
+<Note>
+Need to onboard an individual end user? See [Individual accounts](/guides/individual-accounts) for the KYC-verified flow, custodial or transactional.
+</Note>
+
+The business must be US-registered, but its controller and beneficial owners do not have to live in the US. See [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners) for what changes in the payload.
+
+## What It Does
+
+Custody lets you:
+
+- Create and manage custodial wallets for end users on any blockchain Brale supports.
+- Hold stablecoin balances across all supported chains
+- Initiate transfers and payouts directly from custodied funds using any stablecoin supported at Brale.
+
+All supported custodial accounts receive Brale-managed internal wallets on supported chains out of the box—no custom wallet infrastructure required. [Transactional accounts](/guides/transactional-accounts) are non-custodial and do not receive internal wallets. When new custodial wallets are created they are instantly compatible with all transfer types on the platform.
+
+## Who It's For
+
+Use cases include:
+
+- Wallets that want to show balances and enable transactions
+- Neobanks offering digital dollar accounts
+- Marketplaces holding funds for sellers or escrow
+- Fintech platforms embedding payments or savings
+- Custodial wallets bound to automations to automatically receive and mint stablecoins for end users.
+
+## How It Works
+
+1. **Create Wallets**\
+   When you [register a custodial Account](/key-concepts/accounts), custodial wallets are created automatically on all supported chains, so the default set is ready to use without any additional setup. You can also provision additional internal wallets on demand via [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) — useful for segmenting funds within a single account.
+2. **Receive Deposits**\
+   You or your users can send stablecoins directly to custodial wallet addresses. Just [fetch wallet addresses](/key-concepts/addresses) and fund them.
+3. **Track Balances**\
+   Use the [Balances endpoint](/api-reference/brale/get-address-balance) to query stablecoin holdings across all wallets and chains.
+4. **Initiate Payouts**\
+   Send funds from any custodial wallet using the [Transfers](/key-concepts/transfers) endpoint. This supports on-chain transfers, off-chain payouts, and more.
+
+## Related API References
+
+[`POST /accounts`](/api-reference/brale/create-account) - Register an account
+
+[`GET /addresses`](/api-reference/brale/list-addresses) - Fetch custodial wallet addresses. Custodial wallets have type `internal`
+
+[`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address) - Provision an additional internal (custodial) address
+
+[`GET /balances`](/api-reference/brale/get-address-balance) - View wallet balances
+
+[`POST /transfers`](/api-reference/brale/create-transfer) - Initiate transfers and payouts

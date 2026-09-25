@@ -46,7 +46,7 @@ A transactional account is inbound by design. It does not get a Brale-custodied 
 
 ## How it works
 
-The workflow below shows the transactional flow. For a custodial account, set `account_type: custodial` in step 1; on approval the account receives Brale-custodied wallets automatically, and steps 3–5 do not apply — work with its internal addresses instead, as described in [Custodial Accounts](/guides/managed-accounts).
+The workflow below shows the transactional flow. For a custodial account, set `account_type: custodial` in step 1; on approval the account receives Brale-custodied wallets automatically, and steps 3–5 do not apply — work with its internal addresses instead, as described in [Custodial Accounts](/guides/custodial-accounts).
 
 1. **Create the account.**\
    Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.
@@ -120,7 +120,7 @@ The workflow below shows the transactional flow. For a custodial account, set `a
 
 ## Managed by the API key owner
 
-An individual account created through the API is automatically managed by the account that owns the API key. The managing account's credentials authorize requests scoped to it. These accounts are managed entirely through the API — there is no end-user dashboard for them. See [Custodial Accounts](/guides/managed-accounts) for the sibling business flow.
+An individual account created through the API is automatically managed by the account that owns the API key. The managing account's credentials authorize requests scoped to it. These accounts are managed entirely through the API — there is no end-user dashboard for them. See [Custodial Accounts](/guides/custodial-accounts) for the sibling business flow, and [Managed Accounts](/guides/managed-accounts) for an overview of the account models.
 
 ## Use an individual account as an Automation brand
 
