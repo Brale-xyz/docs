@@ -1066,8 +1066,10 @@ components:
           type: string
           description: >
             ISO 3166-1 alpha-2 country code of the business. Defaults to `US`
-            when omitted. Determines jurisdiction coverage for the account. A
-            non-US business can only be created as a transactional account.
+            when omitted. Determines jurisdiction coverage for the account. Through
+            the API, a non-US business can only be created as a transactional
+            account; a non-US custodial request returns `422
+            unsupported_jurisdiction`.
           example: US
     ControllingPartyAddress:
       type: object
@@ -1203,9 +1205,12 @@ components:
         Business (KYB) account creation payload. This is the default path when
         `entity_type` is omitted, or when it is explicitly set to `business`.
         `account_type` selects between a custodial account (the default) and a
-        non-custodial transactional account. A business outside the US can only
-        be created as a transactional account, with its country in
-        `address.country`; see `BusinessAddress`.
+        non-custodial transactional account. Through the API, a business
+        outside the US can only be created as a transactional account, with
+        its country in `address.country`; see `BusinessAddress`. The API
+        cannot create a non-US custodial account: a non-US business sent with
+        `account_type: custodial` or with `account_type` omitted returns `422
+        unsupported_jurisdiction`.
       required:
         - business_name
         - ein
@@ -1992,7 +1997,8 @@ paths:
 
             - `unsupported_jurisdiction` — Brale does not serve the
               applicant's jurisdiction for the requested account type (for
-              example, a non-US country for a custodial account, or a US
+              example, a non-US country for a custodial account, which the API
+              cannot create, or a US
               state where the combination is unavailable). Permanent; safe to
               cache against an idempotency key.
 

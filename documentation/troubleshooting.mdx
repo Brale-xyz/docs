@@ -80,9 +80,12 @@ Use this checklist when integrating and operating at volume.
 
 ### 422 `unsupported_jurisdiction`
 
-- Cause: Brale does not serve the applicant's jurisdiction for the requested account type. Custodial accounts (business and individual) are U.S.-only and per-state; transactional accounts are unavailable in some U.S. states and outside the approved country list.
-- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Cause: Brale does not serve the applicant's jurisdiction for the requested account type through the API. Custodial accounts (business and individual) are U.S.-only and per-state; transactional accounts are unavailable in some U.S. states and outside the approved country list.
+- A non-US business sent with `account_type: "custodial"` returns this error. So does a non-US business sent with `account_type` omitted, because `account_type` defaults to `custodial` for business accounts. The API cannot create a non-US custodial account.
+- The rejection is permanent. Retrying the same request, or resending it with `account_type` omitted, will not succeed. It is safe to cache this error against your idempotency key.
+- Do not resend a custodial use case as `account_type: "transactional"` to get past this error. Choose the account type that matches how the customer will use the account. A transactional account is non-custodial: it holds no balance at Brale and cannot originate on-chain transfers.
 - Fix: check [Account availability](/coverage/account-availability) for where each customer and account type combination is available.
+- Regulated non-US businesses: Non-US businesses that are registered or licensed to provide money services or virtual asset services in their jurisdiction (for example, a FINTRAC-registered MSB in Canada or a MiCA-authorized CASP in the EU) can be onboarded as custodial accounts through Brale-assisted onboarding. Contact your Brale representative to start. This path is not available through the API. See [Non-US regulated businesses](/coverage/account-availability#non-us-regulated-businesses).
 
 ### 422 `invalid_us_state`
 

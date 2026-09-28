@@ -132,7 +132,7 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.state`         | string | US only  | Required when the business's country is `US` or omitted, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, `PR`). Optional and free-form for a non-US business. |
 | `business.address.zip`           | string | Yes      | Postal code. Any format is accepted.                                                                                                                                                              |
-| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. A non-US business can only be created as a transactional account; see [Creating a non-US business account](#creating-a-non-us-business-account). |
+| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. Through the API, a non-US business can only be created as a transactional account; see [Creating a non-US business account](#creating-a-non-us-business-account). |
 | `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
 | `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
@@ -220,9 +220,15 @@ Owners and controllers can be mixed: a US controller sending `ssn` alongside an 
 
 ### Creating a non-US business account
 
-A business in an approved country outside the US can be created only as a transactional account. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. Custodial accounts are U.S.-only, so a non-US business sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
+Through the API, a business in an approved country outside the US can be created only as a transactional account. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. The API cannot create a non-US custodial account. A non-US business sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
 
-Send the same business payload with these changes:
+<Note>
+Non-US businesses that are registered or licensed to provide money services or virtual asset services in their jurisdiction (for example, a FINTRAC-registered MSB in Canada or a MiCA-authorized CASP in the EU) can be onboarded as custodial accounts through Brale-assisted onboarding. Contact your Brale representative to start.
+
+Brale-assisted onboarding is not available through the API. See [Non-US regulated businesses](/coverage/account-availability#non-us-regulated-businesses).
+</Note>
+
+To create a non-US transactional account, send the same business payload with these changes:
 
 - `entity_type`: `"business"`
 - `account_type`: `"transactional"`

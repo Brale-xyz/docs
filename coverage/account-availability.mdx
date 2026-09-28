@@ -14,7 +14,7 @@ This page is the canonical source for geographic account eligibility. It states 
 | Individual | Custodial | Available in 44 states and territories. Unavailable in California, Massachusetts, Montana, New York, North Carolina, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
 | Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
 
-Custodial accounts (business and individual) are U.S.-only. They are not available outside the United States: a non-US country on a custodial request is refused with `422 unsupported_jurisdiction`.
+Through the API, custodial accounts (business and individual) can be created only in supported U.S. jurisdictions. A custodial `POST /accounts` request with a non-US country is refused with `422 unsupported_jurisdiction`. Qualifying regulated non-US businesses have a separate path that is not available through the API. See [Non-US regulated businesses](#non-us-regulated-businesses).
 
 A request from a jurisdiction Brale does not serve for the requested account type returns `422 unsupported_jurisdiction`. The rejection is permanent, so retrying the same request will not succeed and it is safe to cache the error against an idempotency key.
 
@@ -63,7 +63,7 @@ Country eligibility and verification method are separate. In some countries Bral
 
 Individual transactional accounts in these countries are created through the standard API flow: set the top-level `individual.country` and send a matching identity document type. See [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account).
 
-Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. A non-US business can only be created as a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
+Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. Through the API, a non-US business can only be created as a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
 
 ### Approved countries (131)
 
@@ -115,6 +115,14 @@ Business transactional accounts in these countries are created through the stand
 | Guatemala | GT | Papua New Guinea | PG |  |  |
 
 Countries not in this list are not currently eligible for transactional account creation. Requests for individuals in unapproved countries are rejected before verification begins.
+
+## Non-US regulated businesses
+
+Non-US businesses that are registered or licensed to provide money services or virtual asset services in their jurisdiction (for example, a FINTRAC-registered MSB in Canada or a MiCA-authorized CASP in the EU) can be onboarded as custodial accounts through Brale-assisted onboarding. Contact your Brale representative to start.
+
+Brale-assisted onboarding is not available through the API. You cannot create a non-US custodial account with `POST /accounts`. The request returns `422 unsupported_jurisdiction`. The standard API option for an eligible non-US business is a transactional account. See [International transactional availability](#international-transactional-availability).
+
+The approved country list above applies to transactional accounts only. It does not determine eligibility for Brale-assisted custodial onboarding. Incorporation in a country is not sufficient on its own: the business must be registered or licensed to provide money services or virtual asset services in its jurisdiction. Brale-assisted onboarding remains subject to verification, program approval, and applicable compliance requirements, and does not guarantee approval.
 
 ## Custodial vs. transactional
 
