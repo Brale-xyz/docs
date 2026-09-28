@@ -621,10 +621,18 @@ components:
           $ref: '#/components/schemas/Ksuid'
         address:
           type: string
+          nullable: true
+          description: On-chain address for wallets. `null` for bank addresses.
           example: '0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b'
+        account_number:
+          type: string
+          nullable: true
+          description: Masked bank account number for bank addresses, for example
+            `****1234`. Brale never returns the full account number. `null` or
+            omitted for wallets.
+          example: '****1234'
       required:
         - id
-        - address
     Amount:
       title: Amount
       type: object
@@ -644,7 +652,8 @@ components:
       title: AddressBalance
       type: object
       additionalProperties: false
-      description: Balance of **one** token on **one** chain for a specific wallet
+      description: Balance of **one** token on **one** chain for a custodial wallet,
+        or the USD balance of a Plaid-linked bank address.
       properties:
         address:
           $ref: '#/components/schemas/AddressReference'
@@ -652,29 +661,19 @@ components:
           $ref: '#/components/schemas/Amount'
         transfer_type:
           type: string
-          description: Blockchain where the balance lives
-          enum:
-            - solana
-            - ethereum
-            - polygon
-            - base
-            - arbitrum
-            - canton
-            - avalanche
-            - base_sepolia
-            - sepolia
-            - solana_devnet
-            - tempo_testnet
+          description: Blockchain network for wallets (for example, `solana` or
+            `base`), or `ach_debit` for a Plaid-linked bank.
           example: solana
         value_type:
           type: string
-          description: Token ticker
+          description: Token ticker for wallets (for example, `SBC`), or `USD` for
+            a Plaid-linked bank.
           example: SBC
       required:
         - address
         - balance
-        - transfer_type
         - value_type
+        - transfer_type
       example:
         address:
           id: 2VcUIIsgARwVbEGlIYbhg6fGG57
@@ -2481,11 +2480,24 @@ paths:
     get:
       tags:
         - Addresses
-      operationId: getAddressBalance
-      summary: Fetch the balance of an internal (custodial) address for a specific
-        token
-      description: 'Returns balance data for a given address, chain, and token.   Provide
-        `transfer_type` and `value_type` as query parameters.
+      operationId: get_address_balance
+      summary: Get an address balance
+      description: 'Returns the balance of one address for the requested `transfer_type`
+        and `value_type`. Both query parameters are required.
+
+
+        - **Custodial wallets** (`type=internal`): pass the blockchain network and
+        token ticker, for example `transfer_type=base&value_type=SBC`.
+
+        - **Plaid-linked bank addresses**: pass `transfer_type=ach_debit&value_type=USD`.
+        Brale returns Plaid''s available balance when Plaid supplies it, otherwise
+        the current balance. Successful reads may be cached for up to 30 seconds.
+        The balance is a point-in-time snapshot and does not guarantee that an ACH
+        debit will settle. Brale never returns the full bank account number.
+
+
+        Only Plaid-linked USD bank addresses support balance lookup. Bank addresses
+        created through Direct bank entry do not.
 
         '
       parameters:
@@ -2503,16 +2515,20 @@ paths:
           description: The ID of the address
         - name: transfer_type
           in: query
-          required: false
+          required: true
           schema:
             type: string
-          description: The blockchain environment (e.g., Solana, Ethereum)
+          example: base
+          description: Blockchain network for wallets (for example, `solana`, `base`,
+            `ethereum`), or `ach_debit` for a Plaid-linked bank.
         - name: value_type
           in: query
-          required: false
+          required: true
           schema:
             type: string
-          description: The stablecoin token or currency code
+          example: SBC
+          description: Token ticker for wallets (for example, `SBC`, `USDC`), or `USD`
+            for a Plaid-linked bank.
       responses:
         '200':
           description: The address details and balance info
@@ -2520,6 +2536,78 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AddressBalanceResponse'
+              examples:
+                wallet:
+                  summary: Custodial wallet (transfer_type=solana, value_type=SBC)
+                  value:
+                    address:
+                      id: 2VcUIIsgARwVbEGlIYbhg6fGG57
+                      address: 73uyt9HkEqx9bThYXWaUBP67sWsiJEsyJ5rSCieDx5me
+                    balance:
+                      value: '100.00'
+                      currency: SBC
+                    transfer_type: solana
+                    value_type: SBC
+                plaid_bank:
+                  summary: Plaid-linked bank (transfer_type=ach_debit, value_type=USD)
+                  value:
+                    address:
+                      id: 34yknnMShvDbSW6tQg4HLlN41QO
+                      address: null
+                      account_number: '****1234'
+                    balance:
+                      value: '1250.42'
+                      currency: USD
+                    value_type: USD
+                    transfer_type: ach_debit
+        '400':
+          description: >
+            Bad request. Possible `type` values:
+
+            - `invalid_address` — a bank balance request did not use
+              `transfer_type=ach_debit`.
+
+            - `invalid_value_type` — a bank balance request did not use
+              `value_type=USD`.
+
+            - `balance_not_supported_for_address` — the address is not
+              Plaid-linked, or the currency is not supported.
+
+            - `plaid_error` with `code: plaid_item_login_required` — the
+              Plaid connection needs to be re-authenticated. Have the user
+              relink the bank account through Plaid.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        description: Provider-specific error code. Present on
+                          `plaid_error`.
+                        example: plaid_item_login_required
+              examples:
+                plaid_item_login_required:
+                  summary: Plaid relink required
+                  value:
+                    type: plaid_error
+                    code: plaid_item_login_required
+                balance_not_supported_for_address:
+                  summary: Address does not support balance lookup
+                  value:
+                    type: balance_not_supported_for_address
+        '503':
+          description: >
+            `service_unavailable` — Plaid returned an error or balance data is
+            unavailable. This does not mean the balance is zero or insufficient.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                type: service_unavailable
   /accounts/{account_id}/financial-institutions:
     get:
       tags:

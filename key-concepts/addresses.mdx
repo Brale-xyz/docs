@@ -547,7 +547,7 @@ This endpoint returns all addresses (whether internal or external) linked to the
 
 ### Fetching an Internal Balance
 
-You can query the stablecoin balance of an internal address.
+You can query the stablecoin balance of an internal address. You can also query the USD balance of a Plaid-linked bank address with `transfer_type=ach_debit&value_type=USD`. See [Get A Balance](/guides/how-to/get-a-balance).
 
 **GET** `/accounts/{account_id}/addresses/address_id/balance?transfer_type=chain&value_type=token`
 

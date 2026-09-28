@@ -9,12 +9,13 @@ When you create an external bank address, the path you choose determines which `
 
 ## Comparison
 
-| Capability   | Plaid-linked bank account | Direct bank entry |
-| ------------ | ------------------------- | ----------------- |
-| `ach_debit`  | Supported                 | Not supported     |
-| `ach_credit` | Supported                 | Supported         |
-| `rtp_credit` | Supported                 | Supported         |
-| `wire`       | Not supported             | Supported         |
+| Capability     | Plaid-linked bank account | Direct bank entry |
+| -------------- | ------------------------- | ----------------- |
+| `ach_debit`    | Supported                 | Not supported     |
+| `ach_credit`   | Supported                 | Supported         |
+| `rtp_credit`   | Supported                 | Supported         |
+| `wire`         | Not supported             | Supported         |
+| Balance lookup | Supported (`USD` only)    | Not supported     |
 
 <Warning>
   **ACH debit** is only available through the **Plaid-linked bank account**
@@ -52,6 +53,8 @@ This flow uses the Plaid Link SDK to securely connect a bank account in two step
 2. [Register the account via Plaid](/api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id) — Exchange the `public_token` from Plaid to create an `address_id`.
 
 For a full walkthrough, see [Key Concepts → Addresses → Create addresses through Plaid](/key-concepts/addresses#create-addresses-through-plaid).
+
+After registration, you can check the linked account's USD balance with `GET /accounts/{account_id}/addresses/{address_id}/balance?transfer_type=ach_debit&value_type=USD`. See [Get A Balance](/guides/how-to/get-a-balance#plaid-linked-bank-balance).
 
 ## Direct bank entry flow
 
