@@ -112,7 +112,7 @@ Pick an internal `address_id` whose `transfer_types` include the chain(s) you ne
 
 #### Query an internal balance (custodial only)
 
-Balances require both `transfer_type` and `value_type` and work only for `type=internal`. 
+Balances require both `transfer_type` and `value_type`. For wallets, balance queries work only for `type=internal`.
 
 ```bash
 curl --request GET \
@@ -149,7 +149,7 @@ Store that `id` as the user’s Brale `address_id`.
 
 Notes:
 - If the same user has wallets on **multiple non-EVM chains** (e.g., Solana + Stellar), create separate external Addresses (you’ll get distinct `address_id` values).
-- You **cannot query balances** for external addresses—only internal custodial ones.
+- Balance queries are supported for internal custodial addresses and Plaid-linked bank addresses. Other external addresses—including self-custody wallets and bank addresses created through Direct bank entry—do not expose balances through Brale.
 - For more chain-specific examples, see [Add an External Destination](/guides/how-to/add-external-destination).
 
 ---

@@ -117,6 +117,39 @@ Response Body Example:
   '
   ```
 
+## Check the bank balance (optional)
+
+After you register the bank account through Plaid and before you submit the transfer, you can check the linked account's USD balance. Pass `transfer_type=ach_debit` and `value_type=USD`.
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}/balance?transfer_type=ach_debit&value_type=USD" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+```json
+{
+  "address": {
+    "id": "34yknnMShvDbSW6tQg4HLlN41QO",
+    "address": null,
+    "account_number": "****1234"
+  },
+  "balance": {
+    "value": "1250.42",
+    "currency": "USD"
+  },
+  "value_type": "USD",
+  "transfer_type": "ach_debit"
+}
+```
+
+- The balance is a point-in-time snapshot and may be cached for up to 30 seconds. It does not guarantee that the ACH debit will settle.
+- Brale still validates the balance when you submit the transfer. If the balance is insufficient, `POST /transfers` returns HTTP `422` with `type: insufficient_balance`. See [Idempotency](/key-concepts/idempotency) for how to retry.
+- If the balance request returns `503` with `type: service_unavailable`, balance data is temporarily unavailable. This does not mean the balance is zero or insufficient.
+- If it returns `400` with `type: plaid_error` and `code: plaid_item_login_required`, have the user relink the bank account through Plaid.
+
+See [Get A Balance](/guides/how-to/get-a-balance#plaid-linked-bank-balance) for details and [Get an address balance](/api-reference/brale/get-address-balance#errors) for all errors.
+
 ## Requesting Mint/On-ramping
 
 - At this stage your end users’ accounts should already be connected, where Brale will execute debits and mint to desired stablecoins from the process below:
