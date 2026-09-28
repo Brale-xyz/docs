@@ -3,6 +3,20 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-09-25" description="Week of September 21" tags={["New", "Update"]}>
+  ## Non-US business transactional accounts
+
+  You can now create business transactional accounts for businesses based in approved countries outside the US. Send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. For non-US businesses, `address.state` is optional and postal codes accept any format. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account) and [Account availability](/coverage/account-availability#international-transactional-availability).
+
+  ## USDG support
+
+  Brale now supports USDG on Robinhood Chain, Ethereum, and Solana. See [transfer types](/coverage/transfer-types).
+
+  ## USDC on Stellar
+
+  USDC is now supported on Stellar. See [transfer types](/coverage/transfer-types) for the full list.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
