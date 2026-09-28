@@ -51,7 +51,7 @@ Transactional accounts do not receive internal wallet addresses, do not hold Bra
 | Designs the end-user experience and collects information required for the selected account flow | Uses the selected custodial or transactional account model | Supports the account lifecycle and provisions internal addresses for custodial accounts |
 
 <Note>
-Account availability depends on customer type, account type, jurisdiction, verification, and program approval. Availability in a jurisdiction does not guarantee approval for every customer, payment rail, transfer direction, or funds flow. See [Account availability](/coverage/account-availability).
+Account availability depends on customer type, account type, jurisdiction, verification, and program approval. The API flow in these guides creates custodial accounts only in eligible U.S. jurisdictions. Availability in a jurisdiction does not guarantee approval for every customer, payment rail, transfer direction, or funds flow. See [Account availability](/coverage/account-availability).
 </Note>
 
 Before calling `POST /accounts`, your onboarding flow must present the current [Brale End User Agreement](https://brale.xyz/legal/end-user-agreement) to the end user and capture the required consent. See [Accounts](/key-concepts/accounts) for account-creation requirements.
@@ -75,7 +75,11 @@ Custodial accounts can hold Brale-custodied stablecoin balances in internal wall
 
 ### Where are managed accounts available?
 
-Availability depends on customer type, account type, and jurisdiction. See [Account availability](/coverage/account-availability).
+Availability depends on customer type, account type, and jurisdiction. Through the API, custodial accounts can be created only in eligible U.S. jurisdictions, and eligible non-US businesses can create transactional accounts. See [Account availability](/coverage/account-availability).
+
+Non-US businesses that are registered or licensed to provide money services or virtual asset services in their jurisdiction (for example, a FINTRAC-registered MSB in Canada or a MiCA-authorized CASP in the EU) can be onboarded as custodial accounts through Brale-assisted onboarding. Contact your Brale representative to start.
+
+Brale-assisted onboarding is not available through the API, and the `POST /accounts` flow in these guides does not apply to it. See [Non-US regulated businesses](/coverage/account-availability#non-us-regulated-businesses).
 
 ### Do I need to build separate wallet infrastructure?
 
