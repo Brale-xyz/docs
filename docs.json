@@ -220,6 +220,7 @@
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
               "api-reference/brale/get-automations",
+              "api-reference/brale/update-automation-destination",
               "api-reference/brale/archive-automation"
             ]
           },

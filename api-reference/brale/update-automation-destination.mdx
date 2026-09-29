@@ -1,0 +1,94 @@
+---
+title: 'Update an automation destination'
+description: 'Change the destination address of an active automation without creating a new automation or virtual account.'
+openapi: 'PATCH /accounts/{account_id}/automations/{automation_id}/destination'
+---
+
+Replace the destination address of an active automation. Use this endpoint to rotate wallets instead of creating a replacement automation.
+
+**PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/destination`
+
+Required scope: `automations:write`
+
+This endpoint does not require an `Idempotency-Key` header.
+
+## Behavior
+
+- Deposits received after the update are sent to the new destination.
+- Transfers already created by the automation keep their original destination.
+- The automation's virtual account and `source.funding_instructions` do not change. Your customer keeps sending funds to the same bank details.
+- Brale does not create a new automation or virtual account.
+- Only `destination.address_id` changes. `destination.value_type` and `destination.transfer_type` stay the same.
+- The new address must be valid for the environment the automation runs in. It must also meet the same destination restrictions that apply when you create an automation. For example, automations on a transactional account can only target external addresses. See [Account types](/key-concepts/account-types).
+- You can only update active automations. Archived automations cannot be updated.
+
+## Path parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `account_id` | string (KSUID) | Yes | The account that owns the automation. |
+| `automation_id` | string (KSUID) | Yes | The automation to update. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `address_id` | string (KSUID) | Yes | The ID of the address that receives future deposits. |
+
+```json Request
+{
+  "address_id": "3F2kQ9vXbT7mLpR4sN8wYcHdJ1a"
+}
+```
+
+## Responses
+
+### 200 OK
+
+Returns the full `Automation` object with the new `destination.address_id`. The `source.funding_instructions`, `destination.value_type`, and `destination.transfer_type` are unchanged.
+
+```json Response
+{
+  "id": "35kVg1llbsOBYvx9XKr9eOtsD9z",
+  "name": "Customer XYZ Automation",
+  "status": "active",
+  "source": {
+    "transfer_type": null,
+    "value_type": "USD",
+    "funding_instructions": {
+      "bank_address": "123 Example St, Example City, NY 10001",
+      "beneficiary_address": "25 Main Ave, Suite 100, Example City, IA 50000",
+      "beneficiary_name": "Company ABC",
+      "routing_number": "000111222",
+      "account_number": "000123456789",
+      "bank_name": "Example Bank",
+      "memo": null
+    }
+  },
+  "destination": {
+    "transfer_type": "solana",
+    "address_id": "3F2kQ9vXbT7mLpR4sN8wYcHdJ1a",
+    "value_type": "ARB"
+  },
+  "updated_at": "2026-09-29T17:40:12.204118Z",
+  "created_at": "2025-11-20T15:56:03.531196Z"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid authentication.
+
+### 403 Forbidden
+
+The access token is missing the `automations:write` scope.
+
+### 404 Not Found
+
+The automation or the destination address was not found, or is not owned by the account.
+
+### 422 Unprocessable Entity
+
+The destination address is invalid, incompatible, or cannot be used by this automation.
+
+For more details, see the [Automations concept page](/key-concepts/automations#update-an-automation-destination).

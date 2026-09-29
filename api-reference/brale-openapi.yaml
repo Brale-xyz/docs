@@ -70,7 +70,7 @@ components:
             addresses:read: Read address details
             addresses:write: Create addresses
             automations:read: Read automations
-            automations:write: Create automations
+            automations:write: Create and update automations
             financial-institutions:read: Read FI details (legacy)
             financial-institutions:write: Create FI (legacy)
             transfers:read: Read transfers
@@ -849,6 +849,19 @@ components:
         - address_id
         - value_type
         - transfer_type
+    AutomationDestinationUpdateRequest:
+      title: AutomationDestinationUpdateRequest
+      type: object
+      additionalProperties: false
+      description: >-
+        The new destination address for the automation. Only `address_id` can be
+        changed. The automation keeps its existing `value_type` and `transfer_type`.
+      properties:
+        address_id:
+          $ref: '#/components/schemas/Ksuid'
+          description: The ID of the address that receives future deposits.
+      required:
+        - address_id
     Automation:
       title: Automation
       type: object
@@ -2805,6 +2818,112 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Automation'
+  /accounts/{account_id}/automations/{automation_id}/destination:
+    patch:
+      tags:
+        - Automations
+      operationId: updateAutomationDestination
+      summary: Update an automation's destination
+      description: >-
+        Replaces the destination address of an active automation. Only
+        `destination.address_id` changes. `destination.value_type` and
+        `destination.transfer_type` stay the same.
+
+
+        Deposits received after the update are sent to the new address.
+        Transfers already created by the automation keep their original
+        destination. The automation's virtual account and
+        `source.funding_instructions` do not change, and Brale does not create a
+        new automation or virtual account.
+
+
+        The new address must be valid for the environment the automation runs
+        in and meet the same destination restrictions that apply when you create
+        an automation. Archived automations cannot be updated.
+
+
+        This endpoint does not require an `Idempotency-Key` header.
+
+
+        Required scope: `automations:write`.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account that owns the automation
+        - name: automation_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the automation to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutomationDestinationUpdateRequest'
+            example:
+              address_id: 3F2kQ9vXbT7mLpR4sN8wYcHdJ1a
+      responses:
+        '200':
+          description: >-
+            The destination was updated. Returns the full `Automation` object
+            with the new `destination.address_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Automation'
+              example:
+                id: 35kVg1llbsOBYvx9XKr9eOtsD9z
+                name: Customer XYZ Automation
+                status: active
+                source:
+                  transfer_type: null
+                  value_type: USD
+                  funding_instructions:
+                    bank_address: 123 Example St, Example City, NY 10001
+                    beneficiary_address: 25 Main Ave, Suite 100, Example City, IA 50000
+                    beneficiary_name: Company ABC
+                    routing_number: '000111222'
+                    account_number: '000123456789'
+                    bank_name: Example Bank
+                destination:
+                  transfer_type: solana
+                  address_id: 3F2kQ9vXbT7mLpR4sN8wYcHdJ1a
+                  value_type: ARB
+                updated_at: '2026-09-29T17:40:12.204118Z'
+                created_at: '2025-11-20T15:56:03.531196Z'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The access token is missing the `automations:write` scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: >-
+            The automation or the destination address was not found, or is not
+            owned by the account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >-
+            The destination address is invalid, incompatible, or cannot be used
+            by this automation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /accounts/{account_id}/plaid/link_token:
     post:
       tags:
