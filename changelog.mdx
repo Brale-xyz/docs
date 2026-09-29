@@ -3,6 +3,12 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-09-29" description="Transfer status filter" tags={["Update"]}>
+  ## Filter transfers by status
+
+  [List transfers](/api-reference/brale/list-transfers) now reliably filters by the displayed transfer `status`, including `failed` and `compliance review`. Pass `status` as a query parameter, resend it on every paginated request, and keep following `pagination.next` until it is absent. The `Transfer.status` enum now includes `compliance review`.
+</Update>
+
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
   May's updates focused on real-time event delivery, smoother onboarding, more resilient payouts, and expanded network coverage.
 
