@@ -349,7 +349,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 
 [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` matches the simulated rail (`ach` or `wire`).
 
-The Transfer schema also defines an optional, response-only `funding_simulated` boolean. When the API returns it with a value of `true`, the source funding was simulated rather than coming from a real payment. Do not rely on it being present on every simulated Transfer. Use `automation_id` and your own record of simulated deposits instead. `funding_simulated` is not present on production-funded Transfers.
+`funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
 
 ```json title="Response"
 {
