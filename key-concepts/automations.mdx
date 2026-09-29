@@ -127,8 +127,42 @@ When the automation becomes active, `beneficiary_name` and `beneficiary_address`
 ## Testnet Behavior
 
 <Note>
-  Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. Deposits sent to these coordinates will not be processed, and no actual funds movement occurs.
+  Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. These placeholder coordinates cannot receive real deposits, and no actual funds movement occurs.
 </Note>
+
+### Simulate a testnet deposit
+
+To fund a testnet Automation, call [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Brale creates a simulated inbound ACH or wire payment and runs the normal Automation mint path. Brale does not contact a bank, and no real fiat moves.
+
+Requirements:
+
+- Testnet API credentials with the `automations:write` and `network:testnet` scopes
+- An Automation with `status: "active"`
+- An Automation destination on a testnet chain, such as `base_sepolia` or `solana_devnet`
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/simulations/deposits`
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "wire"
+  }'
+```
+
+`transfer_type` accepts `ach` or `wire`. Brale returns `202 Accepted` with the resulting [Transfer](/key-concepts/transfers). The Transfer includes `automation_id`, and `source.transfer_type` matches the requested rail.
+
+After the simulated payment completes:
+
+- Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events).
+- Brale mints the stablecoin to the Automation's testnet destination.
+- The Transfer moves through the normal statuses. Fetch it with `GET /accounts/{account_id}/transfers/{transfer_id}` and read `destination.transaction_id` for the testnet mint.
+
+Use a new `Idempotency-Key` for each new simulated deposit. Retrying with the same key and body returns the original response without creating another payment, Transfer, or mint. See [Idempotency](/key-concepts/idempotency).
 
 ## Listing Automations for a Customer
 

@@ -191,6 +191,7 @@ Example:
 Notes:
 
 - `data.account_id` identifies the account the payment belongs to. Managing accounts use this to attribute events to a specific managed account.
+- Brale also emits `payment.completed` for inbound payments created by [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) on testnet. There is no simulation-specific webhook type, so the same handler covers simulated and real deposits.
 
 ## `transfer.canceled`
 

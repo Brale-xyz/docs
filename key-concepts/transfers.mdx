@@ -345,6 +345,38 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 }
 ```
 
+### Transfers from simulated testnet deposits
+
+[Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` matches the simulated rail (`ach` or `wire`).
+
+`funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
+
+```json title="Response"
+{
+  "id": "3F1kP8vQ2mZrT6yN0bXcW4hJd7s",
+  "status": "complete",
+  "failure": null,
+  "amount": {
+    "value": "10.00",
+    "currency": "USD"
+  },
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "wire"
+  },
+  "destination": {
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "SBC",
+    "transfer_type": "base_sepolia",
+    "transaction_id": "0x41c66f1d059dad7a55a854e157a1b5b938780c77ba5296e434a02dfb1727fe5e"
+  },
+  "note": null,
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_at": "2026-09-29T17:00:00.000000Z",
+  "updated_at": "2026-09-29T17:00:05.000000Z"
+}
+```
+
 ### Outbound wire transfer response (with `destination.payment_details`)
 
 For outbound wire transfers (e.g., stablecoin-to-fiat offramps via wire), the response may include `destination.payment_details` with the wire IMAD once Brale has received the underlying bank metadata. The object may be absent immediately after the transfer is created and appear later when the wire is submitted.

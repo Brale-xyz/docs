@@ -71,6 +71,7 @@ components:
             addresses:write: Create addresses
             automations:read: Read automations
             automations:write: Create automations
+            network:testnet: Access testnet-only operations, such as Automation deposit simulation
             financial-institutions:read: Read FI details (legacy)
             financial-institutions:write: Create FI (legacy)
             transfers:read: Read transfers
@@ -361,9 +362,10 @@ components:
         funding_simulated:
           type: boolean
           description: >-
-            Set to `true` when the source funding for this transfer was simulated in a
-            test environment rather than coming from a real payment. Not present for
-            production transfers.
+            Optional. When returned with a value of `true`, the source funding for this
+            transfer was simulated in testnet rather than coming from a real payment.
+            Not every simulated transfer is guaranteed to include this field. Not
+            present for production-funded transfers.
         created_at:
           type: string
           format: date-time
@@ -1516,6 +1518,58 @@ components:
           description: Human-readable explanation of the error.
           example: The combination of entity_type, account_type, and verification_mode
             is not supported.
+    SimulateAutomationDepositRequest:
+      title: SimulateAutomationDepositRequest
+      type: object
+      description: >-
+        Request body for simulating an inbound fiat deposit into a testnet
+        Automation.
+      additionalProperties: false
+      properties:
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/Amount'
+          description: >-
+            Deposit amount. `value` must be a positive decimal string greater than
+            zero. `currency` must be a reserve currency accepted by the API.
+          example:
+            value: '10.00'
+            currency: USD
+        transfer_type:
+          type: string
+          description: Inbound rail to simulate.
+          enum:
+            - ach
+            - wire
+          example: wire
+      required:
+        - amount
+        - transfer_type
+    ApiErrorV2:
+      title: ApiErrorV2
+      type: object
+      description: Error envelope returned by newer Brale endpoints.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable error type identifier.
+          example: automation_not_active
+        detail:
+          type: string
+          description: Human-readable explanation of the error.
+          example: Automation must be active to simulate a deposit
+        code:
+          type: string
+          example: ValidationError
+        status:
+          type: integer
+          example: 422
+        values:
+          type: array
+          items:
+            type: string
     BrandData:
       type: object
       nullable: true
@@ -2805,6 +2859,131 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Automation'
+  /accounts/{account_id}/automations/{automation_id}/simulations/deposits:
+    post:
+      tags:
+        - Automations
+      operationId: simulate_automation_deposit
+      summary: Simulate Automation Deposit
+      description: >
+        Simulates an inbound ACH or wire deposit into a testnet Automation and runs
+        the normal Automation mint path. Returns the resulting Transfer.
+
+
+        Available only with testnet credentials. Required scopes:
+        `automations:write` and `network:testnet`.
+
+
+        The Automation must belong to the account in the path, be `active`, and
+        have a testnet destination chain. Brale does not contact a bank and no
+        real fiat moves.
+
+
+        Retrying with the same `Idempotency-Key` and body returns the original
+        `202` response without creating another payment, Transfer, or mint.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account that owns the Automation
+        - name: automation_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the testnet Automation to fund
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          example: idemp-123e4567-e89b-12d3-a456-426614174000
+          description: >
+            A unique string used to prevent duplicate operations. Use a new key for
+            each new simulated deposit. Reuse the same key only to retry the same
+            request. Reusing a key with a different body or URI returns `422`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateAutomationDepositRequest'
+            examples:
+              wire:
+                summary: Simulate a wire deposit
+                value:
+                  amount:
+                    value: '10.00'
+                    currency: USD
+                  transfer_type: wire
+              ach:
+                summary: Simulate an ACH deposit
+                value:
+                  amount:
+                    value: '10.00'
+                    currency: USD
+                  transfer_type: ach
+      responses:
+        '202':
+          description: >-
+            Accepted. Returns the Transfer created by the Automation. The Transfer
+            includes `automation_id`, and `source.transfer_type` matches the
+            requested rail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          description: >
+            Invalid request or schema. Known cases:
+
+
+            - `transfer_type` is not `ach` or `wire` (for example, `rtp`) —
+              schema validation error.
+
+            - `invalid_currency` — the currency is not a supported reserve
+              currency (for example, `EUR`).
+
+            - `invalid_amount` — the amount is malformed, zero, or negative. For
+              zero, `detail` is `Amount must be greater than zero`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+        '401':
+          description: Unauthorized. Missing or invalid bearer token.
+        '403':
+          description: >-
+            Forbidden. The credentials do not include `network:testnet` or another
+            required scope. Mainnet API keys receive this response.
+        '404':
+          description: >-
+            The account or Automation was not found, or the Automation does not
+            belong to the account in the path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+        '422':
+          description: >
+            The request is valid but cannot be processed. Known cases:
+
+
+            - `mainnet_destination` — `Deposit simulation is only available for
+              testnet automations`.
+
+            - `automation_not_active` — `Automation must be active to simulate a
+              deposit`. Returned for pending, disabled, archived, or otherwise
+              inactive Automations.
+
+            - The `Idempotency-Key` was already used with a different request body
+              or URI.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
   /accounts/{account_id}/plaid/link_token:
     post:
       tags:
