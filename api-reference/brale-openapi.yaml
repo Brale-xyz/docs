@@ -321,13 +321,17 @@ components:
           $ref: '#/components/schemas/Ksuid'
         status:
           type: string
-          description: Lifecycle stage of the transfer
+          description: >-
+            Lifecycle stage of the transfer. `compliance review` means the underlying
+            payment is being held for compliance review and has not resumed normal
+            processing.
           enum:
             - pending
             - processing
             - complete
             - canceled
             - failed
+            - compliance review
           example: pending
         failure:
           allOf:
@@ -2079,6 +2083,24 @@ paths:
             reference. Exact match against the `transaction_id` field on either
             the source or destination leg.
           example: '0xdd5646ea…'
+        - name: status
+          in: query
+          required: false
+          description: >-
+            Filters transfers by the status displayed in the API response. Applied
+            after paging, so a page can contain fewer than `page[size]` transfers,
+            including zero. Continue following `pagination.next` until it is absent.
+            Exact match, case-sensitive. Unsupported values return 400.
+          schema:
+            type: string
+            enum:
+              - pending
+              - processing
+              - complete
+              - canceled
+              - failed
+              - compliance review
+          example: failed
         - name: page[size]
           in: query
           required: false
@@ -2087,7 +2109,9 @@ paths:
             minimum: 1
             maximum: 100
           example: 50
-          description: The number of transfers to return per page (1–100, default 25).
+          description: >-
+            The number of transfers retrieved per page before the `status` filter is
+            applied (1–100, default 25). Not a guaranteed number of matching transfers.
         - name: page[after]
           in: query
           required: false
@@ -2109,6 +2133,8 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/TransfersList'
+        '400':
+          description: Bad request. Returned when `status` is not a supported transfer status value.
     post:
       tags:
         - Transfers

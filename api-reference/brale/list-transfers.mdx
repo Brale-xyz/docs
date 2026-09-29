@@ -9,7 +9,7 @@ openapi: 'GET /accounts/{account_id}/transfers'
 
 You can narrow results by appending query parameters. All filters use **exact match** and are **case-sensitive**. When you combine multiple filters they apply with **AND** semantics — only transfers matching every supplied filter are returned.
 
-If no transfers match the filters, the API returns `200` with an empty `transfers` array and a `pagination` object.
+If no transfers on the current page match the filters, the API returns `200` with an empty `transfers` array and a `pagination` object. When you filter by `status`, an empty page can still include `pagination.next`. See [Filtering by `status`](#filtering-by-status).
 
 | Parameter | Filters by | Format | Example |
 | :--- | :--- | :--- | :--- |
@@ -17,6 +17,7 @@ If no transfers match the filters, the API returns `200` with an empty `transfer
 | `value_type` | Currency / token on source **or** destination | Canonical API id (case-sensitive) | `USDC`, `SBC`, `usd` |
 | `transfer_type` | Payment rail / chain on source **or** destination | Canonical API id (case-sensitive) | `polygon`, `wire`, `solana` |
 | `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match, case-sensitive) | `0xdd5646ea…` |
+| `status` | Transfer `status` displayed in the API response | One of `pending`, `processing`, `complete`, `canceled`, `failed`, `compliance review` | `failed` |
 
 <Info>
   `value_type` and `transfer_type` use canonical API identifiers. See [Value types](/coverage/value-types) and [Transfer types](/coverage/transfer-types) for the full list of valid values.
@@ -28,15 +29,29 @@ Pass the full on-chain transaction hash or off-chain payment reference to find t
 
 You can combine `transaction_id` with other filters — multiple filters use **AND** semantics.
 
+### Filtering by `status`
+
+Filters transfers by the `status` displayed in the API response. The filter is applied after retrieving each underlying page, so a page may contain fewer than `page[size]` transfers—including zero—while still returning `pagination.next`. Continue following `pagination.next` until it is absent.
+
+Accepted values are `pending`, `processing`, `complete`, `canceled`, `failed`, and `compliance review`. Matching is exact and case-sensitive. An unsupported `status` value returns `400`.
+
+Because `compliance review` contains a space, URL-encode the value (for example, `status=compliance%20review`).
+
+<Warning>
+  An empty `transfers` array does not necessarily mean there are no matching transfers. When filtering by `status`, the current underlying page may contain no matches while `pagination.next` points to later pages that do. Continue until `pagination.next` is absent.
+</Warning>
+
 ## Pagination
 
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
-| `page[size]` | Number of transfers per page (1–100) | 25 |
+| `page[size]` | Number of transfers retrieved per page before the `status` filter is applied (1–100). It is not a guaranteed number of matching transfers in the response. | 25 |
 | `page[after]` | Cursor for forward pagination | — |
 | `page[prev]` | Cursor from `pagination.prev` in a previous response | — |
 
-Only one of `page[after]` or `page[prev]` may be present per request. Filters persist across pages — you do not need to resend them when paging. Use the `pagination.next` value from the previous response as the `page[after]` query parameter in the next request.
+Only one of `page[after]` or `page[prev]` may be present per request. Use the `pagination.next` value from the previous response as the `page[after]` query parameter in the next request.
+
+Include the same filters on every paginated request. The cursor identifies the underlying page position; it does not replace the request's filter parameters.
 
 ## Examples
 
@@ -44,6 +59,31 @@ Only one of `page[after]` or `page[prev]` may be present per request. Filters pe
 
 ```bash
 curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?transaction_id=0xdd5646ea..." \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+### Filter by `status`
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?status=failed" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Use `--data-urlencode` for `compliance review`, which contains a space:
+
+```bash
+curl --get \
+  "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}" \
+  --data-urlencode "status=compliance review"
+```
+
+### Paginate a status-filtered list
+
+Resend the `status` filter with the `page[after]` cursor on each request:
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?status=canceled&page[size]=25&page[after]=${NEXT_CURSOR}" \
   -H "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
@@ -172,6 +212,19 @@ A successful response returns `200` with the following structure:
   ]
 }
 ```
+
+### `status`
+
+| Value | Description |
+| :--- | :--- |
+| `pending` | The transfer has been submitted but is not yet in progress. |
+| `processing` | The transfer is in progress. |
+| `complete` | The transfer is finalized and funds have arrived at the destination. |
+| `canceled` | The transfer has been canceled. |
+| `failed` | An issue prevented Brale from completing the transfer. |
+| `compliance review` | The underlying payment is being held for compliance review and has not resumed normal processing. |
+
+See [Transfer statuses](/key-concepts/transfers#transfer-statuses) for details.
 
 ### `source.payment_details`
 
