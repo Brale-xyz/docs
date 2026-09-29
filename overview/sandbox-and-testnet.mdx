@@ -5,7 +5,9 @@ description: "Use Brale's testnet environment to build and test stablecoin integ
 
 Brale provides a testnet environment for non-production requests. There is no separate sandbox.
 
-Only testnets (Sepolia, Solana Devnet, Base Sepolia, etc.) are supported. Fiat flows and blockchain mainnets (Ethereum, Solana, etc.) are not supported in testnet.
+Only testnets (Sepolia, Solana Devnet, Base Sepolia, etc.) are supported. Blockchain mainnets (Ethereum, Solana, etc.) are not supported in testnet.
+
+Real fiat movement is not supported in testnet. Brale does not contact a bank or move real funds. You can still test fiat-funded flows: testnet mints and burns skip the fiat leg, and you can [simulate inbound ACH and wire deposits](#4-simulate-a-deposit-into-a-testnet-automation) into testnet Automations.
 
 See the full set of [supported blockchain networks](/coverage/transfer-types#onchain).
 
@@ -66,6 +68,67 @@ When you submit a redemption on testnet, we immediately burn on-chain and skip t
   }
 }
 ```
+
+## 4. Simulate a deposit into a testnet Automation
+
+Testnet [Automations](/key-concepts/automations) return placeholder banking coordinates that cannot receive real deposits. To test the full Automation flow, simulate an inbound ACH or wire deposit. Brale runs the normal Automation, Transfer, and testnet mint flow and emits the normal `payment.completed` [webhook event](/webhooks/webhook-events).
+
+Your testnet API credentials need the `automations:write` and `network:testnet` scopes.
+
+**Create an Automation with a testnet destination**
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "name": "Testnet Onramp",
+    "source": { "value_type": "USD" },
+    "destination": {
+      "address_id": "'"${ADDRESS_ID}"'",
+      "value_type": "SBC",
+      "transfer_type": "base_sepolia"
+    }
+  }'
+```
+
+**Wait until the Automation is active**
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Continue when the response has `"status": "active"`.
+
+**Simulate the deposit**
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "ach"
+  }'
+```
+
+Brale returns `202 Accepted` with the resulting Transfer, including `automation_id`. `transfer_type` accepts `ach` or `wire`.
+
+**Fetch the Transfer**
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers/${TRANSFER_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+When `status` is `complete`, `destination.transaction_id` holds the testnet mint transaction. See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) for validation errors and idempotency behavior.
 
 ## Follow the Quick Start Guide
 

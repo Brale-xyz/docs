@@ -1,0 +1,128 @@
+---
+title: 'Simulate an Automation deposit'
+description: 'Simulate an inbound ACH or wire deposit into a testnet Automation and run the normal Transfer, mint, and webhook flow without moving real fiat.'
+openapi: '/api-reference/brale-openapi.yaml POST /accounts/{account_id}/automations/{automation_id}/simulations/deposits'
+---
+
+Testnet Automations return placeholder banking coordinates that cannot receive real deposits. Use this endpoint to simulate an inbound ACH or wire deposit instead. Brale creates a simulated inbound payment, runs the normal Automation mint path, and returns the resulting Transfer. Brale does not contact a bank, and no real fiat moves.
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/simulations/deposits`
+
+Required scopes: `automations:write` and `network:testnet`
+
+<Note>
+  This endpoint is available only with testnet credentials. The Automation must belong to the account in the path, have `status: "active"`, and have a destination on a testnet chain, such as `base_sepolia` or `solana_devnet`.
+</Note>
+
+## Path parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `account_id` | string (KSUID) | Yes | The account that owns the Automation. |
+| `automation_id` | string (KSUID) | Yes | The testnet Automation to fund. |
+
+## Headers
+
+| Header | Required | Description |
+| :----- | :------- | :---------- |
+| `Authorization` | Yes | `Bearer <token>` from testnet API credentials. |
+| `Idempotency-Key` | Yes | A unique key for this simulated deposit. See [Idempotency](#idempotency). |
+
+## Request body
+
+The request body accepts only the fields below. Brale rejects additional properties.
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `amount.value` | string | Yes | Positive decimal amount greater than zero, such as `"10.00"`. |
+| `amount.currency` | string | Yes | A supported reserve currency, such as `USD` or `MXN`. |
+| `transfer_type` | string | Yes | Inbound rail to simulate. Accepted values: `ach`, `wire`. |
+
+## Examples
+
+<CodeGroup>
+
+```bash Wire
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "wire"
+  }'
+```
+
+```bash ACH
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "ach"
+  }'
+```
+
+</CodeGroup>
+
+## Response
+
+### 202 Accepted
+
+Returns the standard [Transfer](/key-concepts/transfers) representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` matches the requested rail.
+
+```json Response
+{
+  "id": "3F1kP8vQ2mZrT6yN0bXcW4hJd7s",
+  "status": "pending",
+  "failure": null,
+  "amount": {
+    "value": "10.00",
+    "currency": "USD"
+  },
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "wire"
+  },
+  "destination": {
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "SBC",
+    "transfer_type": "base_sepolia"
+  },
+  "note": null,
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_at": "2026-09-29T17:00:00.000000Z",
+  "updated_at": "2026-09-29T17:00:00.000000Z"
+}
+```
+
+Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to follow it to `complete` and read `destination.transaction_id` for the testnet mint.
+
+## Errors
+
+| Status | `type` | When |
+| :----- | :----- | :--- |
+| `400` | Schema validation error | `transfer_type` is not `ach` or `wire` (for example, `rtp`), a required field is missing, or the body includes an unknown field. |
+| `400` | `invalid_currency` | `amount.currency` is not a supported reserve currency (for example, `EUR`). |
+| `400` | `invalid_amount` | `amount.value` is malformed, zero, or negative. For zero, `detail` is `Amount must be greater than zero`. |
+| `401` | | Missing or invalid bearer token. |
+| `403` | | The credentials do not include `network:testnet` or another required scope. Mainnet API keys receive this response. |
+| `404` | | The account or Automation was not found, or the Automation does not belong to the account in the path. |
+| `422` | `mainnet_destination` | The Automation destination is on a mainnet chain. `detail` is `Deposit simulation is only available for testnet automations`. |
+| `422` | `automation_not_active` | The Automation is pending, disabled, archived, or otherwise inactive. `detail` is `Automation must be active to simulate a deposit`. |
+| `422` | | The `Idempotency-Key` was already used with a different request body or URI. |
+
+## Idempotency
+
+`Idempotency-Key` is required, as on every `POST` request. See [Idempotency](/key-concepts/idempotency).
+
+- Send a new key to create a new simulated deposit.
+- Retry with the same key and the same body to get the cached `202` response. The retry does not create a second payment, Transfer, transaction, or mint.
+- Reusing a key with a different body or URI returns `422` and does not create another mint.
+
+## Webhooks
+
+Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events) for the simulated inbound payment. There is no simulation-specific webhook type.

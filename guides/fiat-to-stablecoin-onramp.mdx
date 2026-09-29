@@ -208,3 +208,93 @@ When an automation becomes active, the source.funding_instructions object is pop
 ```
 
 > When an automation is no longer needed, archive it by sending `PATCH /accounts/{account_id}/automations/{automation_id}` with `{ "status": "archived" }`. This closes the virtual account and stops future deposits from being processed.
+
+## Test an Automation on testnet
+
+Testnet Automations return placeholder banking coordinates that cannot receive real deposits. Use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) to test the full onramp flow without moving real fiat.
+
+Prerequisites:
+
+- Testnet API credentials with the `automations:write` and `network:testnet` scopes. See [Sandbox and Testnet](/overview/sandbox-and-testnet).
+- A custodial wallet address on a testnet chain, such as `base_sepolia` or `solana_devnet`.
+- A [webhook subscription](/webhooks/quickstart) that includes `payment.completed`.
+
+### 1. Create an Automation
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/automations`
+
+```json Request
+{
+  "name": "Testnet Onramp",
+  "source": {
+    "value_type": "USD"
+  },
+  "destination": {
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "SBC",
+    "transfer_type": "base_sepolia"
+  }
+}
+```
+
+### 2. Wait until the Automation is active
+
+Poll `GET /accounts/{account_id}/automations/{automation_id}` until `status` is `active`. Brale returns `422 automation_not_active` if you simulate a deposit before then.
+
+### 3. Simulate a deposit
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/simulations/deposits`
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "wire"
+  }'
+```
+
+`transfer_type` accepts `ach` or `wire`. Brale returns `202 Accepted` with the resulting Transfer. Save its `id`.
+
+Use a new `Idempotency-Key` for each new simulated deposit. Retrying with the same key returns the original response without creating another deposit or mint. See [Idempotency](/key-concepts/idempotency).
+
+### 4. Receive webhooks
+
+Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events) for the simulated inbound payment. There is no simulation-specific webhook type, so your production handler works unchanged.
+
+### 5. Fetch the Transfer
+
+**GET** `https://api.brale.xyz/accounts/{account_id}/transfers/{transfer_id}`
+
+```json Response
+{
+  "id": "3F1kP8vQ2mZrT6yN0bXcW4hJd7s",
+  "status": "complete",
+  "failure": null,
+  "amount": {
+    "value": "10.00",
+    "currency": "USD"
+  },
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "wire"
+  },
+  "destination": {
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "SBC",
+    "transfer_type": "base_sepolia",
+    "transaction_id": "0x41c66f1d059dad7a55a854e157a1b5b938780c77ba5296e434a02dfb1727fe5e"
+  },
+  "note": null,
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_at": "2026-09-29T17:00:00.000000Z",
+  "updated_at": "2026-09-29T17:00:05.000000Z"
+}
+```
+
+### 6. Verify the testnet mint
+
+Confirm that `automation_id` matches your Automation and `status` is `complete`. Look up `destination.transaction_id` in a block explorer for the testnet chain to verify the mint.
