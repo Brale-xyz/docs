@@ -251,7 +251,7 @@ Behavior:
 
 Validation:
 
-- Only `address_id` can be updated. `destination.value_type` and `destination.transfer_type` cannot be changed.
+- Only the top-level `address_id` field is accepted. Additional fields, including `value_type` or `transfer_type`, return `400 Bad Request`.
 - The address must belong to the automation's account.
 - Brale validates the address by blockchain environment, not by exact chain. For example, an EVM address created for Ethereum can be accepted for an automation on another EVM chain.
 - Automations on a transactional account cannot use a custodial destination.

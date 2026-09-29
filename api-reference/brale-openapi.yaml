@@ -854,9 +854,9 @@ components:
       type: object
       additionalProperties: false
       description: >-
-        The new destination address for the automation. Only `address_id` can be
-        updated. Including any other field, such as `value_type` or
-        `transfer_type`, returns `400`.
+        The new destination address for the automation. Only the top-level
+        `address_id` field is accepted. Additional fields, including
+        `value_type` or `transfer_type`, return `400 Bad Request`.
       properties:
         address_id:
           allOf:
@@ -2829,9 +2829,9 @@ paths:
       operationId: updateAutomationDestination
       summary: Update an automation's destination
       description: >-
-        Replaces the destination address of an automation. Only
-        `address_id` can be updated. `destination.value_type` and
-        `destination.transfer_type` cannot be changed.
+        Replaces the destination address of an automation. Only the top-level
+        `address_id` field is accepted. Additional fields, including
+        `value_type` or `transfer_type`, return `400 Bad Request`.
 
 
         You can update automations with a status of `active`, `pending`, or
@@ -2956,7 +2956,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '422':
           description: >
-            Unprocessable entity. Returned when:
+            Validation failed. Returned when:
 
             - The address environment is incompatible with the automation's
               destination deployment.

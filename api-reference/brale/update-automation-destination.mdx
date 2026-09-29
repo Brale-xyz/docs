@@ -30,7 +30,7 @@ This endpoint does not require an `Idempotency-Key` header.
 
 ## Validation
 
-- Only `address_id` can be updated. `destination.value_type` and `destination.transfer_type` cannot be changed. Including them in the request returns `400`.
+- Only the top-level `address_id` field is accepted. Additional fields, including `value_type` or `transfer_type`, return `400 Bad Request`.
 - The address must belong to the automation's account.
 - Brale validates the address by blockchain environment, not by exact chain. For example, an EVM address created for Ethereum can be accepted for an automation on another EVM chain.
 - Automations on a transactional account cannot use a custodial destination. See [Account types](/key-concepts/account-types).
@@ -114,7 +114,7 @@ The account or automation does not exist.
 
 The automation is archived. The error message is `Archived automations cannot be updated.`
 
-### 422 Unprocessable Entity
+### 422 Validation Error
 
 Returned when:
 
