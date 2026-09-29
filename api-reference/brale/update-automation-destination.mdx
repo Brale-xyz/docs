@@ -1,0 +1,124 @@
+---
+title: 'Update an automation destination'
+description: 'Change the destination address of an automation without creating a new automation or virtual account.'
+openapi: 'PATCH /accounts/{account_id}/automations/{automation_id}/destination'
+---
+
+Replace the destination address of an automation. Use this endpoint to rotate wallets instead of creating a replacement automation.
+
+**PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/destination`
+
+Required scope: `automations:write`
+
+This endpoint does not require an `Idempotency-Key` header.
+
+## Supported statuses
+
+| Status | Can update destination |
+| :----- | :--------------------- |
+| `active` | Yes |
+| `pending` | Yes |
+| `disabled` | Yes |
+| `archived` | No. Returns `409 Conflict`. |
+
+## Behavior
+
+- Deposits received after the update are sent to the new address.
+- Transfers already created by the automation keep their original destination.
+- The automation's status, destination deployment, virtual account, and `source.funding_instructions` do not change. Your customer keeps sending funds to the same bank details.
+- Brale does not create a new automation or virtual account.
+
+## Validation
+
+- Only the top-level `address_id` field is accepted. Additional fields, including `value_type` or `transfer_type`, return `400 Bad Request`.
+- The address must belong to the automation's account.
+- Brale validates the address by blockchain environment, not by exact chain. For example, an EVM address created for Ethereum can be accepted for an automation on another EVM chain.
+- Automations on a transactional account cannot use a custodial destination. See [Account types](/key-concepts/account-types).
+
+## Path parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `account_id` | string (KSUID) | Yes | The account that owns the automation. |
+| `automation_id` | string (KSUID) | Yes | The automation to update. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `address_id` | string (KSUID) | Yes | The ID of the address that receives future deposits. |
+
+```json Request
+{
+  "address_id": "3F2kQ9vXbT7mLpR4sN8wYcHdJ1a"
+}
+```
+
+## Responses
+
+### 200 OK
+
+Destination updated. Returns the complete updated `Automation` resource with the new `destination.address_id`. The `status`, `source.funding_instructions`, `destination.value_type`, and `destination.transfer_type` are unchanged.
+
+```json Response
+{
+  "id": "35kVg1llbsOBYvx9XKr9eOtsD9z",
+  "name": "Customer XYZ Automation",
+  "status": "active",
+  "source": {
+    "transfer_type": null,
+    "value_type": "USD",
+    "funding_instructions": {
+      "bank_address": "123 Example St, Example City, NY 10001",
+      "beneficiary_address": "25 Main Ave, Suite 100, Example City, IA 50000",
+      "beneficiary_name": "Company ABC",
+      "routing_number": "000111222",
+      "account_number": "000123456789",
+      "bank_name": "Example Bank",
+      "memo": null
+    }
+  },
+  "destination": {
+    "transfer_type": "solana",
+    "address_id": "3F2kQ9vXbT7mLpR4sN8wYcHdJ1a",
+    "value_type": "ARB"
+  },
+  "updated_at": "2026-09-29T17:40:12.204118Z",
+  "created_at": "2025-11-20T15:56:03.531196Z"
+}
+```
+
+### 400 Bad Request
+
+Returned when:
+
+- `address_id` is missing or empty.
+- The request contains unsupported fields, such as `value_type` or `transfer_type`.
+- The address does not exist.
+- The address belongs to another account.
+- The automation's destination deployment cannot be found.
+
+### 401 Unauthorized
+
+Authentication is missing or invalid.
+
+### 403 Forbidden
+
+The client lacks the `automations:write` scope.
+
+### 404 Not Found
+
+The account or automation does not exist.
+
+### 409 Conflict
+
+The automation is archived. The error message is `Archived automations cannot be updated.`
+
+### 422 Validation Error
+
+Returned when:
+
+- The address environment is incompatible with the automation's destination deployment.
+- The automation belongs to a transactional account and the address is a custodial destination.
+
+For more details, see the [Automations concept page](/key-concepts/automations#update-an-automation-destination).
