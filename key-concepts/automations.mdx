@@ -229,7 +229,7 @@ Retrieve a specific Automation.
 
 ## Update an automation destination
 
-Change the wallet an active automation sends stablecoins to. Use this endpoint for wallet rotation instead of creating a replacement automation.
+Change the address an automation sends stablecoins to. Use this endpoint for wallet rotation instead of creating a replacement automation.
 
 **PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/destination`
 
@@ -239,16 +239,24 @@ Change the wallet an active automation sends stablecoins to. Use this endpoint f
 }
 ```
 
+You can update automations with a status of `active`, `pending`, or `disabled`. Archived automations cannot be updated. Brale returns `409 Conflict` with the message `Archived automations cannot be updated.`
+
 Behavior:
 
-- Deposits received after the update use the new destination.
+- Deposits received after the update use the new address.
 - Transfers already created by the automation keep their original destination.
-- The existing virtual account and `source.funding_instructions` do not change. Your customer keeps sending funds to the same bank details.
+- The automation's status, destination deployment, virtual account, and `source.funding_instructions` do not change. Your customer keeps sending funds to the same bank details.
 - Brale does not create a new automation or virtual account.
-- Only `destination.address_id` changes. `destination.value_type` and `destination.transfer_type` stay the same.
 - The request does not require an `Idempotency-Key` header.
-- The new address must be valid for the environment the automation runs in. It must also meet the same destination restrictions that apply when you create the automation. For example, automations on a transactional account can only target external destinations.
-- You can only update active automations. Archived automations cannot be updated.
+
+Validation:
+
+- Only `address_id` can be updated. `destination.value_type` and `destination.transfer_type` cannot be changed.
+- The address must belong to the automation's account.
+- Brale validates the address by blockchain environment, not by exact chain. For example, an EVM address created for Ethereum can be accepted for an automation on another EVM chain.
+- Automations on a transactional account cannot use a custodial destination.
+
+The response is the complete updated automation.
 
 ```json Response
 {
@@ -282,10 +290,12 @@ Errors:
 
 | Status | Description |
 | :----- | :---------- |
-| `401` | Missing or invalid authentication. |
-| `403` | The access token is missing the `automations:write` scope. |
-| `404` | The automation or the destination address was not found. |
-| `422` | The destination address is invalid, incompatible, or cannot be used by this automation. |
+| `400` | `address_id` is missing or empty, the request includes unsupported fields such as `value_type` or `transfer_type`, the address does not exist or belongs to another account, or the automation's destination deployment cannot be found. |
+| `401` | Authentication is missing or invalid. |
+| `403` | The client lacks the `automations:write` scope. |
+| `404` | The account or automation does not exist. |
+| `409` | The automation is archived. |
+| `422` | The address environment is incompatible with the automation's destination deployment, or a transactional account attempts to use a custodial destination. |
 
 Required scope: `automations:write`
 
