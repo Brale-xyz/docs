@@ -362,9 +362,10 @@ components:
         funding_simulated:
           type: boolean
           description: >-
-            Set to `true` when the source funding for this transfer was simulated in a
-            test environment rather than coming from a real payment. Not present for
-            production transfers.
+            Optional. When returned with a value of `true`, the source funding for this
+            transfer was simulated in testnet rather than coming from a real payment.
+            Not every simulated transfer is guaranteed to include this field. Not
+            present for production-funded transfers.
         created_at:
           type: string
           format: date-time
@@ -1530,8 +1531,7 @@ components:
             - $ref: '#/components/schemas/Amount'
           description: >-
             Deposit amount. `value` must be a positive decimal string greater than
-            zero. `currency` must be a supported reserve currency, such as `USD`
-            or `MXN`.
+            zero. `currency` must be a reserve currency accepted by the API.
           example:
             value: '10.00'
             currency: USD

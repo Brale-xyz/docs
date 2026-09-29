@@ -35,7 +35,7 @@ The request body accepts only the fields below. Brale rejects additional propert
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
 | `amount.value` | string | Yes | Positive decimal amount greater than zero, such as `"10.00"`. |
-| `amount.currency` | string | Yes | A supported reserve currency, such as `USD` or `MXN`. |
+| `amount.currency` | string | Yes | Must be a reserve currency accepted by the API, such as `USD`. |
 | `transfer_type` | string | Yes | Inbound rail to simulate. Accepted values: `ach`, `wire`. |
 
 ## Examples
@@ -106,7 +106,7 @@ Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to f
 | Status | `type` | When |
 | :----- | :----- | :--- |
 | `400` | Schema validation error | `transfer_type` is not `ach` or `wire` (for example, `rtp`), a required field is missing, or the body includes an unknown field. |
-| `400` | `invalid_currency` | `amount.currency` is not a supported reserve currency (for example, `EUR`). |
+| `400` | `invalid_currency` | `amount.currency` is not a reserve currency accepted by the API (for example, `EUR`). |
 | `400` | `invalid_amount` | `amount.value` is malformed, zero, or negative. For zero, `detail` is `Amount must be greater than zero`. |
 | `401` | | Missing or invalid bearer token. |
 | `403` | | The credentials do not include `network:testnet` or another required scope. Mainnet API keys receive this response. |
