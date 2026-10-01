@@ -83,7 +83,7 @@ Linked documents are uploaded asynchronously after the account is created. The a
 
 ## Example request (individual)
 
-Create a KYC-verified individual account. Set `account_type` to `transactional` (shown below) or `custodial` — the request shape is identical for both. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent on this path; they are rejected with `400 unexpected_business_fields`.
+Create a KYC-verified individual account. Set `account_type` to `transactional` (shown below) or `custodial` — the request shape is identical for both. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`) must not be sent on this path; they are rejected with `400 unexpected_business_fields`.
 
 ```json
 {

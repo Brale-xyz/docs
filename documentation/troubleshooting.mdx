@@ -80,9 +80,21 @@ Use this checklist when integrating and operating at volume.
 
 ### 422 `unsupported_jurisdiction`
 
-- Cause: Brale does not serve the applicant's jurisdiction for the requested account type. Custodial accounts (business and individual) are U.S.-only and per-state; transactional accounts are unavailable in some U.S. states and outside the approved country list.
+- Cause: Brale does not serve the applicant's jurisdiction for the requested account type. Individual custodial accounts are U.S.-only and per-state. Business custodial accounts are per-state in the U.S.; outside the U.S. they are refused unless the business sends a `regulatory_profile` and is in an approved country. Transactional accounts are unavailable in some U.S. states and outside the approved country list.
 - The rejection is permanent, so it is safe to cache this error against your idempotency key.
 - Fix: check [Account availability](/coverage/account-availability) for where each customer and account type combination is available.
+
+### 400 `regulator_required`
+
+- Cause: a business request sent `regulatory_profile` with `regulator` missing or blank.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: set `regulatory_profile.regulator` to the authority the business is licensed or registered with, for example `FINTRAC`. If the business is not regulated, omit `regulatory_profile` entirely. See [Accounts](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
+
+### 400 `license_number_required`
+
+- Cause: a business request sent `regulatory_profile` with `license_number` missing or blank.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: set `regulatory_profile.license_number` to the license or registration number the regulator issued. If the business is not regulated, omit `regulatory_profile` entirely.
 
 ### 422 `invalid_us_state`
 

@@ -14,7 +14,7 @@ This page is the canonical source for geographic account eligibility. It states 
 | Individual | Custodial | Available in 44 states and territories. Unavailable in California, Massachusetts, Montana, New York, North Carolina, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
 | Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
 
-Custodial accounts (business and individual) are U.S.-only. They are not available outside the United States: a non-US country on a custodial request is refused with `422 unsupported_jurisdiction`.
+Individual custodial accounts are U.S.-only. Outside the United States, business custodial accounts are available only to regulated businesses in the [approved countries](#approved-countries-131) that send a `regulatory_profile`. See [International custodial availability for regulated businesses](#international-custodial-availability-for-regulated-businesses). Any other non-US country on a custodial request is refused with `422 unsupported_jurisdiction`.
 
 A request from a jurisdiction Brale does not serve for the requested account type returns `422 unsupported_jurisdiction`. The rejection is permanent, so retrying the same request will not succeed and it is safe to cache the error against an idempotency key.
 
@@ -63,7 +63,7 @@ Country eligibility and verification method are separate. In some countries Bral
 
 Individual transactional accounts in these countries are created through the standard API flow: set the top-level `individual.country` and send a matching identity document type. See [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account).
 
-Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. A non-US business can only be created as a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
+Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. A non-US business does not need a `regulatory_profile` to open a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
 
 ### Approved countries (131)
 
@@ -114,7 +114,33 @@ Business transactional accounts in these countries are created through the stand
 | Grenada | GD | Panama | PA | Zambia | ZM |
 | Guatemala | GT | Papua New Guinea | PG |  |  |
 
-Countries not in this list are not currently eligible for transactional account creation. Requests for individuals in unapproved countries are rejected before verification begins.
+Countries not in this list are not currently eligible for transactional account creation, or for business custodial account creation outside the United States. Requests for individuals in unapproved countries are rejected before verification begins.
+
+## International custodial availability for regulated businesses
+
+A regulated business (for example, a money services business or a virtual asset service provider) in one of the [approved countries](#approved-countries-131) can be created as a business custodial account. Business custodial accounts outside the United States use the same approved-country list as transactional accounts.
+
+Send `entity_type: "business"` (or omit it), `account_type: "custodial"`, the business's country in `address.country`, and a `regulatory_profile` that identifies the regulator and the license or registration number it issued:
+
+```json
+{
+  "entity_type": "business",
+  "account_type": "custodial",
+  "address": {
+    "country": "CA"
+  },
+  "regulatory_profile": {
+    "regulator": "FINTRAC",
+    "license_number": "M12345678"
+  }
+}
+```
+
+The rest of the payload is the same as for any business account.
+
+`verification_mode` can be `standard`, or `reliance` if Brale has enabled reliance for your managing account. Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence.
+
+A non-US business that sends no `regulatory_profile`, or a regulated business outside the approved countries, is refused with `422 unsupported_jurisdiction` on a custodial request. U.S. business availability is still decided by the [state table](#custodial-availability-by-state), whether or not the business is regulated. See [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account) for the full payload.
 
 ## Custodial vs. transactional
 

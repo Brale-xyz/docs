@@ -3,6 +3,12 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-10-01" description="October 2026" tags={["New"]}>
+  ## Custodial accounts for regulated non-US businesses
+
+  Regulated businesses outside the United States, such as money services businesses and virtual asset service providers, can now open business custodial accounts in any of the approved countries. Send the new optional `regulatory_profile` object, with the `regulator` and `license_number`, on `POST /accounts`. Requests that omit `regulatory_profile` are unaffected. See [International custodial availability for regulated businesses](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
+</Update>
+
 <Update label="2026-09-29" description="September 2026" tags={["New"]}>
   ## Testnet Automation deposit simulation
 

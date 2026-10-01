@@ -1069,7 +1069,9 @@ components:
           description: >
             ISO 3166-1 alpha-2 country code of the business. Defaults to `US`
             when omitted. Determines jurisdiction coverage for the account. A
-            non-US business can only be created as a transactional account.
+            non-US business in an approved country can be created as a
+            transactional account, or as a custodial account if it sends
+            `regulatory_profile`.
           example: US
     ControllingPartyAddress:
       type: object
@@ -1178,6 +1180,34 @@ components:
           type: number
           nullable: true
           example: 40
+    RegulatoryProfile:
+      type: object
+      additionalProperties: false
+      title: RegulatoryProfile
+      description: >
+        Optional. Send only for a regulated business, for example a money
+        services business (MSB) or a virtual asset service provider (VASP).
+        Sending it declares the business regulated; omitting it means the
+        business is not regulated. Required for a non-US business custodial
+        account. Declaring the business regulated is not approval: Brale
+        requests supporting regulatory documents and verifies the license
+        during verification. Business path only; sending it on the individual
+        path returns `400 unexpected_business_fields`.
+      properties:
+        regulator:
+          type: string
+          description: >
+            The authority the business is licensed or registered with. Required
+            and must be non-blank when `regulatory_profile` is sent; otherwise
+            the request returns `400 regulator_required`.
+          example: FINTRAC
+        license_number:
+          type: string
+          description: >
+            The license or registration number that `regulator` issued. Required
+            and must be non-blank when `regulatory_profile` is sent; otherwise
+            the request returns `400 license_number_required`.
+          example: M12345678
     EndUserTosAttestation:
       type: object
       additionalProperties: false
@@ -1205,9 +1235,11 @@ components:
         Business (KYB) account creation payload. This is the default path when
         `entity_type` is omitted, or when it is explicitly set to `business`.
         `account_type` selects between a custodial account (the default) and a
-        non-custodial transactional account. A business outside the US can only
-        be created as a transactional account, with its country in
-        `address.country`; see `BusinessAddress`.
+        non-custodial transactional account. A business outside the US sends its
+        country in `address.country`; see `BusinessAddress`. It can be created
+        as a transactional account, or as a custodial account if it is a
+        regulated business in an approved country and sends
+        `regulatory_profile`.
       required:
         - business_name
         - ein
@@ -1233,9 +1265,14 @@ components:
           description: >
             Optional. When omitted, defaults to `custodial` for business
             accounts. `custodial` accounts receive Brale-managed internal
-            wallets and can hold balances. `transactional` accounts are
-            non-custodial: they receive no internal wallets, hold no balances
-            at Brale, and register external destination-only addresses.
+            wallets and can hold balances. Business custodial accounts are
+            available in supported US states, and outside the US only to
+            regulated businesses in approved countries that send
+            `regulatory_profile`; any other non-US business custodial request
+            returns `422 unsupported_jurisdiction`. `transactional` accounts
+            are non-custodial: they receive no internal wallets, hold no
+            balances at Brale, and register external destination-only
+            addresses.
           example: custodial
         verification_mode:
           type: string
@@ -1256,6 +1293,8 @@ components:
           example: '123456789'
         address:
           $ref: '#/components/schemas/BusinessAddress'
+        regulatory_profile:
+          $ref: '#/components/schemas/RegulatoryProfile'
         beneficial_owners:
           type: array
           nullable: true
@@ -1426,7 +1465,8 @@ components:
         Individual (KYC) account creation payload, custodial or transactional.
         The request shape is identical for both account types. Business-only
         fields (`business_name`, `ein`, `website`, `business_controller`,
-        `beneficial_owners`) must not be sent on this path; they are rejected
+        `beneficial_owners`, `regulatory_profile`) must not be sent on this
+        path; they are rejected
         with `400 unexpected_business_fields`.
       required:
         - entity_type
@@ -1929,6 +1969,45 @@ paths:
                   tos_attestation:
                     accepted_at: '2026-05-13T20:45:15Z'
                     version: '2025-04-01'
+              create_business_custodial_account_regulated_non_us:
+                summary: Business (KYB) custodial account, regulated non-US
+                value:
+                  entity_type: business
+                  account_type: custodial
+                  verification_mode: standard
+                  business_name: Example Payments Inc
+                  ein: '123456789'
+                  address:
+                    street_line_1: 100 King Street West
+                    city: Toronto
+                    state: 'ON'
+                    zip: M5X 1A9
+                    country: CA
+                  phone_number: '+14165550123'
+                  email: ops@example.ca
+                  website: https://example.ca
+                  regulatory_profile:
+                    regulator: FINTRAC
+                    license_number: M12345678
+                  beneficial_owners: []
+                  business_controller:
+                    first_name: Emma
+                    last_name: Tremblay
+                    dob: '1984-06-21'
+                    email: emma@example.ca
+                    phone_number: '+14165550188'
+                    address:
+                      street_line_1: 100 King Street West
+                      city: Toronto
+                      state: 'ON'
+                      zip: M5X 1A9
+                      country: CA
+                    identity:
+                      number: AB123456
+                      type: PASSPORT
+                  tos_attestation:
+                    accepted_at: '2026-05-13T20:45:15Z'
+                    version: '2025-04-01'
               create_individual_account:
                 summary: Individual (KYC) transactional account
                 value:
@@ -2016,7 +2095,18 @@ paths:
                     $ref: '#/components/schemas/Ksuid'
         '400':
           description: >
-            Bad request. Possible `type` values on the individual path:
+            Bad request. Possible `type` values on the business path:
+
+            - `regulator_required` — `regulatory_profile` was sent with
+              `regulator` missing or blank. Permanent; safe to cache against an
+              idempotency key.
+
+            - `license_number_required` — `regulatory_profile` was sent with
+              `license_number` missing or blank. Permanent; safe to cache
+              against an idempotency key.
+
+
+            Possible `type` values on the individual path:
 
             - `individual_details_required` — `entity_type: individual` was
               sent with no `individual` object.
@@ -2026,7 +2116,8 @@ paths:
 
             - `unexpected_business_fields` — a business-only field
               (`business_name`, `ein`, `website`, `business_controller`,
-              `beneficial_owners`) was sent on the individual path.
+              `beneficial_owners`, `regulatory_profile`) was sent on the
+              individual path.
 
             - `invalid_attestation_timestamp` — `tos_attestation.accepted_at`
               is not an ISO-8601 timestamp.
@@ -2046,9 +2137,11 @@ paths:
 
             - `unsupported_jurisdiction` — Brale does not serve the
               applicant's jurisdiction for the requested account type (for
-              example, a non-US country for a custodial account, or a US
-              state where the combination is unavailable). Permanent; safe to
-              cache against an idempotency key.
+              example, a non-US individual custodial account, a non-US
+              business custodial account without `regulatory_profile` or
+              outside the approved countries, or a US state where the
+              combination is unavailable). Permanent; safe to cache against an
+              idempotency key.
 
             - `invalid_us_state` — `individual.country` is `US` or `USA` and
               `individual.address.state` is missing, blank, or not a
