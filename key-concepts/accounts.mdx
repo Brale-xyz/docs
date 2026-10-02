@@ -132,9 +132,12 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.state`         | string | US only  | Required when the business's country is `US` or omitted, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, `PR`). Optional and free-form for a non-US business. |
 | `business.address.zip`           | string | Yes      | Postal code. Any format is accepted.                                                                                                                                                              |
-| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. A non-US business can only be created as a transactional account; see [Creating a non-US business account](#creating-a-non-us-business-account). |
+| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. A non-US business can be created as a transactional account, or as a custodial account if it is regulated and sends `regulatory_profile`; see [Creating a non-US business account](#creating-a-non-us-business-account). |
 | `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
 | `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
+| `regulatory_profile`             | object | No       | Regulated businesses only, for example money services businesses (MSBs) and virtual asset service providers (VASPs). Sending it declares the business regulated; omitting it means the business is not regulated. Required for a non-US custodial business; see [Creating a regulated non-US custodial business account](#creating-a-regulated-non-us-custodial-business-account). |
+| `regulatory_profile.regulator`   | string | When `regulatory_profile` is sent | The authority the business is licensed or registered with, for example `FINTRAC`. Must be non-blank, otherwise the request returns `400 regulator_required`. |
+| `regulatory_profile.license_number` | string | When `regulatory_profile` is sent | The license or registration number that regulator issued. Must be non-blank, otherwise the request returns `400 license_number_required`. |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
 
 ### Non-US controllers and beneficial owners
@@ -220,9 +223,9 @@ Owners and controllers can be mixed: a US controller sending `ssn` alongside an 
 
 ### Creating a non-US business account
 
-A business in an approved country outside the US can be created only as a transactional account. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. Custodial accounts are U.S.-only, so a non-US business sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
+A business in an approved country outside the US can be created as a transactional account. A regulated business in an approved country can also be created as a custodial account by sending a `regulatory_profile`; see [Creating a regulated non-US custodial business account](#creating-a-regulated-non-us-custodial-business-account). See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. A non-US business without a `regulatory_profile` sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
 
-Send the same business payload with these changes:
+For a transactional account, send the same business payload with these changes:
 
 - `entity_type`: `"business"`
 - `account_type`: `"transactional"`
@@ -271,9 +274,67 @@ Send the same business payload with these changes:
 }
 ```
 
+#### Creating a regulated non-US custodial business account
+
+A regulated business (for example, an MSB or a VASP) in one of the [approved countries](/coverage/account-availability#approved-countries-131) can be created as a business custodial account. Send the same payload as the transactional example above with these changes:
+
+- `account_type`: `"custodial"`, or omit it
+- `regulatory_profile.regulator`: the authority the business is licensed or registered with
+- `regulatory_profile.license_number`: the license or registration number that regulator issued
+- `verification_mode`: `"standard"`, or `"reliance"` if Brale has enabled reliance for your managing account
+
+Both `regulatory_profile` fields are required when the object is sent. Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence. A regulated business outside the approved countries returns `422 unsupported_jurisdiction`.
+
+```json Request
+{
+  "entity_type": "business",
+  "account_type": "custodial",
+  "verification_mode": "standard",
+  "business_name": "Example Payments Inc",
+  "ein": "123456789",
+  "address": {
+    "street_line_1": "100 King Street West",
+    "city": "Toronto",
+    "state": "ON",
+    "zip": "M5X 1A9",
+    "country": "CA"
+  },
+  "phone_number": "+14165550123",
+  "email": "ops@example.ca",
+  "website": "https://example.ca",
+  "regulatory_profile": {
+    "regulator": "FINTRAC",
+    "license_number": "M12345678"
+  },
+  "business_controller": {
+    "first_name": "Emma",
+    "last_name": "Tremblay",
+    "dob": "1984-06-21",
+    "email": "emma@example.ca",
+    "phone_number": "+14165550188",
+    "identity": {
+      "number": "AB123456",
+      "type": "PASSPORT"
+    },
+    "address": {
+      "street_line_1": "100 King Street West",
+      "city": "Toronto",
+      "state": "ON",
+      "zip": "M5X 1A9",
+      "country": "CA"
+    }
+  },
+  "beneficial_owners": [],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
 ## Creating an individual account
 
-On the individual path, set `entity_type` to `individual` and `account_type` to `custodial` or `transactional`. The request shape is identical for both account types. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent — they are rejected with `400 unexpected_business_fields`.
+On the individual path, set `entity_type` to `individual` and `account_type` to `custodial` or `transactional`. The request shape is identical for both account types. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`) must not be sent — they are rejected with `400 unexpected_business_fields`.
 
 A custodial individual account receives Brale-custodied (`type=internal`) wallets. A transactional individual account is non-custodial: it receives no custodial wallets and cannot create custodial addresses. Custodial individual accounts are U.S.-only and available in a narrower set of states than business custodial accounts — see [Account availability](/coverage/account-availability).
 
@@ -414,6 +475,9 @@ The supported shape today is inbound: the account receives value on chain and ca
 | `422` | `invalid_country_code` | An `address.country` that is not a recognized ISO country code or name. |
 | `422` | `invalid_us_state` | `address.country` is the US and `address.state` is missing, blank, or not a recognized state or territory. |
 | `400` | `invalid_phone_number` | A `phone_number` that is not valid in that party's `address.country`. |
+| `400` | `regulator_required` | `regulatory_profile` was sent with `regulator` missing or blank. Permanent; safe to cache against an idempotency key. |
+| `400` | `license_number_required` | `regulatory_profile` was sent with `license_number` missing or blank. Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_jurisdiction` | Brale does not serve the business's jurisdiction for the requested account type. For example, a non-US business requested a custodial account without a `regulatory_profile`, a regulated business outside the approved countries requested a custodial account, or a US state where the combination is unavailable. Permanent; safe to cache against an idempotency key. See [Account availability](/coverage/account-availability). |
 
 ### Individual path errors
 
@@ -423,7 +487,7 @@ The supported shape today is inbound: the account receives value on chain and ca
 | `422` | `unsupported_jurisdiction` | Brale does not serve the applicant's jurisdiction for the requested account type (for example, a non-US country for a custodial account, or a state where the combination is unavailable). Permanent; safe to cache against an idempotency key. See [Account availability](/coverage/account-availability). |
 | `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
 | `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
-| `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`). |
+| `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`). |
 | `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is missing, blank, or not a recognized state or territory (abbreviation or full name). |
 | `400` | `invalid_attestation_timestamp` | `tos_attestation.accepted_at` is not an ISO-8601 timestamp. |
 

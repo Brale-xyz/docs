@@ -9,13 +9,13 @@ Custodial Accounts are a managed-account configuration for customers that need B
 
 Brale enables businesses to hold fiat-backed stablecoins on behalf of their end users—unlocking powerful digital dollar experiences for wallets, marketplaces, fintech apps, and neobanks. Use stablecoins as account balances, enable fast transfers, or power embedded payouts.
 
-Custodial accounts are available for businesses (KYB) and individuals (KYC). This guide covers the business flow. Custodial accounts are U.S.-only; see [Account availability](/coverage/account-availability) for the U.S. states where each can be created — the individual custodial state list is narrower than the business list.
+Custodial accounts are available for businesses (KYB) and individuals (KYC). This guide covers the business flow. Individual custodial accounts are U.S.-only. Business custodial accounts are available in supported U.S. states, and outside the United States to regulated businesses in approved countries that send a `regulatory_profile`; see [International custodial availability for regulated businesses](/coverage/account-availability#international-custodial-availability-for-regulated-businesses). See [Account availability](/coverage/account-availability) for the U.S. states where each can be created. The individual custodial state list is narrower than the business list.
 
 <Note>
 Need to onboard an individual end user? See [Individual accounts](/guides/individual-accounts) for the KYC-verified flow, custodial or transactional.
 </Note>
 
-The business must be US-registered, but its controller and beneficial owners do not have to live in the US. See [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners) for what changes in the payload.
+A business outside the US must be regulated and send a `regulatory_profile`; see [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account). The controller and beneficial owners do not have to live in the US. See [Non-US controllers and beneficial owners](/key-concepts/accounts#non-us-controllers-and-beneficial-owners) for what changes in the payload.
 
 ## What It Does
 

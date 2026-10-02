@@ -30,11 +30,11 @@ All eight combinations of the three dimension fields are supported:
 
 An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
 
-Where each combination is geographically available depends on the account's location: the U.S. state for custodial accounts, and the U.S. state or approved country for transactional accounts. See [Account availability](/coverage/account-availability) for the canonical state table and the approved country list.
+Where each combination is geographically available depends on the account's location: the U.S. state for individual custodial accounts, the U.S. state or (for regulated businesses) approved country for business custodial accounts, and the U.S. state or approved country for transactional accounts. See [Account availability](/coverage/account-availability) for the canonical state table and the approved country list.
 
 ## When to choose each
 
-- **Business, custodial** — a business entity that will hold stablecoin balances in Brale-custodied wallets, initiate transfers, and use Brale as its record of funds. See [Custodial Accounts](/guides/custodial-accounts).
+- **Business, custodial** — a business entity that will hold stablecoin balances in Brale-custodied wallets, initiate transfers, and use Brale as its record of funds. Available in supported U.S. states, and outside the United States to regulated businesses in approved countries that send a `regulatory_profile`. See [Account availability](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [Custodial Accounts](/guides/custodial-accounts).
 - **Business, transactional** — a KYB-verified business that is non-custodial: it has no internal Brale wallet and no stored balance at Brale. It can register external, self-custody destination addresses, which are destination-only. Available in supported U.S. states and in approved countries outside the United States. See [Account availability](/coverage/account-availability) and [Transactional Accounts](/guides/transactional-accounts).
 - **Individual, custodial** — a natural person who holds stablecoin balances in Brale-custodied wallets. The request shape is identical to the individual transactional path; only `account_type` changes. U.S.-only, with a narrower state list than business custodial — see [Account availability](/coverage/account-availability).
 - **Individual, transactional** — a natural person who receives value on-chain (for example, as the destination of an on-ramp) but does not hold custody with Brale. See [Individual accounts](/guides/individual-accounts).

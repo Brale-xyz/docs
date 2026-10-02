@@ -49,7 +49,7 @@ A transactional account is inbound by design. It does not get a Brale-custodied 
 The workflow below shows the transactional flow. For a custodial account, set `account_type: custodial` in step 1; on approval the account receives Brale-custodied wallets automatically, and steps 3–5 do not apply — work with its internal addresses instead, as described in [Custodial Accounts](/guides/custodial-accounts).
 
 1. **Create the account.**\
-   Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.
+   Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.
 
    ```json Request
    {
