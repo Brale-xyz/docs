@@ -3,16 +3,18 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
-<Update label="2026-10-01" description="October 2026" tags={["New"]}>
+<Update label="2026-09-28" description="Week of September 28" tags={["New"]}>
   ## Custodial accounts for regulated non-US businesses
 
-  Regulated businesses outside the United States, such as money services businesses and virtual asset service providers, can now open business custodial accounts in any of the approved countries. Send the new optional `regulatory_profile` object, with the `regulator` and `license_number`, on `POST /accounts`. Requests that omit `regulatory_profile` are unaffected. See [International custodial availability for regulated businesses](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
-</Update>
+  Regulated businesses outside the United States, such as money services businesses and virtual asset service providers, can now open business custodial accounts in approved countries. Send the new optional `regulatory_profile` object, with `regulator` and `license_number`, on `POST /accounts`. Requests that omit `regulatory_profile` are unaffected. See [international custodial availability](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
 
-<Update label="2026-09-29" description="September 2026" tags={["New"]}>
   ## Testnet Automation deposit simulation
 
-  Developers can now simulate inbound ACH and wire deposits into testnet Automations, exercise the normal payment and mint lifecycle, and test webhook handling without moving real fiat. See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit).
+  You can now simulate inbound ACH and wire deposits into testnet Automations. This runs the normal payment and mint lifecycle and fires webhooks without moving real fiat. See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) and [sandbox and testnet](/overview/sandbox-and-testnet).
+
+  ## Plaid-linked bank balance lookup
+
+  You can now check the USD balance of a Plaid-linked bank address before requesting an ACH debit. Call the address balance endpoint with `transfer_type=ach_debit` and `value_type=USD`. See [Get a balance](/guides/how-to/get-a-balance#plaid-linked-bank-balance).
 </Update>
 
 <Update label="2026-05-31" description="May 2026" tags={["New", "Update"]}>
