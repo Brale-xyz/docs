@@ -65,6 +65,10 @@ Example response:
 
 Create a subscription for your endpoint and event types.
 
+<Note>
+  **Choose your `account_id`.** The `account_id` in the path is the account that owns the subscription. If you onboard customers as managed accounts, use your managing account ID. One subscription covers events for the managing account and its managed accounts, so you don't need one per customer. Register it before onboarding customers so it is ready for asynchronous verification events. See [Choose the subscription owner](/webhooks/overview#choose-the-subscription-owner).
+</Note>
+
 ```bash
 curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
   -H "Authorization: Bearer {access_token}" \
@@ -95,6 +99,23 @@ Important:
 - Do not log it.
 - Do not expose it to browsers or client-side code.
 - If you lose it, archive the subscription and create a new one.
+
+### Example: managed-account onboarding
+
+To receive verification events for customers you onboard, create the subscription on your managing account with `account.*`:
+
+```bash
+curl -X POST https://api.brale.xyz/accounts/{managing_account_id}/webhooks \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "url": "https://your-app.example.com/webhooks/brale",
+    "events": ["account.*"]
+  }'
+```
+
+Each event's `data.account_id` identifies the account the event concerns, such as the managed customer whose verification completed. Use it to route the event to the right customer record.
 
 ## 5. Verify incoming webhooks
 

@@ -77,13 +77,24 @@ curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
   The `sharedSecret` is returned only once when the subscription is created. Store it immediately. List and get subscription endpoints do not return the secret again.
 </Note>
 
-## Account scope
+## Choose the subscription owner
 
-Webhook subscriptions are account-scoped. A subscription created under `/accounts/{account_id}/webhooks` receives events for that Brale account.
+The `account_id` in `POST /accounts/{account_id}/webhooks` identifies the account that owns the subscription. It is not necessarily the account each event concerns.
 
-If all of your activity runs under one Brale account, one webhook subscription can receive events for that account.
+- A subscription owned by a **managing account** receives subscribed events for the managing account and the accounts it manages.
+- A subscription owned by a **managed account** receives subscribed events for that account only.
 
-If your integration manages separate Brale accounts for separate customers, create a webhook subscription for each account whose events you want to receive. Brale does not currently provide a single org-level catch-all webhook subscription across all accounts.
+If you onboard customers as [managed accounts](/guides/managed-accounts) or [individual accounts](/guides/individual-accounts), you don't need a subscription or signing secret per customer. One subscription on your managing account covers them. Coverage comes from the management relationship. It is not an org-wide catch-all, and there is no scope parameter to set.
+
+Separate Brale accounts that don't share a managing account need their own subscriptions.
+
+| Your setup | Subscribe on |
+| --- | --- |
+| One Brale account | That account |
+| Platform with managed customer accounts | The managing account |
+| You only want one managed customer's events | That managed account |
+
+To identify which account an event concerns, read `data.account_id` from the payload. See [Managing accounts and event fan-in](/webhooks/webhook-events#managing-accounts-and-event-fan-in).
 
 For testnet and mainnet, create webhook subscriptions in the account/environment you want to receive events from. If you have separate testnet and mainnet accounts, create separate subscriptions for those accounts.
 

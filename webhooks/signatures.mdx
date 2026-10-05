@@ -32,6 +32,15 @@ This value is Base64URL encoded. Decode it before using it as the HMAC key.
 
 Do not use the encoded string directly as the HMAC key.
 
+## Which secret should I use?
+
+Each subscription has its own `sharedSecret`. Verify each delivery with the secret of the subscription that delivered it. Don't look up a secret based on `data.account_id`.
+
+- With one managing-account subscription, use that subscription's secret for every event it delivers. This includes events concerning the managing account and events concerning its managed accounts.
+- With multiple subscriptions, verify each delivery with the secret of the corresponding subscription.
+
+Brale returns the `sharedSecret` only once, when you create the subscription. Store it immediately.
+
 ## Node.js / TypeScript example
 
 ```tsx
