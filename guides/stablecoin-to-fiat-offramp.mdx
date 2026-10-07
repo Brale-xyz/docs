@@ -169,6 +169,14 @@ When you retrieve the transfer, the response may include a `destination.payment_
   `destination.payment_details` is response-only and is not accepted in create requests. The IMAD is assigned by the sending bank and may not be available immediately after the transfer is created — the field may be absent until Brale has the underlying bank metadata, at which point it appears on the transfer. Do not confuse this with `destination.wire_memo`, which remains a request field for outbound wires. See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the full field reference.
 </Note>
 
+### Returned outbound wires
+
+The receiving bank can return an outbound wire, even after the transfer reached `complete`. When Brale recognizes the return, it updates the original transfer to `failed` and emits [`transfer.failed`](/webhooks/webhook-events#returned-outbound-wires). Brale does not create a new transfer or use a separate `returned` status.
+
+A recognized wire return has a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"` and return details in `failure.wire_return`.
+
+`transfer.failed` does not confirm that stablecoins have been credited back. Do not automatically credit your end user's balance solely because `transfer.failed` arrived. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for how statuses change.
+
 ## Self-custody redemption
 
 If your customer holds stablecoins in a self-custody or external wallet (for example, Crossmint), the redemption is a two-step process:
