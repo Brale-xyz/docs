@@ -51,13 +51,14 @@
             ]
           },
           {
-            "group": "Platform",
+            "group": "Products",
             "pages": [
               "documentation/platform/company-overview",
-              "documentation/platform/stablecoin-issuance",
               "documentation/platform/stablecoin-orchestration",
-              "documentation/platform/interoperability",
+              "documentation/platform/stablecoin-issuance",
+              "documentation/platform/wallets",
               "documentation/platform/tokenization",
+              "documentation/platform/integrations",
               "documentation/platform/reserves",
               "documentation/platform/transfer-timing"
             ]
