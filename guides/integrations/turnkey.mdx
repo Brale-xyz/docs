@@ -23,7 +23,7 @@ At a high level:
 
 ## **What is Turnkey?**
 
-[<u>Turnkey</u>](https://turnkey.com) is a secure key management infrastructure for provisioning and managing wallets at any scale. Every private key exists inside a[ <u>hardware-backed secure enclave</u>](https://docs.turnkey.com/security/secure-enclaves) (TEE), and typical workflows never directly handle private key material.
+[Turnkey](https://turnkey.com) is a secure key management infrastructure for provisioning and managing wallets at any scale. Every private key exists inside a [hardware-backed secure enclave](https://docs.turnkey.com/security/secure-enclaves) (TEE), and typical workflows never directly handle private key material.
 
 **Why teams choose Turnkey:**
 
@@ -34,8 +34,8 @@ At a high level:
 
 ## **Prerequisites**
 
-- A[ <u>Brale account</u>](https://app.brale.xyz/signup) with KYB started or completed, and an API client created in the Brale Dashboard
-- A[ <u>Turnkey account</u>](https://app.turnkey.com) with an organization and API key pair
+- A [Brale account](https://app.brale.xyz/signup) with KYB started or completed, and an API client created in the Brale Dashboard
+- A [Turnkey account](https://app.turnkey.com) with an organization and API key pair
 - A decision on which network(s) you want to support (for example, EVM chains like base)
 
 ## **Authenticate with Brale**
@@ -75,7 +75,7 @@ Store this as ACCOUNT\_ID.
 
 You only need one thing from Turnkey to use Brale: the onchain address you want to fund (or receive funds from).
 
-The examples below cover two common patterns. Turnkey supports additional SDKs. See the[ <u>SDK overview</u>](https://docs.turnkey.com/sdks/introduction) for the full list.
+The examples below cover two common patterns. Turnkey supports additional SDKs. See the [SDK overview](https://docs.turnkey.com/sdks/introduction) for the full list.
 
 ### **Option A: Embedded wallet with @turnkey/react-wallet-kit**
 
@@ -89,7 +89,7 @@ const walletAddress = wallets?.[0]?.accounts?.[0]?.address;
 // e.g. "0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b"
 ```
 
-See[ <u>Getting started with the Embedded Wallet Kit</u>](https://docs.turnkey.com/sdks/react/getting-started) for the full provider and authentication setup.
+See [Getting started with the Embedded Wallet Kit](https://docs.turnkey.com/sdks/react/getting-started) for the full provider and authentication setup.
 
 ### **Option B: Server-side wallet with @turnkey/sdk-server**
 
@@ -109,7 +109,7 @@ const walletAddress = accounts[0].address;
 // e.g. "0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b"
 ```
 
-See the[ <u>TypeScript Server SDK docs</u>](https://docs.turnkey.com/sdks/javascript-server) for authentication and wallet creation.
+See the [TypeScript Server SDK docs](https://docs.turnkey.com/sdks/javascript-server) for authentication and wallet creation.
 
 ## **Register the Turnkey wallet in Brale**
 
@@ -172,7 +172,7 @@ Replace SBC with your stablecoin value type, and base with your target chain tra
 
 ach\_debit flows require additional setup (end-user funding addresses, Plaid flows, etc.). Once configured, the Transfer pattern is the same: the destination is your Turnkey address\_id.
 
-See:[ <u>ach\_debit to end user wallet</u>](https://docs.brale.xyz/guides/ach-on-ramp)
+See: [ach\_debit to end user wallet](https://docs.brale.xyz/guides/ach-on-ramp)
 
 ## **Sign and send from the Turnkey wallet**
 
@@ -248,7 +248,7 @@ function SendStablecoinButton() {
 }
 ```
 
-Turnkey’s policy engine can restrict which contracts and recipients are signable. See[ <u>Turnkey policies</u>](https://docs.turnkey.com/concepts/policies/overview) for how to configure signing controls.
+Turnkey’s policy engine can restrict which contracts and recipients are signable. See [Turnkey policies](https://docs.turnkey.com/concepts/policies/overview) for how to configure signing controls.
 
 ## **Offramping (stablecoin → USD)**
 
@@ -270,25 +270,25 @@ Find the entry with "type": "internal" and transfer\_types containing your targe
 
 Once Brale sees the inbound transfer credited to the custodial address, you can initiate the stablecoin-to-fiat conversion.
 
-See:[ <u>Stablecoin to Fiat (Offramp)</u>](https://docs.brale.xyz/guides/stablecoin-to-fiat-offramp)
+See: [Stablecoin to Fiat (Offramp)](https://docs.brale.xyz/guides/stablecoin-to-fiat-offramp)
 
 ## **References**
 
 **Brale**
 
-- [<u>Quick Start, Your First Brale Stablecoin Transfer</u>](https://docs.brale.xyz/overview/quick-start)
-- [<u>Authentication</u>](https://docs.brale.xyz/key-concepts/authentication)
-- [<u>Add an External Destination</u>](https://docs.brale.xyz/guides/how-to/add-external-destination)
-- [<u>Self-custody Wallets</u>](https://docs.brale.xyz/guides/self-custody-wallets)
-- [<u>Stablecoin to Fiat (Offramp)</u>](https://docs.brale.xyz/guides/stablecoin-to-fiat-offramp)
-- [<u>ach\_debit to end user wallet</u>](https://docs.brale.xyz/guides/ach-on-ramp)
+- [Quick Start, Your First Brale Stablecoin Transfer](https://docs.brale.xyz/overview/quick-start)
+- [Authentication](https://docs.brale.xyz/key-concepts/authentication)
+- [Add an External Destination](https://docs.brale.xyz/guides/how-to/add-external-destination)
+- [Self-custody Wallets](https://docs.brale.xyz/guides/self-custody-wallets)
+- [Stablecoin to Fiat (Offramp)](https://docs.brale.xyz/guides/stablecoin-to-fiat-offramp)
+- [ach\_debit to end user wallet](https://docs.brale.xyz/guides/ach-on-ramp)
 
 **Turnkey**
 
-- [<u>Quickstart</u>](https://docs.turnkey.com/getting-started/quickstart)
-- [<u>React Wallet Kit, Getting started</u>](https://docs.turnkey.com/sdks/react/getting-started)
-- [<u>React Wallet Kit, Using embedded wallets</u>](https://docs.turnkey.com/sdks/react/using-embedded-wallets)
-- [<u>React Wallet Kit, Signing</u>](https://docs.turnkey.com/sdks/react/signing)
-- [<u>TypeScript Server SDK</u>](https://docs.turnkey.com/sdks/javascript-server)
-- [<u>Policies overview</u>](https://docs.turnkey.com/concepts/policies/overview)
-- [<u>Security model</u>](https://docs.turnkey.com/security/non-custodial-key-mgmt)
+- [Quickstart](https://docs.turnkey.com/getting-started/quickstart)
+- [React Wallet Kit, Getting started](https://docs.turnkey.com/sdks/react/getting-started)
+- [React Wallet Kit, Using embedded wallets](https://docs.turnkey.com/sdks/react/using-embedded-wallets)
+- [React Wallet Kit, Signing](https://docs.turnkey.com/sdks/react/signing)
+- [TypeScript Server SDK](https://docs.turnkey.com/sdks/javascript-server)
+- [Policies overview](https://docs.turnkey.com/concepts/policies/overview)
+- [Security model](https://docs.turnkey.com/security/non-custodial-key-mgmt)
