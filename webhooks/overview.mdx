@@ -69,7 +69,7 @@ curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
   -H "Idempotency-Key: {uuid}" \
   -d '{
     "url": "https://your-app.example.com/webhooks/brale",
-    "events": ["transfer.completed"]
+    "events": ["transfer.completed", "transfer.failed"]
   }'
 ```
 
@@ -113,12 +113,12 @@ Current supported events:
 | `transfer.created` | A transfer is created | Record transfer intents and surface in-flight state to customers |
 | `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
 | `transfer.canceled` | A transfer is canceled | Reverse provisional ledger entries and notify customers of cancellations |
-| `transfer.failed` | A transfer reaches `failed` status | React to permanent transfer failures (e.g., ACH returns); inspect `data.failure` for details |
+| `transfer.failed` | A transfer reaches `failed` status | React to permanent transfer failures (e.g., ACH returns or returned outbound wires, including wires returned after `complete`); inspect `data.failure` for details |
 | `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
 
-Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed.
+Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed. Subscribe to `transfer.failed` as well, or use `transfer.*`. An outbound domestic wire can be returned after `transfer.completed`, and Brale reports the return with [`transfer.failed`](/webhooks/webhook-events#returned-outbound-wires).
 
 ### Wildcard subscriptions
 

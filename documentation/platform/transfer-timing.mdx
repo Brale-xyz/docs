@@ -156,19 +156,30 @@ stateDiagram-v2
     pending --> processing
     processing --> complete
     processing --> canceled
+    processing --> failed
+    complete --> failed: outbound wire returned
     complete --> [*]
     canceled --> [*]
+    failed --> [*]
 ```
+
+A successful transfer progresses from `pending` → `processing` → `complete`. Outbound domestic wires can also be returned by the receiving bank. When Brale recognizes the return, it updates the original transfer to `failed`:
+
+- **Return received before completion:** `processing` → `failed`
+- **Return received after completion:** `complete` → `failed`
+
+Brale does not use a separate `returned` status for returned wires. The transfer has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`.
 
 | Status       | Terminal | Description                                                                                                                                                                                                                                                                                                            |
 | ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pending`    | No       | The transfer has been submitted but is not yet in progress. For fiat transfers, this typically means the system is waiting for funds, confirmation from a correspondent, or the transfer is under review.                                                                                                              |
 | `processing` | No       | The transfer is actively being processed. For onchain transfers, this includes signing, broadcasting, and awaiting network confirmation. If an onchain transaction encounters a transient error (such as a signing timeout or network congestion), Brale will automatically retry it while it remains in `processing`. |
-| `complete`   | Yes      | The transfer has finalized and funds have arrived at the destination.                                                                                                                                                                                                                                                  |
-| `canceled`   | Yes      | The transfer has been permanently canceled and will not be retried. This is the only terminal failure state.                                                                                                                                                                                                           |
+| `complete`   | Usually  | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
+| `canceled`   | Yes      | The transfer has been permanently canceled and will not be retried. |
+| `failed`     | Yes      | The transfer did not succeed, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Check the [`failure`](/api-reference/brale/get-transfer#failure) object for details when it is present. |
 
 <Note>
-  `complete` and `canceled` are the only terminal statuses. If a transfer is in `pending` or `processing`, it is still in progress and may still complete. Do not treat a non-terminal status as a final outcome.
+  `complete`, `canceled`, and `failed` are terminal statuses for routine polling. If a transfer is in `pending` or `processing`, it is still in progress and may still complete. Do not treat a non-terminal status as a final outcome. For outbound domestic wires, `complete` does not guarantee that a later bank return cannot occur. Keep accepting `transfer.failed` events for transfers you recorded as `complete`.
 </Note>
 
 ### When Transfers Are Canceled
@@ -180,6 +191,15 @@ A transfer moves to `canceled` when a failure is unrecoverable. Common scenarios
 - **Compliance or risk hold** — The transfer was flagged and could not proceed.
 
 When a transfer is canceled, [submit a new transfer](/api-reference/brale/create-transfer) rather than expecting the original to be retried.
+
+### When Transfers Fail
+
+A transfer moves to `failed` when it did not succeed or its payout was returned. Unlike `canceled`, `failed` can describe a transfer that previously reached `complete`.
+
+- **Outbound domestic wire return** — The receiving bank returned the wire. Brale updates the original transfer to `failed` whether the return arrives while the transfer is `processing` or after it is `complete`. The [`failure`](/api-reference/brale/get-transfer#failure) object has `type: "wire_return"` and `retriable: false`.
+- **Other rail or provider failures** — For example, ACH returns. Check `failure` for details when it is present. `failure` can be `null`.
+
+A returned wire does not move to a separate `returned` status, and Brale does not retry it automatically. `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins have been credited back.
 
 ### Automatic Retries
 
@@ -225,7 +245,7 @@ The response includes a `status` field with one of the values described above, a
 </Info>
 
 - **Poll interval** — Start at 25% of the anticipated transfer time. If the transfer is still in `pending` or `processing`, apply exponential backoff up to a reasonable maximum (for example, 60 seconds).
-- **Terminal check** — Stop polling once the status is `complete` or `canceled`.
+- **Terminal check** — Stop routine polling once the status is `complete`, `canceled`, or `failed`. Stopping polling does not mean ignoring later webhook events. An outbound domestic wire can move from `complete` to `failed` if the bank returns it. Retrieve the latest transfer when you need to reconcile.
 - **Onchain transfers** — Most onchain transfers complete within 30 seconds. If a transfer is still `processing` after several minutes, it is likely being retried automatically.
 - **Fiat transfers** — Fiat settlement depends on the payment rail and time of day. A wire submitted at 2:00 PM ET may take up to 2 hours; an ACH credit may take 1–3 business days.
 - **Idempotency** — Always send a unique [`Idempotency-Key`](/key-concepts/idempotency) when [creating transfers](/api-reference/brale/create-transfer) and reuse the same key on retries. On `401`, refresh your token and retry with the same key.

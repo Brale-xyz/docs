@@ -516,6 +516,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 - Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) to receive signed events when a transfer reaches `complete` or `failed`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.
+- For outbound domestic wires, do not treat `complete` as final for reconciliation. The same transfer can later emit `transfer.failed` if the wire is returned. Retrieve the latest transfer when you need to confirm its current state.
 
 ## Transfer Statuses
 
@@ -523,13 +524,20 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pending`    | The transfer has been submitted but is not yet in progress. This may be due to Brale waiting for funds (e.g., fiat-to-stablecoin wire transfer) or an ongoing review. |
 | `processing` | The transfer is in progress.                                                                                                                                          |
-| `complete`   | The transfer is finalized and funds have arrived at the destination.                                                                                                  |
+| `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
 | `canceled`   | The transfer has been canceled.                                                                                                                                       |
-| `failed`     | An issue prevented Brale from completing the transfer. Manual intervention may be required.                                                                           |
+| `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Manual intervention may be required. |
 
 ### Transfer Flow
 
-A transfer will progress from `pending` → `processing` → `complete`. Transfers include an `updated_at` field denoting the last time the status updated.
+A successful transfer progresses from `pending` → `processing` → `complete`. Transfers include an `updated_at` field denoting the last time the status updated.
+
+Outbound domestic wires can be returned by the receiving bank. When Brale recognizes the return, it updates the original transfer to `failed`:
+
+- **Return received before completion:** `processing` → `failed`
+- **Return received after completion:** `complete` → `failed`
+
+Brale does not use a separate `returned` status. A returned wire has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`. Keep accepting [`transfer.failed`](/webhooks/webhook-events#transfer-failed) events for transfers you already recorded as `complete`. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for details.
 
 ## Transfer Limits
 

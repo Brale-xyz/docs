@@ -111,7 +111,8 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
-- Treat `data.status` as the completed transfer state.
+- Treat `data.status` as the completed transfer state. The event name is `transfer.completed`; the API status is `complete`.
+- For outbound domestic wires, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the wire, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
@@ -119,7 +120,7 @@ Notes:
 
 Emitted when a Brale transfer reaches `failed` status.
 
-Use this event to react to permanent transfer failures (e.g., ACH returns or other rail/provider failures). For ACH-specific return details, inspect `data.failure.ach_return`.
+Use this event to react to permanent transfer failures (e.g., ACH returns, outbound domestic wire returns, or other rail/provider failures). For ACH-specific return details, inspect `data.failure.ach_return`. For wire return details, inspect `data.failure.wire_return`.
 
 Example:
 
@@ -160,6 +161,49 @@ Notes:
 - `data.failure.ach_return` is only set for ACH return failures. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
+
+### Returned outbound wires
+
+Brale uses the existing `transfer.failed` event for returned outbound domestic wires. There is no separate returned or refunded event. The same transfer can produce `transfer.completed` and later `transfer.failed` if the wire is returned after completion.
+
+Example (illustrative, not an observed production payload):
+
+```json
+{
+  "id": "3D4ExampleEventId",
+  "type": "transfer.failed",
+  "created": "2026-10-06T18:30:05.000000Z",
+  "data": {
+    "id": "3D4ExampleTransferId",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "status": "failed",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    },
+    "failure": {
+      "type": "wire_return",
+      "occurred_at": "2026-10-06T18:30:00Z",
+      "retriable": false,
+      "ach_return": null,
+      "wire_return": {
+        "code": "AC04",
+        "reason": "Account closed"
+      }
+    }
+  }
+}
+```
+
+How to handle it:
+
+- Read `data.status` for the payout state. Read `data.failure.type` for the failure classification when `data.failure` is present.
+- When `data.failure.type` is `wire_return`, read `data.failure.wire_return`, not `data.failure.ach_return`.
+- Do not require an ACH return code or a specific bank reason code to recognize a wire return. `data.failure.wire_return.code` is `WIRE_RETURN` when the provider supplies no code, and `data.failure.wire_return.reason` can be `null`.
+- Missing structured failure details do not mean the transfer succeeded. If `data.status` is `failed`, update your records even when `data.failure` is `null`.
+- `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins were refunded or that refunded funds are available.
+- Track payout state, return classification, and any refund credit separately.
+- Do not assume event ordering. Retrieve the [latest transfer](/api-reference/brale/get-transfer) when you need to reconcile its current state.
 
 ## `payment.completed`
 
