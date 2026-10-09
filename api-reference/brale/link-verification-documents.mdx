@@ -42,6 +42,7 @@ During KYB review, Brale may request additional documents. Subscribe to `account
 | `400`  | `doc_submission_ids` is empty or missing.                      |
 | `404`  | Account not found.                                             |
 | `422`  | Document upload not allowed for this account's current state.  |
+| `422`  | `document_not_required`: a staged document is not one the account currently requires. `other` and, for a business, `aml_program` are accepted at any time. |
 
 ## Verification webhooks
 
