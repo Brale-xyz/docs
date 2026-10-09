@@ -334,7 +334,7 @@ Both `regulatory_profile` fields are required when the object is sent. Sending `
 
 ##### Required documents for a regulated non-US business
 
-Brale requires these documents from every regulated non-US custodial business. [Stage them](/api-reference/brale/stage-verification-document) and pass the IDs in `doc_submission_ids` on `POST /accounts`, or [link them](/api-reference/brale/link-verification-documents) after the account is created. Until each one is uploaded, [List Verification Documents](/api-reference/brale/list-verification-documents) shows it as `pending_upload`.
+Brale requires these documents from every regulated non-US custodial business created with `verification_mode: "standard"`. [Stage them](/api-reference/brale/stage-verification-document) and pass the IDs in `doc_submission_ids` on `POST /accounts`, or [link them](/api-reference/brale/link-verification-documents) after the account is created. Until each one is uploaded, [List Verification Documents](/api-reference/brale/list-verification-documents) shows it as `pending_upload`.
 
 | `document_kind` | Document |
 | --- | --- |
