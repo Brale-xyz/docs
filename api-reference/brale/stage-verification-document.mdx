@@ -27,8 +27,13 @@ Uploads a verification document file and returns a `doc_submission_id`. Staged s
 | `articles_of_incorporation` | `business_document` | Articles of Incorporation / Organization |
 | `certificate_of_good_standing` | `business_document` | Certificate of Good Standing |
 | `ein_letter` | `business_document` | IRS SS-4 / 147-C EIN letter |
+| `regulatory_license` | `business_document` | Regulatory License or Registration |
+| `entity_registration` | `business_document` | Entity Registration Document |
+| `aml_program` | `business_document` | AML Assessment or Program. Optional: never a required document, and a business can link it at any time. |
 | `government_photo_id` | `individual_document` | Government-issued photo ID (requires `person_label`) |
 | `other` | `misc_document` | Other supporting documents |
+
+`regulatory_license`, `entity_registration`, and `aml_program` apply to regulated businesses outside the US. See [Required documents for a regulated non-US business](/key-concepts/accounts#required-documents-for-a-regulated-non-us-business).
 
 ## Example request
 
