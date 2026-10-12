@@ -283,7 +283,7 @@ A regulated business (for example, an MSB or a VASP) in one of the [approved cou
 - `regulatory_profile.license_number`: the license or registration number that regulator issued
 - `verification_mode`: `"standard"`, or `"reliance"` if Brale has enabled reliance for your managing account
 
-Both `regulatory_profile` fields are required when the object is sent. Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence. A regulated business outside the approved countries returns `422 unsupported_jurisdiction`.
+Both `regulatory_profile` fields are required when the object is sent. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence listed under [Required documents for a regulated non-US business](#required-documents-for-a-regulated-non-us-business). A regulated business outside the approved countries returns `422 unsupported_jurisdiction`.
 
 ```json Request
 {
@@ -331,6 +331,21 @@ Both `regulatory_profile` fields are required when the object is sent. Brale req
   }
 }
 ```
+
+##### Required documents for a regulated non-US business
+
+Brale requires these documents from every regulated non-US custodial business created with `verification_mode: "standard"`. [Stage them](/api-reference/brale/stage-verification-document) and pass the IDs in `doc_submission_ids` on `POST /accounts`, or [link them](/api-reference/brale/link-verification-documents) after the account is created. Until each one is uploaded, [List Verification Documents](/api-reference/brale/list-verification-documents) shows it as `pending_upload`.
+
+| `document_kind` | Document |
+| --- | --- |
+| `regulatory_license` | Proof of the business's license or registration with the regulator named in `regulatory_profile` |
+| `entity_registration` | The business's registration with its company or corporate registry |
+| `articles_of_incorporation` | Formation documents: articles of incorporation or organization, or the equivalent in the business's country |
+| `certificate_of_good_standing` | Certificate of good standing, or the equivalent issued in the business's country |
+
+An EIN letter is not requested from a business outside the US.
+
+Also send the business's most recent independent AML assessment as `aml_program`. If no independent assessment is available, send the full AML program instead. `aml_program` is reviewed with the rest of the application but is not a required document, so it never appears in the required documents list. It can be sent at account creation or linked later.
 
 ## Creating an individual account
 
