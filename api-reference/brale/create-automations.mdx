@@ -20,6 +20,10 @@ You can optionally include a `brand` object in the request body to select the ve
 
 The automation is still created under the account in the request path (`/accounts/{account_id}/automations`). `brand.account_id` does not change which account owns the automation — it only selects the identity shown on the funding instructions.
 
+<Note>
+  **Testnet branding.** With testnet credentials, you can create branded Automations using a business or individual account you have access to, without completing mainnet KYB/KYC or enabling that account for mainnet. Testnet funding instructions contain placeholder banking details and cannot receive real deposits. To fund a testnet Automation, use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Mainnet verification requirements are unchanged.
+</Note>
+
 ### Example: branded automation request (business account)
 
 ```json
@@ -40,7 +44,7 @@ The automation is still created under the account in the request path (`/account
 
 ### Example: branded automation request (individual account)
 
-Pass the `account_id` of a KYC-verified individual account to render that person's legal name and address as the beneficiary. See [Individual accounts](/guides/individual-accounts) for how to create one.
+Pass the `account_id` of an individual account to render that person's legal name and address as the beneficiary. On mainnet, the individual account must be KYC-verified. See [Individual accounts](/guides/individual-accounts) for how to create one.
 
 ```json
 {
