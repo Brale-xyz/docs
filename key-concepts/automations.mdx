@@ -132,6 +132,8 @@ When the automation becomes active, `beneficiary_name` and `beneficiary_address`
 
 <Note>
   Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. These placeholder coordinates cannot receive real deposits, and no actual funds movement occurs.
+
+  For both branded and unbranded testnet Automations, `source.funding_instructions.account_number` contains the Automation's alphanumeric ID as a placeholder, not a numeric bank account number. This is expected.
 </Note>
 
 ### Simulate a testnet deposit
