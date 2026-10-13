@@ -446,7 +446,13 @@ components:
         payment_reference:
           type: string
           nullable: true
-          description: Sender-provided payment reference or memo, when available.
+          description: >-
+            Sender-provided payment reference or memo, when available. For inbound
+            wires, Brale may also populate this field from "Instruction for Creditor
+            Agent," which some banks label "Message to receiving bank." This fallback
+            is used only when no existing memo, Originator-to-Beneficiary Information
+            (OBI), or remittance reference is available. Existing reference precedence
+            is preserved.
           example: Simulated Wire
         imad:
           type: string
