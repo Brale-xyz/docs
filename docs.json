@@ -66,6 +66,7 @@
             "group": "Coverage",
             "pages": [
               "coverage/account-availability",
+              "coverage/prohibited-businesses",
               "coverage/transfer-types",
               "coverage/value-types"
             ]
