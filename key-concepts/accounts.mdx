@@ -12,7 +12,7 @@ Four shapes are supported:
 - **Individual, custodial (KYC)** — a natural person verified with KYC whose account receives Brale-custodied (`type=internal`) wallets. The request shape is identical to the individual transactional path; only `account_type` differs. See [Individual accounts](/guides/individual-accounts).
 - **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
 
-Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts.
+Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts. Brale does not onboard the business types listed in [Prohibited businesses](/coverage/prohibited-businesses), for either custodial or transactional accounts.
 
 Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
 

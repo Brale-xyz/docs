@@ -19,7 +19,7 @@ Individual custodial accounts are U.S.-only. Outside the United States, business
 A request from a jurisdiction Brale does not serve for the requested account type returns `422 unsupported_jurisdiction`. The rejection is permanent, so retrying the same request will not succeed and it is safe to cache the error against an idempotency key.
 
 <Note>
-All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's restricted-business policies. Availability in a state or country does not guarantee approval.
+All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's [prohibited businesses](/coverage/prohibited-businesses) policy. Availability in a state or country does not guarantee approval.
 </Note>
 
 ## Custodial availability by state
@@ -55,7 +55,7 @@ Business custodial accounts are supported in the 44 jurisdictions above plus Cal
 
 Business transactional and individual transactional accounts are available in the same set of 131 approved countries outside the United States, listed below. Transactional accounts are non-custodial: they receive no Brale-managed internal wallets, hold no balances at Brale, and register external destination-only addresses.
 
-Coverage remains subject to identity verification, sanctions screening, program approval, product support, applicable law, and Brale's restricted-business policies. A country appearing in this list does not guarantee that an applicant from that country is approved.
+Coverage remains subject to identity verification, sanctions screening, program approval, product support, applicable law, and Brale's [prohibited businesses](/coverage/prohibited-businesses) policy. A country appearing in this list does not guarantee that an applicant from that country is approved.
 
 <Note>
 Country eligibility and verification method are separate. In some countries Brale can verify an identity number against a government registry; in others, no registry check is available and verification is completed through identity document collection instead. An eligible applicant may therefore be asked for documents even though their country is approved. The document request flow is the same as for U.S. accounts — see [Verification](/key-concepts/accounts#verification).
@@ -163,5 +163,6 @@ A business's incorporation state or bank location does not, by itself, determine
 ## Related
 
 - [Account types](/key-concepts/account-types) — the `entity_type` and `account_type` fields on `POST /accounts`.
+- [Prohibited businesses](/coverage/prohibited-businesses) — business types Brale does not onboard.
 - [Accounts](/key-concepts/accounts) — the full account resource, fields, and lifecycle.
 - [`POST /accounts`](/api-reference/brale/create-account) — API reference.
