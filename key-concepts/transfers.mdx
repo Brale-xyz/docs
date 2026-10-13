@@ -52,7 +52,7 @@ The object is optional and may not be present on every transfer. Wire transfers 
 | `sender_name` | string \| null | Name of the originating sender, when available |
 | `sender_bank_name` | string \| null | Originating bank name, when available |
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
-| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
+| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available. For inbound wires, Brale may also populate this field from "Instruction for Creditor Agent," which some banks label "Message to receiving bank." This fallback is used only when no existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference is available. Existing reference precedence is preserved. |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
 | `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 

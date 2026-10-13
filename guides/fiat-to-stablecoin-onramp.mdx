@@ -149,6 +149,25 @@ Query a transfer that has been created.
   `source.payment_details` appears when Brale has underlying payment metadata to expose for the source leg of a transfer. Wire transfers typically include the full set of fields (`sender_name`, `sender_bank_name`, `imad`, etc.). ACH transfers may include only a subset — fields may be `null` or omitted depending on available rail metadata, and may include `trace_number` as the ACH trace identifier. See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayment_details) for the full field reference.
 </Note>
 
+### Wire payment references
+
+If a sender enters a reference in their bank's "Message to receiving bank" field, Brale can expose it in `source.payment_details.payment_reference`. Some banks call this field "Instruction for Creditor Agent." Brale uses it only when the instruction is received and no higher-priority reference is available. An existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference keeps its current precedence.
+
+`payment_reference` is an existing response-only field. It is not a request parameter, and it may be `null` or absent. Availability depends on the metadata the sending bank supplies and Brale receives, so not every inbound wire includes a reference.
+
+Illustrative Transfer response excerpt:
+
+```json Response excerpt
+{
+  "source": {
+    "transfer_type": "wire",
+    "payment_details": {
+      "payment_reference": "CUSTOMER-REF-123"
+    }
+  }
+}
+```
+
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
