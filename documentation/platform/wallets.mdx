@@ -1,0 +1,35 @@
+---
+title: "Wallets"
+description: "Pair Brale's stablecoin rails with any self-custody wallet provider while keeping key control in your product."
+---
+
+## Overview
+
+Wallets covers how Brale integrates with self-custody wallet providers so you can offer stablecoin balances and transfers without taking on custody or key management yourself. Wallets and bank endpoints are represented as Addresses (`address_id`); a customer's self-custody wallet is registered as a `type=external` address and used as a transfer source or destination like any other.
+
+## Core capabilities
+
+- **Provider-agnostic pattern**: pair any self-custody wallet provider (Para, Turnkey, or others) with Brale rails using the same integration shape.
+- **External addresses**: register onchain wallets as `type=external` addresses; Brale holds no balance or keys for them.
+- **Unified transfers**: send to or from a registered wallet address using the same `address_id`/`transfer_type`/`value_type` model as custodial flows.
+- **Multi-chain**: works across supported chains (EVM, Solana, Stellar, Canton, etc.).
+
+## Typical flows
+
+- **Fund a self-custody wallet**: mint or payout stablecoins from a custodial address to a customer's external wallet address.
+- **Receive from a self-custody wallet**: accept deposits from a registered external address into a custodial address.
+- **Swap wallet providers**: because the pattern is provider-agnostic, add or change wallet providers without changing the underlying Brale integration.
+
+## Implementation checkpoints
+
+- Register the wallet as an external address (`type=internal` addresses are for Brale-custodied wallets only).
+- Reuse the same `address_id` model used for custodial flows; wallets don't get a separate API surface.
+- Review a concrete provider implementation before generalizing to your own pattern.
+
+## Related docs
+
+- [Self-custody wallets guide](/guides/self-custody-wallets)
+- [Para Wallet integration](/guides/integrations/para-wallet)
+- [Turnkey integration](/guides/integrations/turnkey)
+- [Addresses](/key-concepts/addresses)
+- [External bank addresses](/key-concepts/external-bank-addresses)
