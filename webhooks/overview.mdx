@@ -114,7 +114,7 @@ Current supported events:
 | `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
 | `transfer.canceled` | A transfer is canceled | Reverse provisional ledger entries and notify customers of cancellations |
 | `transfer.failed` | A transfer reaches `failed` status | React to permanent transfer failures (e.g., ACH returns or returned outbound wires, including wires returned after `complete`); inspect `data.failure` for details |
-| `payment.completed` | A payment reaches `complete` status | React to completed payment events, including supported fiat payment flows |
+| `payment.completed` | A payment reaches `complete` status | React to completed fiat payments, including inbound wire, ACH, and FedNow deposits. Payment IDs are not Transfer IDs, and this event does not confirm the stablecoin mint. |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
 

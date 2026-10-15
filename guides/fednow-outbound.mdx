@@ -1,0 +1,227 @@
+---
+title: "Send FedNow payouts"
+description: "Pay out USD over FedNow from stablecoins held in a Brale internal Address by creating a fednow_credit Transfer."
+keywords: ["FedNow", "fednow_credit", "offramp", "payout", "bank address", "additional_transfer_types", "idempotency"]
+---
+
+Outbound FedNow uses a [Transfer](/key-concepts/transfers). Brale redeems stablecoins from a funded Brale internal Address and sends USD to a recipient bank Address over FedNow. You create one Transfer for each payout.
+
+<Note>
+  FedNow payouts are available on Brale accounts where FedNow has been enabled. Contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement.
+</Note>
+
+## Prerequisites
+
+- A Brale [Account](/key-concepts/accounts) with `status: complete`.
+- API credentials with the `addresses:write` scope, plus permission to create and read Transfers.
+- A Brale internal (custodial) Address that holds the stablecoin you will redeem.
+- The recipient's bank details: owner name, account number, routing number, and account type. The recipient's bank must participate in FedNow.
+
+<Warning>
+  Brale can only pay out stablecoins already held in a Brale internal Address. The API cannot debit an external or self-custody wallet. Send those stablecoins onchain to your Brale internal Address first, then create the payout.
+</Warning>
+
+## Step 1: Fund a Brale internal Address
+
+Fund the internal Address you will use as the payout source. For example, mint to it with an [onramp](/guides/fiat-to-stablecoin-onramp) or send stablecoins to its onchain address. Check its balance before you create a payout. See [Get a balance](/guides/how-to/get-a-balance).
+
+Note the Address's `id`, the stablecoin `value_type` it holds (for example, `USDB`), and the network `transfer_type` it holds it on (for example, `spark`). You will use all three in the Transfer.
+
+## Step 2: Register or upgrade the recipient bank Address
+
+FedNow recipients use the `fednow_credit` transfer type on an external bank Address. Register recipients with Direct bank entry.
+
+| Path | `fednow_credit` support |
+| --- | --- |
+| Direct bank entry (`POST /accounts/{account_id}/addresses/external`) | Supported |
+| Add to an existing Direct bank entry Address (`PATCH /accounts/{account_id}/addresses/{address_id}`) | Supported |
+| Plaid-linked bank account | Not documented. Contact support before relying on it. |
+
+### Option A: Create a new FedNow recipient
+
+`bank_address` and `beneficiary_address` are not required for a FedNow-only recipient. They are required only when `transfer_types` includes `wire`.
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/external" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: 0b8f3c1e-5a2d-4f6b-8e9a-7c4d2b1f0e35" \
+  --data '{
+    "owner": "Jane Doe",
+    "name": "Example Bank",
+    "account_number": "0012345678",
+    "routing_number": "063108680",
+    "account_type": "checking",
+    "transfer_types": ["fednow_credit"]
+  }'
+```
+
+Send `account_number` and `routing_number` as strings so leading zeros are preserved. You can request other rails in the same call, for example `["ach_credit", "fednow_credit"]`. If you include `wire`, also send `bank_address` and `beneficiary_address`.
+
+```json Response (201)
+{
+  "id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+  "name": "Example Bank",
+  "owner": "Jane Doe",
+  "status": "active",
+  "transfer_types": ["fednow_credit"],
+  "account_number": "****5678",
+  "account_type": "checking",
+  "bank_address": null,
+  "beneficiary_address": null,
+  "needs_update": false,
+  "created": "2026-10-15T16:05:25.965990Z",
+  "last_updated": "2026-10-15T16:05:26.801044Z",
+  "routingNumber": "063108680"
+}
+```
+
+### Option B: Add FedNow to an existing recipient
+
+To add FedNow to an existing bank Address, such as an RTP recipient, send `additional_transfer_types`:
+
+```bash
+curl --request PATCH \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/2MhCCIHulVdXrHiEuQDJvnKbSkl" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{ "additional_transfer_types": ["fednow_credit"] }'
+```
+
+- Brale merges `fednow_credit` into the Address's existing `transfer_types`. An Address with `["ach_credit", "rtp_credit"]` becomes `["ach_credit", "rtp_credit", "fednow_credit"]`.
+- The Address `id` does not change. Keep using the same `address_id` for all rails.
+- Sending a transfer type that is already enabled has no additional effect.
+- `PATCH` requests do not take an `Idempotency-Key` header.
+
+### Registration errors
+
+| Status | `type` | What to do |
+| --- | --- | --- |
+| `422` | `fednow_routing_number_not_supported` | The routing number does not participate in FedNow. Do not retry the same request. Use another rail for this recipient. |
+| `422` | `fednow_provider_registration_failed` | Registration with Brale's banking provider failed. This can be temporary. Retry the same request after a backoff. For `POST`, reuse the same `Idempotency-Key` and body. |
+
+```json Response (422)
+{
+  "type": "fednow_provider_registration_failed",
+  "detail": "The recipient could not be registered for FedNow. Try again later.",
+  "status": 422
+}
+```
+
+## Step 3: Confirm the recipient supports FedNow
+
+Retrieve the Address and confirm that `status` is `active` and `transfer_types` includes `fednow_credit`:
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/2MhCCIHulVdXrHiEuQDJvnKbSkl" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Only create a FedNow payout after both conditions are true. If `fednow_credit` is missing, do not send the payout on another rail automatically. Choose the rail explicitly.
+
+## Step 4: Create the payout Transfer
+
+```http
+POST /accounts/{account_id}/transfers
+Authorization: Bearer <access_token>
+Idempotency-Key: <key-for-this-logical-payout>
+```
+
+```json Request
+{
+  "amount": { "value": "1.00", "currency": "USD" },
+  "source": {
+    "value_type": "USDB",
+    "transfer_type": "spark",
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4"
+  },
+  "destination": {
+    "value_type": "USD",
+    "transfer_type": "fednow_credit",
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl"
+  }
+}
+```
+
+- `source.address_id` is your funded Brale internal Address.
+- `source.value_type` and `source.transfer_type` must match the token and network that Address holds. If the Address holds `SBC` on `solana`, send `"value_type": "SBC"` and `"transfer_type": "solana"`.
+- `destination.address_id` is the recipient bank Address with `fednow_credit` enabled.
+- Generate one `Idempotency-Key` per logical payout and store it with your payout record before you send the request.
+
+```json Response (201)
+{
+  "id": "36JqTB7hN3pQe5ZuWv0XkLr2sGc",
+  "status": "pending",
+  "amount": { "value": "1.00", "currency": "USD" },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "USDB",
+    "transfer_type": "spark"
+  },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "USD",
+    "transfer_type": "fednow_credit"
+  },
+  "automation_id": null,
+  "failure": null,
+  "note": null,
+  "created_at": "2026-10-15T16:10:03.531196Z",
+  "updated_at": "2026-10-15T16:10:03.531196Z"
+}
+```
+
+`201 Created` means Brale created the Transfer. It does not mean the recipient has been paid.
+
+## Step 5: Track the payout
+
+Track the Transfer until it reaches `complete`, `canceled`, or `failed`:
+
+- Subscribe to `transfer.*` webhooks. `transfer.completed` means the Transfer reached `complete`. See [Webhook events](/webhooks/webhook-events).
+- Or poll `GET /accounts/{account_id}/transfers/36JqTB7hN3pQe5ZuWv0XkLr2sGc` with exponential backoff.
+- To list FedNow payouts, call `GET /accounts/{account_id}/transfers?transfer_type=fednow_credit`.
+
+Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope `id`, and retrieve the Transfer when you need its current state.
+
+### Handle a pending payout safely
+
+1. Keep tracking the original Transfer by its `id`. A FedNow payout can stay `pending` or `processing` while Brale reviews and submits it.
+2. If your create request timed out or returned `5xx` or `429`, retry with the **same** `Idempotency-Key` and the **same** body. Brale returns the original Transfer instead of creating a second one.
+3. Do not create a replacement payout with a new key because the first one is still `pending`. Both could be paid.
+4. If you need to stop a payout, contact [support@brale.xyz](mailto:support@brale.xyz) immediately. Brale can cancel a payout only before it is submitted to FedNow. A `processing` payout cannot be canceled, and `pending` does not guarantee that cancellation is still possible.
+5. Create a new payout only after the original reaches `canceled` or `failed`, and use a new `Idempotency-Key`.
+
+### Cancellation compared with returns
+
+A `canceled` Transfer was stopped before Brale sent the payment. A settled FedNow payment is final. Recovering funds after settlement depends on the recipient and their bank, and Brale does not automatically refund a settled payout. Check `failure` on `failed` Transfers when it is present.
+
+## Errors and retries
+
+| Status | Cause | Retry? |
+| --- | --- | --- |
+| `401` | Expired or invalid token | Refresh the token and retry with the same key. |
+| `422` `insufficient_balance` | The source Address does not hold enough of `source.value_type` | Fund the Address, then retry with the same key and body. |
+| `422` idempotency key reused with a different body | The request body changed under the same key | Fix the request and use a new key. |
+| `429` or `5xx`, or a timeout | Temporary failure | Retry with the same key and body using exponential backoff. |
+
+## Test outbound payouts
+
+Testnet does not send real FedNow payments. When you submit a redemption on testnet, Brale burns the stablecoin onchain and skips the fiat payout. See [Burn tokens on testnets](/overview/sandbox-and-testnet#3-burn-tokens-on-testnets). On testnet you can:
+
+- Fund internal Addresses on testnet networks with testnet mints.
+- Exercise redemption Transfers, idempotency handling, and status tracking without moving real USD.
+- Validate your FedNow request construction against the examples on this page.
+
+If a testnet request with `destination.transfer_type: "fednow_credit"` is rejected on your account, contact support to confirm testnet FedNow enablement.
+
+Confirm end-to-end FedNow payouts on mainnet with a small amount, such as `1.00` USD, to a recipient you control.
+
+## Related
+
+- [FedNow overview](/guides/fednow)
+- [Receive FedNow deposits](/guides/fednow-inbound)
+- [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp)
+- [Update an Address](/api-reference/brale/update-address)
+- [Idempotency](/key-concepts/idempotency)

@@ -1,10 +1,10 @@
 ---
 title: 'Simulate an Automation deposit'
-description: 'Simulate an inbound ACH or wire deposit into a testnet Automation and run the normal Transfer, mint, and webhook flow without moving real fiat.'
+description: 'Simulate an inbound ACH, wire, or FedNow deposit into a testnet Automation and run the normal Transfer, mint, and webhook flow without moving real fiat.'
 openapi: '/api-reference/brale-openapi.yaml POST /accounts/{account_id}/automations/{automation_id}/simulations/deposits'
 ---
 
-Testnet Automations return placeholder banking coordinates that cannot receive real deposits. Use this endpoint to simulate an inbound ACH or wire deposit instead. Brale creates a simulated inbound payment, runs the normal Automation mint path, and returns the resulting Transfer. Brale does not contact a bank, and no real fiat moves.
+Testnet Automations return placeholder banking coordinates that cannot receive real deposits. Use this endpoint to simulate an inbound ACH, wire, or FedNow deposit instead. Brale creates a simulated inbound payment, runs the normal Automation mint path, and returns the resulting Transfer. Brale does not contact a bank, and no real fiat moves.
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/simulations/deposits`
 
@@ -36,11 +36,23 @@ The request body accepts only the fields below. Brale rejects additional propert
 | :---- | :--- | :------- | :---------- |
 | `amount.value` | string | Yes | Positive decimal amount greater than zero, such as `"10.00"`. |
 | `amount.currency` | string | Yes | Must be a reserve currency accepted by the API, such as `USD`. |
-| `transfer_type` | string | Yes | Inbound rail to simulate. Accepted values: `ach`, `wire`. |
+| `transfer_type` | string | Yes | Inbound rail to simulate. Accepted values: `ach`, `wire`, `fednow`. These are simulator inputs, not Transfer rail identifiers. `fednow` produces a Transfer with `source.transfer_type: "fednow_credit"`. Do not send `fednow_credit` here. |
 
 ## Examples
 
 <CodeGroup>
+
+```bash FedNow
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "1.00", "currency": "USD" },
+    "transfer_type": "fednow"
+  }'
+```
 
 ```bash Wire
 curl --request POST \
@@ -72,7 +84,7 @@ curl --request POST \
 
 ### 202 Accepted
 
-Returns the standard [Transfer](/key-concepts/transfers) representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` matches the requested rail.
+Returns the standard [Transfer](/key-concepts/transfers) representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. For a `fednow` simulation, `source.transfer_type` is `fednow_credit`. `202 Accepted` means Brale accepted the simulated deposit. It does not mean the mint is complete.
 
 ```json Response
 {
@@ -99,13 +111,38 @@ Returns the standard [Transfer](/key-concepts/transfers) representation. There i
 }
 ```
 
+```json Response (FedNow simulation)
+{
+  "id": "36JqT2nF4kW8xYbR1sLmPz9cVdA",
+  "status": "pending",
+  "failure": null,
+  "amount": {
+    "value": "1.00",
+    "currency": "USD"
+  },
+  "source": {
+    "value_type": "USD",
+    "transfer_type": "fednow_credit"
+  },
+  "destination": {
+    "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
+    "value_type": "SBC",
+    "transfer_type": "base_sepolia"
+  },
+  "note": null,
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_at": "2026-10-15T17:00:00.000000Z",
+  "updated_at": "2026-10-15T17:00:00.000000Z"
+}
+```
+
 Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to follow it to `complete` and read `destination.transaction_id` for the testnet mint.
 
 ## Errors
 
 | Status | `type` | When |
 | :----- | :----- | :--- |
-| `400` | Schema validation error | `transfer_type` is not `ach` or `wire` (for example, `rtp`), a required field is missing, or the body includes an unknown field. |
+| `400` | Schema validation error | `transfer_type` is not `ach`, `wire`, or `fednow` (for example, `rtp` or `fednow_credit`), a required field is missing, or the body includes an unknown field. |
 | `400` | `invalid_currency` | `amount.currency` is not a reserve currency accepted by the API (for example, `EUR`). |
 | `400` | `invalid_amount` | `amount.value` is malformed, zero, or negative. For zero, `detail` is `Amount must be greater than zero`. |
 | `401` | | Missing or invalid bearer token. |
@@ -125,4 +162,4 @@ Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to f
 
 ## Webhooks
 
-Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events) for the simulated inbound payment. There is no simulation-specific webhook type.
+Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events) for the simulated inbound payment, followed by the normal `transfer.*` events as the Transfer progresses. There is no simulation-specific webhook type. Simulation creates simulated fiat funding only. It does not test a real bank or the FedNow network. See [Receive FedNow deposits](/guides/fednow-inbound#test-on-testnet).

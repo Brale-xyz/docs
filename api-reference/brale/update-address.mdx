@@ -20,7 +20,7 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 | --- | --- | --- |
 | `name` | string | Rename the address. |
 | `status` | string | `"archived"` to archive, `"active"` to unarchive (external addresses only — custodial addresses cannot be unarchived). |
-| `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
+| `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"fednow_credit"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
 | `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
 | `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
 
@@ -40,9 +40,23 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 
 `additional_transfer_types` is **merged** into the address's existing `transfer_types`. You do not need to resend the full existing list — send only the rails you want to add. Sending a transfer type that is already enabled is idempotent.
 
+### Add FedNow to an existing recipient
+
+To send FedNow payouts to an existing bank address, such as an RTP recipient, add `fednow_credit`:
+
+```json Request
+{
+  "additional_transfer_types": ["fednow_credit"]
+}
+```
+
+An address with `["ach_credit", "rtp_credit"]` becomes `["ach_credit", "rtp_credit", "fednow_credit"]`. The address `id` does not change, so existing references keep working. `bank_address` and `beneficiary_address` are not required to add `fednow_credit`. Confirm `fednow_credit` is present before sending a payout. See [Send FedNow payouts](/guides/fednow-outbound).
+
 ### Error responses
 
 - `400` — invalid or incompatible transfer types, attempting to archive a pending address, attempting to unarchive a custodial address, or invalid status value.
 - `404` — address not found or not owned by the account.
+- `422` `fednow_routing_number_not_supported` — the address's routing number does not participate in FedNow. Do not retry.
+- `422` `fednow_provider_registration_failed` — FedNow registration failed. This can be temporary. Retry the same request after a backoff.
 
 Required scope: `addresses:write`

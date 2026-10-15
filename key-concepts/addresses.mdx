@@ -47,7 +47,7 @@ See the [PATCH address endpoint reference](/api-reference/brale/update-address) 
 
 ## Supported Transfer Types
 
-- [Off-chain](/coverage/transfer-types#offchain) rails: `wire`, `ach_credit`, `same_day_ach_credit`, `ach_debit`, `rtp_credit`
+- [Off-chain](/coverage/transfer-types#offchain) rails: `wire`, `ach_credit`, `same_day_ach_credit`, `ach_debit`, `rtp_credit`, `fednow_credit`
 - [On-chain](/coverage/transfer-types#onchain) (examples): `canton`, `base`, `polygon`, `solana`, `stellar`, `xrp_ledger`<br/>(for full list, see [Coverage: Transfer Types](/coverage/transfer-types))
 
 ## Custodial (Internal) Addresses
@@ -94,6 +94,7 @@ Brale supports two paths for creating an external off-chain bank address. The pa
 | `ach_debit` | Supported | Not supported |
 | `ach_credit` | Supported | Supported |
 | `rtp_credit` | Supported | Supported |
+| `fednow_credit` | Not documented | Supported |
 | `wire` | Not supported | Supported |
 
 <Warning>
@@ -126,23 +127,25 @@ The blockchains the address supports. See [Supported Chains](/coverage/value-typ
 
 ### Create via Direct bank entry
 
-Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. It does **not** support `ach_debit`.
+Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled). It does **not** support `ach_debit`.
 
 **POST** `/accounts/{account_id}/addresses/external`
 
 <Note>
-For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for ACH/RTP-only addresses using `ach_credit`, `same_day_ach_credit`, or `rtp_credit`. Omit these fields for ACH/RTP-only addresses unless you have accurate values—do not use placeholder or generic bank addresses.
+For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`. Omit these fields for addresses without `wire` unless you have accurate values. Do not use placeholder or generic bank addresses.
 </Note>
 
-| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit (`rtp_credit`) | Wire     |
-| --------------------- | ---------- | ------------------- | ------------------------- | -------- |
-| `owner`               | Required   | Required            | Required                  | Required |
-| `account_number`      | Required   | Required            | Required                  | Required |
-| `routing_number`      | Required   | Required            | Required                  | Required |
-| `account_type`        | Required   | Required            | Required                  | Required |
-| `transfer_types`      | Required   | Required            | Required                  | Required |
-| `bank_address`        | Optional   | Optional            | Optional                  | Required |
-| `beneficiary_address` | Optional   | Optional            | Optional                  | Required |
+| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit (`rtp_credit`) | FedNow Credit (`fednow_credit`) | Wire     |
+| --------------------- | ---------- | ------------------- | ------------------------- | ------------------------------- | -------- |
+| `owner`               | Required   | Required            | Required                  | Required                        | Required |
+| `account_number`      | Required   | Required            | Required                  | Required                        | Required |
+| `routing_number`      | Required   | Required            | Required                  | Required                        | Required |
+| `account_type`        | Required   | Required            | Required                  | Required                        | Required |
+| `transfer_types`      | Required   | Required            | Required                  | Required                        | Required |
+| `bank_address`        | Optional   | Optional            | Optional                  | Optional                        | Required |
+| `beneficiary_address` | Optional   | Optional            | Optional                  | Optional                        | Required |
+
+Send `account_number` and `routing_number` as strings so leading zeros are preserved.
 
 #### ACH Credit example
 
@@ -181,6 +184,27 @@ For Direct bank entry, `bank_address` and `beneficiary_address` are required onl
   "id": "2VcUIIsgARwVbEGlIYbhg6fGG57"
 }
 ```
+
+#### FedNow Credit (`fednow_credit`) example
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["fednow_credit"],
+  "account_number": "0012345678",
+  "routing_number": "063108680",
+  "account_type": "checking",
+  "name": "Example Bank"
+}
+```
+
+```json Response
+{
+  "id": "2MhCCIHulVdXrHiEuQDJvnKbSkl"
+}
+```
+
+If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`. Unlike `rtp_credit`, do not assume `fednow_credit` is added asynchronously. Confirm the Address's `transfer_types` before sending a payout. See [Send FedNow payouts](/guides/fednow-outbound).
 
 #### Wire example
 
@@ -290,7 +314,7 @@ Response
   "name": "checking 7890",
   "owner": "Jane Doe",
   "status": "active",
-  "transfer_types": ["rtp_credit", "same_day_ach_credit", "wire"],
+  "transfer_types": ["wire", "ach_credit", "same_day_ach_credit"],
   "created": "2025-11-25T20:53:12.655227Z",
   "bank_address": {
     "state": "CA",
@@ -314,13 +338,27 @@ Response
 }
 ```
 
+Offchain Address Example - add FedNow to an existing RTP recipient
+
+Suppose a bank Address supports `ach_credit` and `rtp_credit` and you want to send FedNow payouts to it. Add `fednow_credit`:
+
+**PATCH** `/accounts/{account_id}/addresses/{address_id}`
+
+```json Request
+{
+  "additional_transfer_types": ["fednow_credit"]
+}
+```
+
+Brale merges `fednow_credit` into the existing `transfer_types`, so the Address lists `["ach_credit", "rtp_credit", "fednow_credit"]`. The Address `id` stays the same. If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`.
+
 #### Updating Address Name
 
 You can also use this endpoint to update the human-readable name (alias) of an Address. You can send name on its own, or together with additional_transfer_types:
 
 ```json Request
 {
-  "name": "My EVM Wallet"
+  "name": "My EVM Wallet",
   "additional_transfer_types": ["base"]
 }
 ```
@@ -450,7 +488,7 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
   "reason": "Plaid item requires re-authentication",
   "timestamp": "2025-09-13T17:17:00Z",
   "event_type": "ITEM_LOGIN REQUIRED",
-  "address_id": "address_id123"
+  "address_id": "34yxvqP90NfeeYkQGriO6bSfn1K"
 }
 ```
 
@@ -491,10 +529,10 @@ This endpoint returns all addresses (whether internal or external) linked to the
 {
   "addresses": [
     {
-      "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+      "id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
       "status": "active",
       "name": "Internal Custodial Wallet",
-      "type": "Internal",
+      "type": "internal",
       "address": "73uyt9HkEqx9bThYXWaUBP67sWsiJEsyJ5rSCieDx5me",
       "created": "2023-03-07T17:31:37.997502Z",
       "transfer_types": ["solana", "solana_devnet"]

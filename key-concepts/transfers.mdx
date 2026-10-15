@@ -27,7 +27,7 @@ Each source and destination includes:
 | `amount`          | Body                        | object | `{ "value": "10", "currency": "USD" }`                   |
 | `source`          | Body                        | object | Origin of funds (fiat rail or on-chain address)          |
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
-| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, polygon, solana) |
+| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, rtp_credit, fednow_credit, polygon, solana) |
 | `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
 | `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
 
@@ -35,7 +35,7 @@ Each source and destination includes:
 
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand` | Body  | object | **ACH only.** `{ "account_id": "<ACCOUNT_ID>" }` to control which Account name appears on **ACH** bank statement line items (ACH debit + ACH credit). Not supported for `wire` or `rtp`. |
+| `brand` | Body  | object | **ACH only.** `{ "account_id": "<ACCOUNT_ID>" }` to control which Account name appears on **ACH** bank statement line items (ACH debit + ACH credit). Not supported for `wire`, `rtp_credit`, or `fednow_credit`. |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 
 ## Response-only fields
@@ -79,7 +79,9 @@ The object is optional and may be absent immediately after a transfer is created
 | Flow                               | Source         | Destination                         | Description                                |
 | ---------------------------------- | -------------- | ----------------------------------- | ------------------------------------------ |
 | Onramp<br/>(Fiat → Stablecoin)     | USD / wire     | SBC / base                          | Mint SBC on Base funded by wire deposit    |
-| Offramp<br/>(Stablecoin → Fiat)    | SBC / solana   | USD / ACH                           | Redeem SBC on Solana to USD via ACH        |
+| Offramp<br/>(Stablecoin → Fiat)    | SBC / solana   | USD / ach_credit                    | Redeem SBC on Solana to USD via ACH        |
+| FedNow payout                      | USDB / spark   | USD / fednow_credit                 | Redeem USDB on Spark to USD via FedNow     |
+| FedNow onramp (Automation-created) | USD / fednow_credit | SBC / solana                   | Created by Brale when an Automation receives a FedNow credit. You do not create this Transfer. |
 | Swap<br/>(Stablecoin ↔ Stablecoin) | USDC / solana  | SBC / solana                        | 1:1 swap from USDC to SBC with no slippage |
 | On-chain Payout                    | USDC / polygon | USDC / polygon (external address)   | Pay a recipient wallet                     |
 | USDC off-ramp (wire)               | USDC / polygon | USD / wire                          | Offramp USDC to wire                       |
@@ -98,17 +100,18 @@ Accept a USD deposit to mint stablecoins.
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
 ```shell
+# Generate a fresh Idempotency-Key per logical transfer. Reuse it on retries of the same transfer.
 curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Content-Type: application/json" \
   --header "Authorization: Bearer ${AUTH_TOKEN}" \
-  --header "Idempotency-Key: $(uuidgen)" \          # generate a fresh key per logical transfer; reuse on retries of the same transfer
+  --header "Idempotency-Key: $(uuidgen)" \
   --data '{
     "amount":    { "value": "10", "currency": "USD" },
-    "source":    { "value_type": "usd", "transfer_type": "wire" },
+    "source":    { "value_type": "USD", "transfer_type": "wire" },
     "destination": {
       "address_id": "'"${ADDRESS_ID}"'",
-      "value_type": "sbc",
+      "value_type": "SBC",
       "transfer_type": "base"
     }
   }'
@@ -186,7 +189,7 @@ Offramp your stablecoin to USD via wire transfer.
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "SBC",
-    "transfer_type": "Polygon"
+    "transfer_type": "polygon"
   },
   "destination": {
     "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
@@ -224,6 +227,30 @@ Offramp your stablecoin to USD via ACH Credit.
 }
 ```
 
+## Stablecoin to USD (FedNow payout)
+
+Send USD over FedNow from stablecoins held in a funded Brale internal Address. The destination bank Address must be `active` and list `fednow_credit` in `transfer_types`. `source.value_type` and `source.transfer_type` must match the token and network held by the source Address.
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
+
+```json Request
+{
+  "amount": { "value": "1.00", "currency": "USD" },
+  "source": {
+    "value_type": "USDB",
+    "transfer_type": "spark",
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4"
+  },
+  "destination": {
+    "value_type": "USD",
+    "transfer_type": "fednow_credit",
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl"
+  }
+}
+```
+
+`wire_memo` and `destination.payment_details.imad` are wire-only and do not apply to FedNow. Inbound FedNow deposits do not use `POST /transfers`. Brale creates those Transfers from an [Automation](/guides/fednow-inbound). See [Send FedNow payouts](/guides/fednow-outbound) for recipient setup, status tracking, and safe retries.
+
 ## Stablecoin Swaps
 
 Swap USDC to your own stablecoin (YSBC). All stablecoin swaps are 1:1 with no slippage.
@@ -239,12 +266,12 @@ Swap USDC to your own stablecoin (YSBC). All stablecoin swaps are 1:1 with no sl
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "USDC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   }
 }
 ```
@@ -264,12 +291,12 @@ Process stablecoin payouts to one or many external addresses (EOAs).
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2xNL6PAF0cbcQHyjMQJ2RKRfbD9",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   }
 }
 ```
@@ -297,7 +324,7 @@ Process stablecoin payouts to one or many external addresses (EOAs).
     "transaction_id": "0xdd5646ea…"
   },
   "destination": {
-    "address_id": "2O6asmNK4TGVgT9a4loQzJx1rj",
+    "address_id": "2O6asmNK4TGVgT9a4loQzJx1rjH",
     "value_type": "USDC",
     "transfer_type": "polygon",
     "transaction_id": "0xdd5646ea…"
@@ -347,7 +374,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 
 ### Transfers from simulated testnet deposits
 
-[Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` matches the simulated rail (`ach` or `wire`).
+[Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. A `fednow` simulation produces `source.transfer_type: "fednow_credit"`.
 
 `funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
 
@@ -450,7 +477,7 @@ All filters are **exact match** and **case-sensitive**. When you combine multipl
 | :--- | :--- | :--- | :--- |
 | `automation_id` | Automation that created the transfer | KSUID | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
 | `value_type` | Currency / token on source or destination | Canonical API id | `USDC`, `SBC`, `usd` |
-| `transfer_type` | Payment rail / chain on source or destination | Canonical API id | `polygon`, `wire`, `solana` |
+| `transfer_type` | Payment rail / chain on source or destination | Canonical API id | `polygon`, `wire`, `fednow_credit`, `solana` |
 | `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match) | `0xdd5646ea…` |
 
 <Info>
@@ -476,6 +503,13 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?transaction_id=<onc
 
 ```bash
 curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=2MhCCIHuK4TGVgT9a4loQzJx1rj" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+### Example: FedNow deposits for an automation
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z&transfer_type=fednow_credit" \
   -H "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
@@ -513,6 +547,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
 - For inbound fiat-funded transfers, check `source.payment_details` to identify the sender and match payments. Wire transfers typically include `sender_name`, `sender_bank_name`, and `imad`; ACH transfers may include only a subset of these fields.
 - For outbound wire transfers, check `destination.payment_details.imad` to record the wire's IMAD for reconciliation and tracing. It may be absent immediately after the transfer is created and populated later once Brale has the underlying bank metadata.
+- For FedNow, correlate inbound deposits with `automation_id` and `transfer_type=fednow_credit`. Do not expect wire `imad` or ACH `trace_number` on FedNow legs. Payment IDs from `payment.completed` are not Transfer IDs.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 - Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) to receive signed events when a transfer reaches `complete` or `failed`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.
@@ -525,7 +560,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | `pending`    | The transfer has been submitted but is not yet in progress. This may be due to Brale waiting for funds (e.g., fiat-to-stablecoin wire transfer) or an ongoing review. |
 | `processing` | The transfer is in progress.                                                                                                                                          |
 | `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
-| `canceled`   | The transfer has been canceled.                                                                                                                                       |
+| `canceled`   | The transfer has been canceled. Brale can cancel a transfer only before it is submitted to the payment rail. A `pending` status does not guarantee that cancellation is still possible. |
 | `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Manual intervention may be required. |
 
 ### Transfer Flow
