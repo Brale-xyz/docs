@@ -4,14 +4,14 @@ description: 'Creates a non-custodial address (EOA) for the specified account us
 openapi: 'POST /accounts/{account_id}/addresses/external'
 ---
 
-This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, or `rtp_credit`.
+This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, or `fednow_credit` (on accounts with FedNow enabled).
 
 <Note>
 This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [Plaid-linked bank account flow](/api-reference/brale/create-plaid-link-token) instead.
 </Note>
 
 <Warning>
-Address fields are conditional. `bank_address` and `beneficiary_address` are **required when `transfer_types` includes `wire`**. They are **optional** for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. For ACH/RTP-only addresses, do not provide placeholder or generic bank addresses—omit these fields unless you have accurate values.
+Address fields are conditional. `bank_address` and `beneficiary_address` are **required when `transfer_types` includes `wire`**. They are **optional** for `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`. For addresses without `wire`, do not provide placeholder or generic bank addresses. Omit these fields unless you have accurate values.
 </Warning>
 
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
@@ -20,17 +20,17 @@ For a full comparison of both external bank address creation paths, see [Externa
 
 For Direct bank entry, required fields depend on the transfer types you request.
 
-| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit | Wire     |
-| --------------------- | ---------- | ------------------- | ---------- | -------- |
-| `owner`               | Required   | Required            | Required   | Required |
-| `account_number`      | Required   | Required            | Required   | Required |
-| `routing_number`      | Required   | Required            | Required   | Required |
-| `account_type`        | Required   | Required            | Required   | Required |
-| `transfer_types`      | Required   | Required            | Required   | Required |
-| `bank_address`        | Optional   | Optional            | Optional   | Required |
-| `beneficiary_address` | Optional   | Optional            | Optional   | Required |
+| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit | FedNow Credit | Wire     |
+| --------------------- | ---------- | ------------------- | ---------- | ------------- | -------- |
+| `owner`               | Required   | Required            | Required   | Required      | Required |
+| `account_number`      | Required   | Required            | Required   | Required      | Required |
+| `routing_number`      | Required   | Required            | Required   | Required      | Required |
+| `account_type`        | Required   | Required            | Required   | Required      | Required |
+| `transfer_types`      | Required   | Required            | Required   | Required      | Required |
+| `bank_address`        | Optional   | Optional            | Optional   | Optional      | Required |
+| `beneficiary_address` | Optional   | Optional            | Optional   | Optional      | Required |
 
-If `transfer_types` includes `wire`, wire requirements apply. For ACH/RTP-only addresses, omit `bank_address` and `beneficiary_address` unless you have accurate values.
+If `transfer_types` includes `wire`, wire requirements apply. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values. Send `account_number` and `routing_number` as strings so leading zeros are preserved.
 
 ### Direct bank entry examples
 
@@ -68,6 +68,40 @@ Omit `bank_address` and `beneficiary_address` for RTP-only addresses.
 RTP eligibility is determined asynchronously by the banking partner after the address is created. The `rtp_credit` transfer type may not appear immediately. See [Key Concepts → Addresses](/key-concepts/addresses#create-external-address-for-rtp) for details.
 </Info>
 
+#### FedNow Credit (`fednow_credit`)
+
+Omit `bank_address` and `beneficiary_address` for FedNow-only addresses.
+
+```json Request
+{
+  "owner": "Jane Doe",
+  "transfer_types": ["fednow_credit"],
+  "account_number": "0012345678",
+  "routing_number": "063108680",
+  "account_type": "checking",
+  "name": "Example Bank"
+}
+```
+
+Do not assume `fednow_credit` is added asynchronously like `rtp_credit`. [Retrieve the address](/api-reference/brale/get-address) and confirm `status` is `active` and `transfer_types` includes `fednow_credit` before you send a payout. See [Send FedNow payouts](/guides/fednow-outbound).
+
+#### FedNow errors
+
+Brale returns these errors with the standard error envelope:
+
+| Status | `type` | Meaning | Retry |
+| --- | --- | --- | --- |
+| `422` | `fednow_routing_number_not_supported` | The routing number does not participate in FedNow. | No. Use another rail. |
+| `422` | `fednow_provider_registration_failed` | FedNow registration failed. This can be temporary. | Yes. Retry with the same `Idempotency-Key` and body after a backoff. |
+
+```json Response (422)
+{
+  "type": "fednow_routing_number_not_supported",
+  "detail": "The routing number does not support FedNow.",
+  "status": 422
+}
+```
+
 #### Wire (`wire`)
 
 Wire-capable addresses require both `bank_address` and `beneficiary_address`.
@@ -98,7 +132,7 @@ Wire-capable addresses require both `bank_address` and `beneficiary_address`.
 ```
 
 <Note>
-If you include `wire` in `transfer_types`, both `bank_address` and `beneficiary_address` are required, even if the same address also includes ACH or RTP rails.
+If you include `wire` in `transfer_types`, both `bank_address` and `beneficiary_address` are required, even if the same address also includes ACH, RTP, or FedNow rails.
 </Note>
 
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

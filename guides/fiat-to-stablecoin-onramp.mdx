@@ -3,13 +3,17 @@ title: "wire or ach_debit to custodial wallet"
 description: "Fund stablecoins in custodial wallets via wire or ACH debit transfers, or set up automations for automatic minting."
 ---
 
-Brale makes it easy for you to fund stablecoins in custodial wallets via offchain transfer types like ach_credit, or wire. There are three common ways of funding a custodial wallet at brale (Type=Internal) using offchain transfers:
+Brale makes it easy for you to fund stablecoins in custodial wallets via offchain transfer types like `wire`, `ach_debit`, and `fednow_credit`. There are three common ways of funding a custodial wallet at Brale (`type: internal`) using offchain transfers:
 
-- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `wire`
-- Submit a [Transfer](/key-concepts/transfers) request with a source value_type of `ach_debit`
-- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received via ach or wire.
+- Submit a [Transfer](/key-concepts/transfers) request with a source `transfer_type` of `wire`
+- Submit a [Transfer](/key-concepts/transfers) request with a source `transfer_type` of `ach_debit`
+- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received via ACH, wire, or FedNow.
 
-## Submitting a Transfer request with a source value_type of `wire`
+<Tip>
+  To receive FedNow deposits, use an Automation. You do not create a Transfer for each FedNow deposit. See [Receive FedNow deposits](/guides/fednow-inbound) and the [FedNow overview](/guides/fednow).
+</Tip>
+
+## Submitting a Transfer request with a source transfer_type of `wire`
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by calling the Transfers endpoint with the source `transfer_type` of `wire`.
 
@@ -35,7 +39,7 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
 
 ```json Response
 {
-  "id": "transfer_123",
+  "id": "36JqTWc5Yt2mVr8LpQa0NkH3sDe",
   "status": "pending",
   "amount": {
     "value": "100",
@@ -46,7 +50,7 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
     "value_type": "USD"
   },
   "destination": {
-    "transfer_type": "polygon",
+    "transfer_type": "solana",
     "value_type": "SBC",
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4"
   },
@@ -56,11 +60,11 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
 }
 ```
 
-Initially, the status of the transfer will be `pending`. Once Brale receives the funds at the bank account provided in `source_deposit_instructions` the stablecoins will immediately be minted to the destination wallet.
+Initially, the status of the transfer will be `pending`. Once Brale receives the funds at the bank account provided in `wire_instructions` the stablecoins will immediately be minted to the destination wallet.
 
-## Submitting a Transfer request with a source value_type of `ach_debit`
+## Submitting a Transfer request with a source transfer_type of `ach_debit`
 
-You can initiate ACH debits from Plaid-linked addresses. See [Addresses](https://docs.brale.xyz/key-concepts/addresses) for the full flow of linking Plaid accounts as addresses you can pull from. This guide is specifically designed for first party funding of stablecoin mints, into a Brale custodial wallet.
+You can initiate ACH debits from Plaid-linked addresses. See [Addresses](/key-concepts/addresses) for the full flow of linking Plaid accounts as addresses you can pull from. This guide is specifically designed for first party funding of stablecoin mints, into a Brale custodial wallet.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
@@ -71,7 +75,7 @@ You can initiate ACH debits from Plaid-linked addresses. See [Addresses](https:/
     "currency": "USD"
   },
   "source": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
     "value_type": "USD",
     "transfer_type": "ach_debit"
   },
@@ -85,20 +89,20 @@ You can initiate ACH debits from Plaid-linked addresses. See [Addresses](https:/
 
 ```json Response
 {
-  "id": "transfer_123",
+  "id": "36JqTXd6Zu3nWs9MqRb1OlI4tEf",
   "status": "pending",
   "amount": {
     "value": "100",
     "currency": "USD"
   },
   "source": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
-    "value_type": "USD"
-    "transfer_type": "ach_debit",
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "USD",
+    "transfer_type": "ach_debit"
   },
   "destination": {
-    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4"
-    "value_type": "SBC"
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
     "transfer_type": "canton"
   }
 }
@@ -171,7 +175,7 @@ Illustrative Transfer response excerpt:
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
-  Automations provide a unique account number and routing number that accepts wire transfers and ACH deposits, and automatically reconcials funds received and mints them to a bound wallet address. 
+  Automations provide a unique account number and routing number that accepts wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled), and automatically reconciles funds received and mints them to a bound wallet address. See [Receive FedNow deposits](/guides/fednow-inbound). 
 </div>
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
@@ -185,14 +189,16 @@ Here is an example of onramping to your own stablecoin (SBC) via wire transfer b
     "value_type": "USD"
   },
   "destination": {
-    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "address_id": "35LWXNTO2jem13nXCLyciFdi162",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   }
 }
 ```
 
-Automations are opened in a pending state and automatically transition into processing. 
+Omit `source.transfer_type`. A USD Automation accepts the inbound rails enabled for its virtual account, and responses may return `source.transfer_type: null`.
+
+Automations are created in a `pending` state and transition to `active` when the virtual account is ready.
 
 When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
 
@@ -276,7 +282,7 @@ curl --request POST \
   }'
 ```
 
-`transfer_type` accepts `ach` or `wire`. Brale returns `202 Accepted` with the resulting Transfer. Save its `id`.
+`transfer_type` accepts `ach`, `wire`, or `fednow`. A `fednow` simulation produces a Transfer with `source.transfer_type: "fednow_credit"`. Brale returns `202 Accepted` with the resulting Transfer. Save its `id`.
 
 Use a new `Idempotency-Key` for each new simulated deposit. Retrying with the same key returns the original response without creating another deposit or mint. See [Idempotency](/key-concepts/idempotency).
 

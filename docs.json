@@ -156,6 +156,14 @@
               "guides/ach-on-ramp",
               "guides/fiat-to-stablecoin-onramp",
               "guides/stablecoin-to-fiat-offramp",
+              {
+                "group": "FedNow",
+                "pages": [
+                  "guides/fednow",
+                  "guides/fednow-inbound",
+                  "guides/fednow-outbound"
+                ]
+              },
               "guides/stablecoin-to-stablecoin-swap",
               "guides/stablecoin-issuance",
               "guides/stablecoin-payouts",

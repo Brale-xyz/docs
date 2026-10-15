@@ -5,6 +5,12 @@ openapi: 'POST /accounts/{account_id}/automations'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
+## Source configuration
+
+Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automation is not tied to a single deposit rail. Its virtual account accepts the inbound rails enabled for it, such as wire, ACH, and FedNow (on accounts with FedNow enabled). Responses may return `source.transfer_type: null`.
+
+The rail used for each deposit appears on the resulting Transfer in `source.transfer_type`, for example `fednow_credit`. This is a Transfer response value, not an Automation setting. See [Receive FedNow deposits](/guides/fednow-inbound).
+
 ## Branded Automations
 
 You can optionally include a `brand` object in the request body to select the verified identity (business or individual) that appears as the beneficiary on the automation's funding instructions.
@@ -30,8 +36,7 @@ The automation is still created under the account in the request path (`/account
 {
   "name": "XYZ Onramp",
   "source": {
-    "value_type": "USD",
-    "transfer_type": "wire"
+    "value_type": "USD"
   },
   "destination": {
     "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
@@ -50,8 +55,7 @@ Pass the `account_id` of an individual account to render that person's legal nam
 {
   "name": "Jane Doe Onramp",
   "source": {
-    "value_type": "USD",
-    "transfer_type": "wire"
+    "value_type": "USD"
   },
   "destination": {
     "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",

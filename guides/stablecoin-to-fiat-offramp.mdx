@@ -1,6 +1,6 @@
 ---
 title: "Stablecoin to Fiat (Offramp)"
-description: "Convert stablecoins to USD and withdraw to bank accounts via wire, ACH, or RTP payment rails."
+description: "Convert stablecoins to USD and withdraw to bank accounts via wire, ACH, RTP, or FedNow payment rails."
 ---
 
 In order to submit a stablecoin-to-fiat transaction, first you need to:
@@ -19,13 +19,14 @@ If stablecoins are currently in an external or self-custody wallet, they must fi
 Destination bank addresses can be created in two ways:
 
 - **Plaid-linked bank account** — Securely connect a bank account via the Plaid Link SDK. Supports `ach_debit`, `ach_credit`, and `rtp_credit`.
-- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`.
 
 | Capability   | Plaid-linked bank account | Direct bank entry |
 | ------------ | ------------------------- | ----------------- |
 | `ach_debit`  | Supported                 | Not supported     |
 | `ach_credit` | Supported                 | Supported         |
 | `rtp_credit` | Supported                 | Supported         |
+| `fednow_credit` | Supported              | Supported         |
 | `wire`       | Not supported             | Supported         |
 
 **Direct bank entry** is the right path when you already have bank account details or need `wire` transfers. For the full comparison and guidance, see [External bank addresses](/key-concepts/external-bank-addresses).
@@ -37,7 +38,7 @@ Here is an example of adding an ACH/RTP offchain address via Direct bank entry u
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
 <Note>
-For ACH/RTP-only Direct bank entry addresses, `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
+For Direct bank entry addresses without `wire` (ACH, RTP, or FedNow only), `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
 </Note>
 
 ```json title="Request (ACH/RTP Credit)"
@@ -104,6 +105,12 @@ Need `ach_debit`? Use the [Plaid-linked bank account flow](/api-reference/brale/
 
 Offramps via RTP use the `rtp_credit` transfer_type on the destination Address. RTP capability is enabled asynchronously by our banking partner, so a newly created bank Address may initially not show `rtp_credit` even though it is eligible for real-time payments. Only treat an Address as RTP-capable once `"rtp_credit"` appears in its `transfer_types`. See **Key Concepts → Addresses → Create External Address for RTP** for details.
 
+### FedNow payouts
+
+To pay out over FedNow, the destination Address must be `active` and list `fednow_credit` in `transfer_types`. Add `fednow_credit` when you create the Address, or add it to an existing Direct bank entry Address with `PATCH /accounts/{account_id}/addresses/{address_id}` and `{"additional_transfer_types": ["fednow_credit"]}`. The Address ID does not change. Then create a Transfer with `destination.transfer_type: "fednow_credit"`. Do not assume `fednow_credit` is enabled asynchronously like `rtp_credit`.
+
+See [Send FedNow payouts](/guides/fednow-outbound) for the full flow, including errors, safe retries, and handling pending payouts.
+
 ## Stablecoin to USD via Wire
 
 Once your customer has an address and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address. For outbound wire transfers, you can optionally pass `destination.wire_memo` to include a memo or payment reference with the wire.
@@ -119,7 +126,7 @@ Once your customer has an address and stablecoins are held in a Brale controlled
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
@@ -220,7 +227,7 @@ Once the stablecoins have arrived in the Brale internal address, submit the off-
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",

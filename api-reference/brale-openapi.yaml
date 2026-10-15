@@ -9,7 +9,7 @@ info:
     Brale API makes it easy to build stablecoin-enabled products.
 
     NOTE: All resource IDs (including account_id, address_id, financial_institution_id,
-    and automation_id) are KSUIDs—26-character alphanumeric strings that are sortable
+    and automation_id) are KSUIDs—27-character alphanumeric strings that are sortable
     by time. Examples showing UUIDs are incorrect.
 
 
@@ -26,6 +26,19 @@ info:
     - Off-chain Address creation uses `CreateExternalAddressRequest` oneOf with bank + blockchain variants.
     - FI endpoints kept but marked deprecated; use Addresses instead.
     - `rtp_credit` is the canonical RTP rail name.
+
+
+    **FedNow**
+    - Added the `fednow_credit` rail. Outbound: create a Transfer with
+      `destination.transfer_type: fednow_credit` to a bank Address that lists
+      `fednow_credit` in `transfer_types`. Inbound: payers send FedNow credits to an
+      active Automation's `source.funding_instructions`; Brale creates the Transfer
+      automatically with `source.transfer_type: fednow_credit`.
+    - Simulate a testnet FedNow deposit with `transfer_type: fednow` on
+      `POST /accounts/{account_id}/automations/{automation_id}/simulations/deposits`.
+    - `bank_address` and `beneficiary_address` are required only when an external
+      bank Address requests `wire`.
+    - FedNow availability depends on account enablement.
 tags:
   - name: Accounts
     description: Endpoints related to managing customer accounts (KYB, details, etc.)
@@ -83,7 +96,7 @@ components:
       title: Kusid
       type: string
       format: ksuid
-      pattern: ^[a-zA-Z0-9]{26}$
+      pattern: ^[a-zA-Z0-9]{27}$
       example: 2VcUIIsgARwVbEGlIYbhg6fGG57
     ExternalAddressResponseStreetAddress:
       title: ExternalAddressResponseStreetAddress
@@ -417,10 +430,12 @@ components:
       type: object
       description: >-
         Underlying payment metadata for a transfer leg. Response-only. Appears on
-        `source.payment_details` for inbound fiat-funded transfers (wire, ACH) and on
-        `destination.payment_details` for outbound wire transfers. Optional and may
-        be absent depending on the rail and on whether the underlying bank metadata
-        is available yet.
+        `source.payment_details` for inbound fiat-funded transfers (wire, ACH, and
+        FedNow) and on `destination.payment_details` for outbound wire transfers.
+        Optional and may be absent depending on the rail and on whether the
+        underlying bank metadata is available yet. Fields are rail-specific. For
+        example, `imad` applies only to wires and `trace_number` only to ACH. Do not
+        expect wire or ACH identifiers on `fednow_credit` legs.
       properties:
         received_at:
           type: string
@@ -846,10 +861,14 @@ components:
       title: AutomationSource
       type: object
       description: >-
-        The funding source for the automation. Defines the fiat rail and value type
-        that the automation accepts. When the automation becomes active,
+        The funding source for the automation. Set `value_type: USD` to accept fiat
+        deposits. You do not need to select a deposit rail: a USD Automation's
+        virtual account accepts the inbound rails enabled for your account (wire,
+        ACH, and FedNow where enabled). When the automation becomes active,
         `funding_instructions` is populated with the virtual account details to share
-        with the payer.
+        with the payer. This is Automation configuration. The rail of each deposit
+        is reported on the resulting Transfer's `source.transfer_type` (for example,
+        `fednow_credit`), not here.
       properties:
         value_type:
           type: string
@@ -857,13 +876,16 @@ components:
           example: USD
         transfer_type:
           type: string
-          description: The transfer rail used to fund the automation (e.g. `wire`).
-          example: wire
+          nullable: true
+          description: >-
+            Optional. Omit this field to accept every inbound rail enabled for the
+            virtual account. Responses may return `null`. Do not set it to restrict
+            deposits to FedNow. A null value does not mean FedNow is unavailable.
+          example: null
         funding_instructions:
           $ref: '#/components/schemas/FundingInstructions'
       required:
         - value_type
-        - transfer_type
     AutomationDestination:
       title: AutomationDestination
       type: object
@@ -961,6 +983,7 @@ components:
         - ach_debit
         - same_day_ach_debit
         - rtp_credit
+        - fednow_credit
         - solana
         - ethereum
         - polygon
@@ -973,6 +996,7 @@ components:
         - solana_devnet
         - tempo_testnet
         - stellar
+        - spark
         - xrp_ledger
     ExternalAddressOnchainCreate:
       type: object
@@ -1007,7 +1031,7 @@ components:
           items:
             $ref: '#/components/schemas/TransferType'
           description: One or more rails (wire, ach_credit, same_day_ach_credit, ach_debit,
-            same_day_ach_debit, rtp_credit)
+            same_day_ach_debit, rtp_credit, fednow_credit)
         plaid_token:
           type: string
           description: Required when using ach_debit or same_day_ach_debit
@@ -1611,11 +1635,15 @@ components:
             currency: USD
         transfer_type:
           type: string
-          description: Inbound rail to simulate.
+          description: >-
+            Inbound rail to simulate. This is a simulator input, not a Transfer rail
+            identifier. `fednow` produces a Transfer with
+            `source.transfer_type: fednow_credit`.
           enum:
             - ach
             - wire
-          example: wire
+            - fednow
+          example: fednow
       required:
         - amount
         - transfer_type
@@ -1759,7 +1787,7 @@ components:
           items:
             type: string
             example: ach_credit
-          description: Rails to enable (e.g., ach_credit, wire, rtp_credit)
+          description: Rails to enable (e.g., ach_credit, rtp_credit)
     RegisterAccountAddressResponse:
       type: object
       title: RegisterAccountAddressResponse
@@ -1798,9 +1826,12 @@ components:
       description: >
         Address fields are conditional. `bank_address` and `beneficiary_address`
         are required when `transfer_types` includes `wire`. They are optional
-        for `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. For
-        ACH/RTP-only addresses, do not provide placeholder or generic bank
-        addresses—omit these fields unless you have accurate values.
+        for `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and
+        `fednow_credit`. For addresses without `wire`, do not provide
+        placeholder or generic bank addresses. Omit these fields unless you have
+        accurate values. Requesting `fednow_credit` requires a routing number
+        that participates in FedNow; otherwise Brale returns `422`
+        `fednow_routing_number_not_supported`.
       required:
         - owner
         - account_number
@@ -1829,15 +1860,15 @@ components:
         bank_address:
           description: >
             Bank physical address. Required when `transfer_types` includes
-            `wire`. Optional for `ach_credit`, `same_day_ach_credit`, and
-            `rtp_credit`.
+            `wire`. Optional for `ach_credit`, `same_day_ach_credit`,
+            `rtp_credit`, and `fednow_credit`.
           allOf:
             - $ref: '#/components/schemas/USStreetAddress'
         beneficiary_address:
           description: >
             Beneficiary physical address. Required when `transfer_types`
             includes `wire`. Optional for `ach_credit`, `same_day_ach_credit`,
-            and `rtp_credit`.
+            `rtp_credit`, and `fednow_credit`.
           allOf:
             - $ref: '#/components/schemas/USStreetAddress'
         transfer_types:
@@ -1846,15 +1877,15 @@ components:
           description: >
             Rails to enable for this bank endpoint. If this array includes
             `wire`, the request must include `bank_address` and
-            `beneficiary_address`. For ACH/RTP-only addresses, those address
-            fields are optional.
+            `beneficiary_address`. For addresses without `wire` (for example,
+            ACH, RTP, or FedNow only), those address fields are optional.
           items:
             type: string
             example: ach_credit
           example:
             - ach_credit
-            - wire
             - rtp_credit
+            - fednow_credit
     CreateExternalAddressRequest:
       type: object
       oneOf:
@@ -2246,9 +2277,11 @@ paths:
           schema:
             type: string
           description: >-
-            Filter transfers by payment rail or chain identifier. Matches transfers
-            where the source **or** destination `transfer_type` equals this value.
-            Case-sensitive. Use canonical API ids from the Coverage page.
+            Filter transfers by blockchain chain (for example, `solana`, `base`,
+            `ethereum`). Fiat payment types (for example, `same_day_ach_credit`,
+            `wire`, `fednow_credit`) are not supported as filter values. To find
+            FedNow Transfers, filter by `automation_id` or `address_id` and check
+            `source.transfer_type` or `destination.transfer_type`.
           example: polygon
         - name: transaction_id
           in: query
@@ -2326,56 +2359,86 @@ paths:
                 summary: "Onramp via ACH debit \u2192 Mint on Solana"
                 value:
                   amount:
-                    value: '2500'
+                    value: '2500.00'
                     currency: USD
                   source:
-                    address_id: addr_ach_debit
+                    address_id: 2VcUIonJeVQzFoBuC7LdFT0dRe4
                     value_type: USD
                     transfer_type: ach_debit
                   destination:
-                    address_id: addr_solana_internal
+                    address_id: 35LWXNTO2jem13nXCLyciFdi162
                     value_type: SBC
                     transfer_type: solana
               wire_offramp_with_brand:
                 summary: "Burn on Polygon \u2192 Wire out (brand override)"
                 value:
                   amount:
-                    value: '10000'
+                    value: '10000.00'
                     currency: USD
                   source:
-                    address_id: addr_polygon_internal
+                    address_id: 35LWXNTO2jem13nXCLyciFdi162
                     value_type: SBC
                     transfer_type: polygon
                   destination:
-                    address_id: addr_wire_external
+                    address_id: 2MhCCIHulVdXrHiEuQDJvnKbSkl
                     value_type: USD
                     transfer_type: wire
                     wire_memo: Invoice 1048
                   brand:
-                    account_id: acct_company_beta
+                    account_id: 2VcUIIsgARwVbEGlIYbhg6fGG57
               rtp_payout:
                 summary: Stablecoin payout via RTP
                 value:
                   amount:
-                    value: '150'
+                    value: '150.00'
                     currency: USD
                   source:
-                    address_id: addr_treasury_sbc
+                    address_id: 35LWXNTO2jem13nXCLyciFdi162
                     value_type: SBC
                     transfer_type: ethereum
                   destination:
-                    address_id: addr_rtp_external
+                    address_id: 2MhCCIHulVdXrHiEuQDJvnKbSkl
                     value_type: USD
-                    transfer_type: rtp
-                  brand:
-                    account_id: acct_company_beta
+                    transfer_type: rtp_credit
+              fednow_payout:
+                summary: Stablecoin payout via FedNow
+                description: >-
+                  Pays out USD over FedNow from a funded Brale internal Address. The
+                  source `value_type` and `transfer_type` must match the token and
+                  network held by the source Address. The destination bank Address
+                  must be `active` and list `fednow_credit` in `transfer_types`.
+                value:
+                  amount:
+                    value: '1.00'
+                    currency: USD
+                  source:
+                    address_id: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+                    value_type: USDB
+                    transfer_type: spark
+                  destination:
+                    address_id: 2MhCCIHulVdXrHiEuQDJvnKbSkl
+                    value_type: USD
+                    transfer_type: fednow_credit
       responses:
         '201':
-          description: Transfer successfully created
+          description: >-
+            Transfer successfully created. Creation is not settlement. Track
+            `status` until it reaches `complete`, `canceled`, or `failed`.
           content:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Transfer'
+        '422':
+          description: >
+            The request is valid but cannot be processed. Known cases include
+            `insufficient_balance` (the source Address does not hold enough of the
+            source `value_type`) and reuse of an `Idempotency-Key` with a different
+            body or URI. After funding the source Address, retry
+            `insufficient_balance` with the same `Idempotency-Key` and body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
   /accounts/{account_id}/transfers/{id}:
     get:
       tags:
@@ -2490,6 +2553,16 @@ paths:
                   routing_number: '063108680'
                   account_type: checking
                   name: Example Bank
+              offchain_fednow_credit:
+                summary: Off-chain (FedNow Credit, no postal addresses required)
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - fednow_credit
+                  account_number: '0012345678'
+                  routing_number: '063108680'
+                  account_type: checking
+                  name: Example Bank
               offchain_wire:
                 summary: Off-chain (Wire — requires bank_address and beneficiary_address)
                 value:
@@ -2552,6 +2625,35 @@ paths:
                     needs_update: false
                     last_updated: '2026-06-02T20:01:03.321461Z'
                     routingNumber: '063108680'
+        '422':
+          description: >
+            The request is valid but cannot be processed. FedNow-related cases:
+
+
+            - `fednow_routing_number_not_supported`: the `routing_number` does not
+              participate in FedNow. Do not retry with the same body. Remove
+              `fednow_credit` or use a FedNow-participating account.
+
+            - `fednow_provider_registration_failed`: Brale could not register the
+              recipient for FedNow with its banking provider. This can be temporary.
+              Retry the same request with the same `Idempotency-Key` after a backoff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                fednow_routing_number_not_supported:
+                  summary: Routing number does not support FedNow
+                  value:
+                    type: fednow_routing_number_not_supported
+                    detail: The routing number does not support FedNow.
+                    status: 422
+                fednow_provider_registration_failed:
+                  summary: FedNow recipient registration failed
+                  value:
+                    type: fednow_provider_registration_failed
+                    detail: The recipient could not be registered for FedNow. Try again later.
+                    status: 422
   /accounts/{account_id}/addresses/internal:
     post:
       tags:
@@ -2636,7 +2738,8 @@ paths:
         fetch the latest status, address value, and enabled transfer_types for an
         internal or external address. For RTP-enabled bank addresses, inspect transfer_types
         to confirm whether rtp_credit has been added after asynchronous eligibility
-        checks complete.'
+        checks complete. Before sending a FedNow payout, confirm the address is active
+        and transfer_types includes fednow_credit.'
       parameters:
         - name: account_id
           in: path
@@ -2993,8 +3096,11 @@ paths:
       operationId: simulate_automation_deposit
       summary: Simulate Automation Deposit
       description: >
-        Simulates an inbound ACH or wire deposit into a testnet Automation and runs
-        the normal Automation mint path. Returns the resulting Transfer.
+        Simulates an inbound ACH, wire, or FedNow deposit into a testnet Automation
+        and runs the normal Automation mint path. Returns the resulting Transfer.
+        The request `transfer_type` is a simulator input (`ach`, `wire`, or
+        `fednow`). A `fednow` simulation produces a Transfer with
+        `source.transfer_type: fednow_credit`.
 
 
         Available only with testnet credentials. Required scopes:
@@ -3038,6 +3144,13 @@ paths:
             schema:
               $ref: '#/components/schemas/SimulateAutomationDepositRequest'
             examples:
+              fednow:
+                summary: Simulate a FedNow deposit
+                value:
+                  amount:
+                    value: '1.00'
+                    currency: USD
+                  transfer_type: fednow
               wire:
                 summary: Simulate a wire deposit
                 value:
@@ -3056,8 +3169,10 @@ paths:
         '202':
           description: >-
             Accepted. Returns the Transfer created by the Automation. The Transfer
-            includes `automation_id`, and `source.transfer_type` matches the
-            requested rail.
+            includes `automation_id`, and `source.transfer_type` identifies the
+            simulated rail. For `fednow`, `source.transfer_type` is
+            `fednow_credit`. `202` means the simulated deposit was accepted. It
+            does not mean the mint is complete.
           content:
             application/json:
               schema:
@@ -3067,8 +3182,8 @@ paths:
             Invalid request or schema. Known cases:
 
 
-            - `transfer_type` is not `ach` or `wire` (for example, `rtp`) —
-              schema validation error.
+            - `transfer_type` is not `ach`, `wire`, or `fednow` (for example,
+              `rtp` or `fednow_credit`) — schema validation error.
 
             - `invalid_currency` — the currency is not a supported reserve
               currency (for example, `EUR`).

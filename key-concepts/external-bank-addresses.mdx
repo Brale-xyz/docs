@@ -14,6 +14,7 @@ When you create an external bank address, the path you choose determines which `
 | `ach_debit`    | Supported                 | Not supported     |
 | `ach_credit`   | Supported                 | Supported         |
 | `rtp_credit`   | Supported                 | Supported         |
+| `fednow_credit` | Supported                | Supported         |
 | `wire`         | Not supported             | Supported         |
 | Balance lookup | Supported (`USD` only)    | Not supported     |
 
@@ -29,8 +30,10 @@ When you create an external bank address, the path you choose determines which `
 
 ## Which path should you use?
 
-- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `rtp_credit`.
-- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
+- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
+
+To pay out over FedNow, include `fednow_credit` when you register the recipient with either path, or add it to an existing address. The recipient's routing number must participate in FedNow. See [Send FedNow payouts](/guides/fednow-outbound).
 
 ## Direct bank entry field requirements
 
@@ -41,9 +44,10 @@ For Direct bank entry, required fields depend on the transfer types you request.
 | `ach_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `same_day_ach_credit` | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `rtp_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
+| `fednow_credit`       | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `wire`                | All of the above, plus `bank_address` and `beneficiary_address`                        |
 
-If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH or RTP rails. For ACH/RTP-only addresses, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
+If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH, RTP, or FedNow rails. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
 
 ## Plaid-linked bank account flow
 
@@ -60,7 +64,7 @@ After registration, you can check the linked account's USD balance with `GET /ac
 
 Submit bank account details directly using the Addresses API:
 
-- [Create a new external address](/api-reference/brale/create-address) — ACH/RTP-only addresses require `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types`. Wire-capable addresses also require `bank_address` and `beneficiary_address`. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+- [Create a new external address](/api-reference/brale/create-address) — Addresses without `wire` require `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types`. Wire-capable addresses also require `bank_address` and `beneficiary_address`. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`.
 
 For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).
 
