@@ -43,7 +43,7 @@ FedNow uses different identifiers depending on context. Use the value that match
 - FedNow operates 24 hours a day, 7 days a week, including weekends and holidays. Business-day cut-off times on [Transfer timing](/documentation/platform/transfer-timing) apply to wire and ACH, not to FedNow.
 - FedNow availability does not guarantee instant end-to-end completion. Brale reviews, bank processing, and onchain settlement of the stablecoin leg can add time.
 - HTTP `201 Created` (Transfers, Automations, Addresses) and `202 Accepted` (deposit simulation) mean Brale accepted or created the resource. They do not mean funds have settled.
-- A Transfer's terminal statuses are `complete`, `canceled`, and `failed`. `pending` and `processing` are in progress.
+- A Transfer's terminal statuses include `complete`, `canceled`, and `failed`. `pending` and `processing` are in progress. The `status` enum also includes `compliance review`, `refunding`, and `refunded`. None of these mean the Transfer is complete.
 - An Automation with `status: active` is ready to receive deposits. That is different from a Transfer with `status: complete` and from the `transfer.completed` webhook event.
 - `payment.completed` reports that Brale received the fiat payment. It does not confirm that the stablecoin mint was delivered. Use the Transfer's `status` or `transfer.completed` for that.
 
@@ -52,8 +52,8 @@ FedNow uses different identifiers depending on context. Use the value that match
 - **Idempotency.** Send an `Idempotency-Key` on every `POST`. Retry the same logical operation with the same key and the same body. See [Idempotency](/key-concepts/idempotency).
 - **Pending payouts.** Do not submit a replacement payout because a Transfer is `pending` or `processing`. Keep tracking the original Transfer until it reaches a terminal status.
 - **Cancellation.** Brale can cancel a payout only before it submits the payment to FedNow. A `processing` payout cannot be canceled, and a `pending` status does not guarantee that cancellation is still possible.
-- **Returns.** Cancellation is different from a return after settlement. FedNow credits are final when they settle. Recovering funds from a settled payout depends on the recipient and their bank. Brale does not automatically refund settled FedNow payouts.
-- **No automatic fallback.** If a FedNow request is rejected, Brale does not resend it on another rail. Choose whether to use another rail and submit a new Transfer with a new idempotency key.
+- **Returns.** Cancellation is different from a return after settlement. Do not assume a settled payout is refunded automatically.
+- **Rail fallback.** Do not assume Brale moves a FedNow payout to another rail. Read `destination.transfer_type` on the Transfer. When `payment_details.original_transfer_type`, `fallback_reason`, `fallback_reason_code`, or `fallback_at` are present, the payment was sent on a different rail than requested.
 - **Metadata.** Wire-only fields such as `wire_memo` and `payment_details.imad` do not apply to FedNow. Read only the `payment_details` fields that are present on the response.
 
 ## FedNow errors

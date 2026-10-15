@@ -5,7 +5,7 @@ description: "Move funds between fiat and stablecoins, swap between stablecoins,
 
 **Key rules**
 
-- All IDs are KSUIDs (26-char, time-sortable); copy/paste carefully.
+- All IDs are KSUIDs (27-char, time-sortable); copy/paste carefully.
 - `address_id` is the universal source/destination primitive (covers wallets and fiat endpoints).
 - Always send `Idempotency-Key` on create POSTs; never on GETs. Do not reuse a key with a different payload/URI.
 
@@ -17,7 +17,7 @@ Each transfer requires both a source and a destination, which can be:
 Each source and destination includes:
 
 - `value_type`: The currency being transferred (USD, USDC, USDT, MXN, etc.)
-- `transfer_type`: The payment rail used (Wire, ACH, Polygon, Solana, SPEI, etc.)
+- `transfer_type`: The payment rail used (for example, `wire`, `ach_credit`, `fednow_credit`, `polygon`, `solana`)
 
 ## Required Fields
 
@@ -477,7 +477,7 @@ All filters are **exact match** and **case-sensitive**. When you combine multipl
 | :--- | :--- | :--- | :--- |
 | `automation_id` | Automation that created the transfer | KSUID | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
 | `value_type` | Currency / token on source or destination | Canonical API id | `USDC`, `SBC`, `usd` |
-| `transfer_type` | Payment rail / chain on source or destination | Canonical API id | `polygon`, `wire`, `fednow_credit`, `solana` |
+| `transfer_type` | Blockchain on source or destination. Fiat rails such as `wire` and `fednow_credit` are not supported as filter values. | Canonical API id | `polygon`, `base`, `solana` |
 | `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match) | `0xdd5646ea…` |
 
 <Info>
@@ -508,8 +508,10 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=2MhCC
 
 ### Example: FedNow deposits for an automation
 
+The `transfer_type` filter accepts blockchain values only, not fiat rails such as `fednow_credit`. List the Automation's Transfers, then keep those where `source.transfer_type` is `fednow_credit`.
+
 ```bash
-curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z&transfer_type=fednow_credit" \
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z" \
   -H "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
@@ -547,7 +549,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
 - For inbound fiat-funded transfers, check `source.payment_details` to identify the sender and match payments. Wire transfers typically include `sender_name`, `sender_bank_name`, and `imad`; ACH transfers may include only a subset of these fields.
 - For outbound wire transfers, check `destination.payment_details.imad` to record the wire's IMAD for reconciliation and tracing. It may be absent immediately after the transfer is created and populated later once Brale has the underlying bank metadata.
-- For FedNow, correlate inbound deposits with `automation_id` and `transfer_type=fednow_credit`. Do not expect wire `imad` or ACH `trace_number` on FedNow legs. Payment IDs from `payment.completed` are not Transfer IDs.
+- For FedNow, correlate inbound deposits with `automation_id` and check `source.transfer_type` on each Transfer. Do not expect wire `imad` or ACH `trace_number` on FedNow legs. Payment IDs from `payment.completed` are not Transfer IDs.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 - Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) to receive signed events when a transfer reaches `complete` or `failed`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.

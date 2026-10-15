@@ -2277,9 +2277,11 @@ paths:
           schema:
             type: string
           description: >-
-            Filter transfers by payment rail or chain identifier. Matches transfers
-            where the source **or** destination `transfer_type` equals this value.
-            Case-sensitive. Use canonical API ids from the Coverage page.
+            Filter transfers by blockchain chain (for example, `solana`, `base`,
+            `ethereum`). Fiat payment types (for example, `same_day_ach_credit`,
+            `wire`, `fednow_credit`) are not supported as filter values. To find
+            FedNow Transfers, filter by `automation_id` or `address_id` and check
+            `source.transfer_type` or `destination.transfer_type`.
           example: polygon
         - name: transaction_id
           in: query

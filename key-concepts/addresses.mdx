@@ -5,7 +5,7 @@ description: "Addresses represent onchain wallets and offchain bank accounts, id
 
 Addresses are represented by an `address_id`, which uniquely identifies a wallet or account for a specific `transfer_type`.
 
-> IDs are KSUIDs (26-char, time-sortable); copy/paste carefully.
+> IDs are KSUIDs (27-char, time-sortable); copy/paste carefully.
 
 An `address_id` can represent either an onchain wallet or offchain account (ACH, Wire, or RTP account), depending on the `transfer_type`. Use `address_id` wherever a source/destination is required in Transfers.
 
@@ -94,7 +94,7 @@ Brale supports two paths for creating an external off-chain bank address. The pa
 | `ach_debit` | Supported | Not supported |
 | `ach_credit` | Supported | Supported |
 | `rtp_credit` | Supported | Supported |
-| `fednow_credit` | Not documented | Supported |
+| `fednow_credit` | Supported | Supported |
 | `wire` | Not supported | Supported |
 
 <Warning>

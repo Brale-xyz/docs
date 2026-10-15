@@ -14,7 +14,7 @@ When you create an external bank address, the path you choose determines which `
 | `ach_debit`    | Supported                 | Not supported     |
 | `ach_credit`   | Supported                 | Supported         |
 | `rtp_credit`   | Supported                 | Supported         |
-| `fednow_credit` | Not documented           | Supported         |
+| `fednow_credit` | Supported                | Supported         |
 | `wire`         | Not supported             | Supported         |
 | Balance lookup | Supported (`USD` only)    | Not supported     |
 
@@ -30,10 +30,10 @@ When you create an external bank address, the path you choose determines which `
 
 ## Which path should you use?
 
-- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `rtp_credit`.
+- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
 - **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
 
-To pay out over FedNow, register the recipient with Direct bank entry or add `fednow_credit` to an existing Direct bank entry address. The recipient's routing number must participate in FedNow. See [Send FedNow payouts](/guides/fednow-outbound).
+To pay out over FedNow, include `fednow_credit` when you register the recipient with either path, or add it to an existing address. The recipient's routing number must participate in FedNow. See [Send FedNow payouts](/guides/fednow-outbound).
 
 ## Direct bank entry field requirements
 

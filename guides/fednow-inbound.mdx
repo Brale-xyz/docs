@@ -15,7 +15,7 @@ You do not call `POST /transfers` for each deposit. Brale does not pull or debit
 ## Prerequisites
 
 - A Brale [Account](/key-concepts/accounts) with `status: complete`.
-- API credentials with the `automations:write` scope, plus permission to read Automations and Transfers.
+- API credentials with the `automations:write`, `automations:read`, and `transfers:read` scopes.
 - A destination [Address](/key-concepts/addresses) for the minted stablecoins, and a stablecoin `value_type` supported on its `transfer_type`. See [Transfer types](/coverage/transfer-types).
 - A [webhook subscription](/webhooks/quickstart) for `transfer.*` and `payment.completed` (recommended).
 
@@ -124,11 +124,11 @@ Deliveries are at-least-once and can arrive in any order. Deduplicate on the env
 
 ### Find the Transfer
 
-Payment IDs and Transfer IDs are different. To find the Transfer for a deposit, list Transfers for the Automation and filter by the FedNow rail:
+Payment IDs and Transfer IDs are different. To find the Transfer for a deposit, list Transfers for the Automation, then keep the ones where `source.transfer_type` is `fednow_credit`. The `transfer_type` query parameter filters by blockchain only, so do not pass `fednow_credit` to it.
 
 ```bash
 curl --request GET \
-  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z&transfer_type=fednow_credit" \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z" \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 

@@ -13,7 +13,7 @@ Outbound FedNow uses a [Transfer](/key-concepts/transfers). Brale redeems stable
 ## Prerequisites
 
 - A Brale [Account](/key-concepts/accounts) with `status: complete`.
-- API credentials with the `addresses:write` scope, plus permission to create and read Transfers.
+- API credentials with the `addresses:write`, `addresses:read`, `transfers:write`, and `transfers:read` scopes.
 - A Brale internal (custodial) Address that holds the stablecoin you will redeem.
 - The recipient's bank details: owner name, account number, routing number, and account type. The recipient's bank must participate in FedNow.
 
@@ -29,13 +29,13 @@ Note the Address's `id`, the stablecoin `value_type` it holds (for example, `USD
 
 ## Step 2: Register or upgrade the recipient bank Address
 
-FedNow recipients use the `fednow_credit` transfer type on an external bank Address. Register recipients with Direct bank entry.
+FedNow recipients use the `fednow_credit` transfer type on an external bank Address. Register recipients with Direct bank entry or Plaid. `fednow_credit` is available only on accounts it has been enabled for.
 
 | Path | `fednow_credit` support |
 | --- | --- |
 | Direct bank entry (`POST /accounts/{account_id}/addresses/external`) | Supported |
 | Add to an existing Direct bank entry Address (`PATCH /accounts/{account_id}/addresses/{address_id}`) | Supported |
-| Plaid-linked bank account | Not documented. Contact support before relying on it. |
+| Plaid-linked bank account (`POST /accounts/{account_id}/plaid/register-account` with `fednow_credit` in `transfer_types`) | Supported |
 
 ### Option A: Create a new FedNow recipient
 
@@ -181,7 +181,7 @@ Track the Transfer until it reaches `complete`, `canceled`, or `failed`:
 
 - Subscribe to `transfer.*` webhooks. `transfer.completed` means the Transfer reached `complete`. See [Webhook events](/webhooks/webhook-events).
 - Or poll `GET /accounts/{account_id}/transfers/36JqTB7hN3pQe5ZuWv0XkLr2sGc` with exponential backoff.
-- To list FedNow payouts, call `GET /accounts/{account_id}/transfers?transfer_type=fednow_credit`.
+- To list payouts to a recipient, call `GET /accounts/{account_id}/transfers?address_id=<recipient_bank_address_id>` and check `destination.transfer_type`. The `transfer_type` query parameter filters by blockchain only and does not accept `fednow_credit`.
 
 Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope `id`, and retrieve the Transfer when you need its current state.
 
@@ -195,7 +195,7 @@ Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope 
 
 ### Cancellation compared with returns
 
-A `canceled` Transfer was stopped before Brale sent the payment. A settled FedNow payment is final. Recovering funds after settlement depends on the recipient and their bank, and Brale does not automatically refund a settled payout. Check `failure` on `failed` Transfers when it is present.
+A `canceled` Transfer was stopped before Brale sent the payment. A return after settlement is a separate event. Do not assume an automatic refund. The Transfer `status` enum also includes `compliance review`, `refunding`, and `refunded`. Treat them as not complete and keep tracking the Transfer. Check `failure` on `failed` Transfers when it is present.
 
 ## Errors and retries
 
