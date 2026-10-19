@@ -46,6 +46,16 @@ If your customer needs Brale-managed wallet addresses and a stablecoin balance, 
 5. **Attribute activity.**\
    Inbound events carry `data.account_id`. A webhook subscription on your managing account receives events for every account it manages, so you can attribute activity to the correct managed customer account. See [Webhook Events](/webhooks/webhook-events).
 
+## Off-ramp to a bank account
+
+A transactional account cannot be the source of an off-ramp. To pay a transactional account holder out to their own bank account, route the payout through your managing account:
+
+1. The holder sends stablecoins from their self-custody wallet to an internal address on your managing account. This can be an omnibus address or a dedicated address per user.
+2. You register the holder's bank account as an external address, under either the managing account or the holder's transactional account.
+3. You submit a stablecoin-to-USD transfer from the managing account's internal address to that bank address.
+
+See [Off-ramp for transactional accounts](/guides/stablecoin-to-fiat-offramp#off-ramp-for-transactional-accounts) for the full walkthrough, branding guidance, and request examples.
+
 ## Business and individual accounts
 
 Both business and individual entities can use the transactional model, subject to your configured program, eligibility, and availability. The request shape and geographic rules differ by entity type:
