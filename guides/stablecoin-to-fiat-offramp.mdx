@@ -240,3 +240,56 @@ Once the stablecoins have arrived in the Brale internal address, submit the off-
 <Note>
 Brale cannot redeem directly from an external wallet it does not control. The stablecoins must first be received into a Brale internal address so Brale can complete the redemption and fiat payout flow.
 </Note>
+
+## Off-ramp for transactional accounts
+
+[Transactional accounts](/guides/transactional-accounts), including [individual transactional accounts](/guides/individual-accounts), have no internal address and cannot be the source of a transfer. To pay out a transactional account holder to their own bank account, route the off-ramp through your managing account. The managing account holds the stablecoins in its internal address and sends USD to the holder's bank account as a third-party payout.
+
+<Note>
+A per-user off-ramp automation is not available yet and is expected in Q1 2027. Until then, submit each payout as a transfer from the managing account.
+</Note>
+
+1. **Choose a deposit address on the managing account.**\
+   The end user sends stablecoins from their self-custody wallet to an internal address owned by your managing account. You can use one omnibus internal address for all users, or segment funds with a dedicated internal address per user created with [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address). A dedicated address per user makes it easier to attribute each deposit to the right user. With an omnibus address, your platform tracks which deposit belongs to which user.
+
+   ```json Request (per-user internal address)
+   {
+     "name": "Jane Doe deposit wallet",
+     "transfer_types": ["base", "solana"]
+   }
+   ```
+
+2. **Register the user's bank account.**\
+   Create the user's bank account as an external address with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). You can register it under the managing account or under the user's transactional account. Use the same request shape shown in [Direct bank entry](#direct-bank-entry), with the user as `owner`.
+
+3. **Wait for the deposit to settle.**\
+   Confirm the on-chain deposit has arrived in the managing account's internal address before you submit the payout.
+
+4. **Submit the off-ramp transfer from the managing account.**\
+   Call `POST /accounts/{account_id}/transfers` with the managing account's `account_id`. Set the managing account's internal address as the source and the user's bank address as the destination.
+
+   For ACH payouts, pass a `brand` object to control the sender name the user sees on their bank statement. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit` and `same_day_ach_credit` only.
+
+   ```json Request
+   {
+     "amount": {
+       "value": "250",
+       "currency": "USD"
+     },
+     "source": {
+       "address_id": "<MANAGING_ACCOUNT_INTERNAL_ADDRESS_ID>",
+       "value_type": "SBC",
+       "transfer_type": "base"
+     },
+     "destination": {
+       "address_id": "<USER_BANK_ADDRESS_ID>",
+       "value_type": "USD",
+       "transfer_type": "ach_credit"
+     },
+     "brand": {
+       "account_id": "<MANAGING_ACCOUNT_ID>"
+     }
+   }
+   ```
+
+Brale burns the stablecoins from the managing account's internal address and sends USD to the user's bank account.
