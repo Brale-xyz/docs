@@ -13,6 +13,10 @@ description: "Configure automatic onramps, offramps, and swaps that trigger when
   Automations can also be created in the Brale Dashboard on the Automations tab.
 </Tip>
 
+<Note>
+  A USD Automation mints a Brale-issued stablecoin, such as `SBC`, to its destination. Set `destination.value_type` to a Brale-issued stablecoin. USDC is not a supported Automation destination, so a direct USD → USDC Automation is not available. To deliver USDC, see [Onramp to USDC](#onramp-to-usdc).
+</Note>
+
 <Warning>
 Automations on a transactional account (`account_type: transactional`) may only target external destinations. A Brale-custodied destination is rejected. See [Account types](/key-concepts/account-types), [Transactional Accounts](/guides/transactional-accounts), and [Individual accounts](/guides/individual-accounts).
 </Warning>
@@ -80,6 +84,42 @@ Automations are created in a `pending` state. Once virtual accounts are created 
 ```
 
 When an automation becomes active, the `source.funding_instructions` object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
+
+## Onramp to USDC
+
+To turn a USD deposit into USDC, combine an Automation with a separate swap Transfer:
+
+1. **Mint a Brale-issued stablecoin with an Automation**\
+   Create a USD Automation with a Brale-issued stablecoin destination, such as `SBC` on `solana`. See [Creating an Automation](#creating-an-automation). Share the Automation's `source.funding_instructions` with the sender.
+2. **Swap to USDC with a Transfer**\
+   After the mint Transfer reaches `complete`, create a [stablecoin-to-stablecoin swap](/guides/stablecoin-to-stablecoin-swap) Transfer from `SBC` to `USDC`. Brale swaps Brale-issued stablecoins and USDC 1:1 without slippage. Set `destination.address_id` to the wallet that should receive the USDC, such as your customer's external address.
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
+
+```json Request
+{
+  "amount": {
+    "value": "100",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "35LWXNTO2jem13nXCLyciFdi162",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "destination": {
+    "address_id": "2VcUIjvaXjMUVAWLT8R9LzEUDed",
+    "value_type": "USDC",
+    "transfer_type": "solana"
+  }
+}
+```
+
+The swap is not part of the Automation. You create one swap Transfer for each amount you want to convert.
+
+<Note>
+  Funding instructions belong to the Automation, not to a token. Find them in `source.funding_instructions` from [Retrieve an Automation](#retrieve-an-automation), or on the Automation in the Brale Dashboard Automations tab. The USDC token view in the Dashboard does not show Automations or funding instructions.
+</Note>
 
 ## Branded Automations
 

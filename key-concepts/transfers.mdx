@@ -83,6 +83,7 @@ The object is optional and may be absent immediately after a transfer is created
 | FedNow payout                      | USDB / spark   | USD / fednow_credit                 | Redeem USDB on Spark to USD via FedNow     |
 | FedNow onramp (Automation-created) | USD / fednow_credit | SBC / solana                   | Created by Brale when an Automation receives a FedNow credit. You do not create this Transfer. |
 | Swap<br/>(Stablecoin ↔ Stablecoin) | USDC / solana  | SBC / solana                        | 1:1 swap from USDC to SBC with no slippage |
+| Onramp to USDC (Automation + swap) | SBC / solana   | USDC / solana (external address)    | Swap SBC minted by a USD Automation to USDC and send it to a recipient wallet. See [Onramp to USDC](/key-concepts/automations#onramp-to-usdc). |
 | On-chain Payout                    | USDC / polygon | USDC / polygon (external address)   | Pay a recipient wallet                     |
 | USDC off-ramp (wire)               | USDC / polygon | USD / wire                          | Offramp USDC to wire                       |
 | SBC branded ACH payout (ACH only)  | SBC / base     | USD / ach_credit + brand (ACH only) | ACH payout with brand on statement         |

@@ -180,6 +180,10 @@ Illustrative Transfer response excerpt:
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
 
+<Note>
+  Automations mint Brale-issued stablecoins, such as `SBC`. USDC is not a supported Automation destination. To deliver USDC, mint a Brale-issued stablecoin with the Automation, then create a separate [swap Transfer](/guides/stablecoin-to-stablecoin-swap) to USDC. See [Onramp to USDC](/key-concepts/automations#onramp-to-usdc).
+</Note>
+
 **POST** `https://api.brale.xyz/accounts/account_id/automations`
 
 ```json Request
