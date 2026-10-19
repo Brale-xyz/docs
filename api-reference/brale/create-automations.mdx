@@ -15,6 +15,8 @@ The rail used for each deposit appears on the resulting Transfer in `source.tran
 
 You can optionally include a `brand` object in the request body to select the verified identity (business or individual) that appears as the beneficiary on the automation's funding instructions.
 
+Both custodial and transactional business or individual accounts can be used as `brand.account_id`, subject to applicable verification and program eligibility. See [Branded Automations](/key-concepts/automations#branded-automations) for the account-type matrix and ownership rules.
+
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
 | `brand` | object | No | Controls the beneficiary shown on the Automation's funding instructions. |
@@ -63,6 +65,22 @@ Pass the `account_id` of an individual account to render that person's legal nam
     "transfer_type": "solana"
   },
   "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
+}
+```
+
+#### Excerpt from retrieving the Automation after it becomes active
+
+This partial response shows only the branded fields. It is not the immediate create response, and it does not contain usable banking instructions. Brale populates the full `source.funding_instructions` once the Automation becomes active.
+
+```json
+{
+  "status": "active",
+  "source": {
+    "funding_instructions": {
+      "beneficiary_name": "Jane Doe",
+      "beneficiary_address": "123 Main St, Des Moines, IA 50309"
+    }
+  }
 }
 ```
 
