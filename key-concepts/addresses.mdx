@@ -147,6 +147,10 @@ For Direct bank entry, `bank_address` and `beneficiary_address` are required onl
 
 Send `account_number` and `routing_number` as strings so leading zeros are preserved.
 
+<Note>
+Brale validates the format of Direct bank entry details, such as the routing number. Brale does not verify that the account exists or who owns it. An invalid account surfaces later as an ACH return (for example, `R03`) through a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. See [External bank addresses → Validation](/key-concepts/external-bank-addresses#validation).
+</Note>
+
 #### ACH Credit example
 
 ```json Request

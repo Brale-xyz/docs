@@ -68,6 +68,16 @@ Submit bank account details directly using the Addresses API:
 
 For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).
 
+### Validation
+
+When you create a Direct bank entry address, Brale validates the format of the bank details. For example, Brale checks that the routing number is valid. Brale does not verify that the account exists, that it is open, or who owns it.
+
+- **Bad account details surface after submission.** If the account number does not exist or cannot receive the payment, the receiving bank returns the ACH entry. For example, `R03` means no account was found or the account could not be located.
+- **Returns arrive as `transfer.failed`.** Brale updates the transfer to `failed` and sends a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. Read the return code and reason from `failure.ach_return`. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
+- **Returns can arrive late.** An ACH return can arrive after the transfer was already processed. Keep handling `transfer.failed` events for transfers you have already recorded. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle).
+
+If you need the account confirmed before you send funds, use the [Plaid-linked bank account flow](#plaid-linked-bank-account-flow) instead. That flow connects the account through Plaid Link rather than accepting manually entered details.
+
 ## Archive and unarchive
 
 If you need to stop using a previously linked external bank address without deleting the record, use the [PATCH address endpoint](/api-reference/brale/update-address) to archive it. If the customer later wants to restore the same external address, unarchive it.
