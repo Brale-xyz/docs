@@ -829,7 +829,7 @@ components:
           type: string
           example: XYZ Onramp
         source:
-          $ref: '#/components/schemas/AutomationSource'
+          $ref: '#/components/schemas/AutomationCreateSource'
         destination:
           $ref: '#/components/schemas/AutomationDestination'
         brand:
@@ -838,6 +838,27 @@ components:
         - name
         - source
         - destination
+    AutomationCreateSource:
+      title: AutomationCreateSource
+      type: object
+      description: >-
+        The funding source to configure when creating an automation. Set
+        `value_type: USD` to accept fiat deposits. Do not send funding
+        instructions. Brale populates `source.funding_instructions` in the
+        Automation response once the automation becomes active.
+      properties:
+        value_type:
+          type: string
+          description: The fiat value type accepted by the automation (e.g. `USD`).
+          example: USD
+        transfer_type:
+          type: string
+          nullable: true
+          description: >-
+            Optional. Omit this field to accept every inbound rail enabled for the
+            virtual account.
+      required:
+        - value_type
     AutomationBrand:
       title: AutomationBrand
       type: object
@@ -3032,6 +3053,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AutomationCreateRequest'
+            examples:
+              branded:
+                summary: Branded automation (individual account)
+                value:
+                  name: Jane Doe Onramp
+                  source:
+                    value_type: USD
+                  destination:
+                    address_id: 2MhCCIHulVdXrHiEuQDJvnKbSkl
+                    value_type: SBC
+                    transfer_type: solana
+                  brand:
+                    account_id: 3Ar9BnQCKIrB3SYjKGBzCtFs6XL
       responses:
         '201':
           description: Automation successfully created

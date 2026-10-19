@@ -125,6 +125,15 @@ The swap is not part of the Automation. You create one swap Transfer for each am
 
 Branded Automations let you select the verified identity (business or individual) shown as the beneficiary on funding instructions for a virtual account.
 
+Both custodial and transactional accounts can be used as `brand.account_id`, subject to applicable verification and program eligibility.
+
+| Brand account            | Beneficiary shown on funding instructions |
+| :----------------------- | :---------------------------------------- |
+| Individual transactional | Individual's legal name and address       |
+| Individual custodial     | Individual's legal name and address       |
+| Business transactional   | Business's verified name and address      |
+| Business custodial       | Business's verified name and address      |
+
 Add a `brand` object to the create request to control which account name appears on funding instructions:
 
 | Field   | Where | Type   | Description                                                                                                                                                                                                                                                                                       |
@@ -136,7 +145,7 @@ Behavior:
 - If `brand` is omitted, the beneficiary on funding instructions remains Brale.
 - If `brand.account_id` references a business account, `beneficiary_name` and `beneficiary_address` show the business name and address.
 - If `brand.account_id` references an individual account, `beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
-- The automation is still created under the account in the request path. `brand.account_id` selects the identity rendered on the funding instructions; it does not change which account owns the automation.
+- The account in `/accounts/{account_id}/automations` owns the Automation. `brand.account_id` selects the beneficiary identity, and `destination.address_id` selects the wallet receiving minted stablecoins. Branding does not change ownership, custody, or destination restrictions. Automations owned by transactional accounts must still target external destinations.
 
 ```json Request (business brand)
 {
