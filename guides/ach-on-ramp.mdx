@@ -171,6 +171,10 @@ curl --request GET \
 - If the balance request returns `503` with `type: service_unavailable`, balance data is temporarily unavailable. This does not mean the balance is zero or insufficient.
 - If it returns `400` with `type: plaid_error` and `code: plaid_item_login_required`, have the user relink the bank account through Plaid.
 
+<Tip>
+  If ACH debits fail for one linked bank account while the user's other accounts work, the Plaid connection for that account may have expired. Call the balance endpoint for that `address_id`. If it returns `plaid_item_login_required`, have the user relink the bank account through Plaid, then use the `address_id` returned by registration for new debits.
+</Tip>
+
 See [Get A Balance](/guides/how-to/get-a-balance#plaid-linked-bank-balance) for details and [Get an address balance](/api-reference/brale/get-address-balance#errors) for all errors.
 
 ## Requesting Mint/On-ramping
