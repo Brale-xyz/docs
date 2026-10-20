@@ -49,6 +49,10 @@ For Direct bank entry, required fields depend on the transfer types you request.
 
 If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH, RTP, or FedNow rails. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
 
+## Account holder type
+
+Both paths accept an optional `account_holder_type` (`"individual"` or `"business"`). Brale uses it to choose the ACH SEC code for payouts to the address: `individual` → PPD, `business` → CCD. If you omit it, Brale uses the entity type of the account that owns the address. For Plaid-linked accounts, the holder category reported by Plaid takes precedence when available. You can set it later with the [PATCH address endpoint](/api-reference/brale/update-address) if it was not set at creation; once set, it cannot be changed.
+
 ## Plaid-linked bank account flow
 
 This flow uses the Plaid Link SDK to securely connect a bank account in two steps:

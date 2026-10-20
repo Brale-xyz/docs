@@ -23,6 +23,7 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 | `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"fednow_credit"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
 | `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
 | `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
+| `account_holder_type` | string | Bank addresses only. `"individual"` or `"business"`. Can be set only while it is not set yet. Sending the value that is already stored succeeds with no change; a different value returns `400` `account_holder_type_already_set`. |
 
 ### Add transfer types to an existing address
 
@@ -52,9 +53,20 @@ To send FedNow payouts to an existing bank address, such as an RTP recipient, ad
 
 An address with `["ach_credit", "rtp_credit"]` becomes `["ach_credit", "rtp_credit", "fednow_credit"]`. The address `id` does not change, so existing references keep working. `bank_address` and `beneficiary_address` are not required to add `fednow_credit`. Confirm `fednow_credit` is present before sending a payout. See [Send FedNow payouts](/guides/fednow-outbound).
 
+### Set the account holder type
+
+For bank addresses created without `account_holder_type`, set it once:
+
+```json Request
+{ "account_holder_type": "individual" }
+```
+
+It determines the ACH SEC code for payouts to this address (`individual` → PPD, `business` → CCD). Once set, it cannot be changed through the API.
+
 ### Error responses
 
-- `400` — invalid or incompatible transfer types, attempting to archive a pending address, attempting to unarchive a custodial address, or invalid status value.
+- `400` — invalid or incompatible transfer types, attempting to archive a pending address, attempting to unarchive a custodial address, invalid status value, or invalid `account_holder_type` value.
+- `400` `account_holder_type_already_set` — the address already has a different `account_holder_type`.
 - `404` — address not found or not owned by the account.
 - `422` `fednow_routing_number_not_supported` — the address's routing number does not participate in FedNow. Do not retry.
 - `422` `fednow_provider_registration_failed` — FedNow registration failed. This can be temporary. Retry the same request after a backoff.

@@ -144,6 +144,15 @@ components:
         ownership:
           type: string
           example: customer-owned
+        account_holder_type:
+          type: string
+          nullable: true
+          enum:
+            - individual
+            - business
+          description: Whether the bank account is held by an individual or a
+            business. `null` if it was not set.
+          example: business
         bank_address:
           allOf:
             - $ref: '#/components/schemas/ExternalAddressResponseStreetAddress'
@@ -1809,6 +1818,15 @@ components:
             type: string
             example: ach_credit
           description: Rails to enable (e.g., ach_credit, rtp_credit)
+        account_holder_type:
+          type: string
+          enum:
+            - individual
+            - business
+          description: >
+            Optional. Whether the linked bank account is held by an individual
+            or a business. Used when Plaid does not report the account holder
+            category. If Plaid reports it, Plaid's value is used.
     RegisterAccountAddressResponse:
       type: object
       title: RegisterAccountAddressResponse
@@ -2573,6 +2591,7 @@ paths:
                   account_number: '1234567890'
                   routing_number: '063108680'
                   account_type: checking
+                  account_holder_type: business
                   name: Example Bank
               offchain_rtp_credit:
                 summary: Off-chain (ACH + RTP Credit)
@@ -2642,6 +2661,7 @@ paths:
                     owner: Jane Doe
                     status: active
                     ownership: customer-owned
+                    account_holder_type: business
                     bank_address: null
                     beneficiary_address:
                       street_line_1: 100 Example St
