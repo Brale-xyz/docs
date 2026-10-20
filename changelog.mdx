@@ -31,6 +31,16 @@ description: "The latest updates and improvements to the Brale platform."
   A new [Prohibited businesses](/coverage/prohibited-businesses) page lists the business types Brale cannot onboard.
 </Update>
 
+<Update label="2026-10-05" description="October 2026" tags={["New", "Update"]}>
+  ## Outbound wire return details
+
+  When a receiving bank returns an outbound domestic wire, Brale now updates the original transfer to `failed` and sends a `transfer.failed` webhook. This can happen even after the transfer reached `complete`. The `failure` object includes a new `wire_return` field with the bank's return code and reason when available. Keep accepting `transfer.failed` for transfers you recorded as complete. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) and [Returned outbound wires](/webhooks/webhook-events#returned-outbound-wires).
+
+  ## USDC on XRP Ledger
+
+  You can now send and receive USDC on XRP Ledger using the `xrp_ledger` transfer type. See [supported transfer types for USDC](/coverage/transfer-types#supported-transfer_type-values-for-usdc).
+</Update>
+
 <Update label="2026-10-01" description="October 2026" tags={["New"]}>
   ## Custodial accounts for regulated non-US businesses
 
