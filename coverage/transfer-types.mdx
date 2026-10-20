@@ -15,12 +15,13 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | --- | --- |
 | `algorand` | Algorand |
 | `arbitrum` | Arbitrum |
+| `aptos` | Aptos |
 | `avalanche` | Avalanche |
 | `base` | Base |
 | `canton` | Canton |
 | `celo` | Celo |
 | `classic` | Ethereum Classic |
-| `coreum` | Coreum |
+| `coreum` | Tx |
 | `ethereum` | Ethereum |
 | `hedera` | Hedera |
 | `kusama` | Polkadot / Kusama |
@@ -29,6 +30,7 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `polygon` | Polygon |
 | `pulsechain` | PulseChain |
 | `radius` | Radius |
+| `robinhood` | Robinhood Chain |
 | `solana` | Solana |
 | `spark` | Spark |
 | `starknet` | Starknet |
@@ -37,7 +39,7 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `tron` | Tron |
 | `vechain` | VeChain |
 | `worldchain` | Worldchain |
-| `xion` | Xion |
+| `xion` | Verona |
 | `xrp_ledger` | XRP Ledger |
 
 ## Offchain
@@ -49,6 +51,11 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `ach_credit` | ACH Credit |
 | `same_day_ach_credit` | Same Day ACH Credit |
 | `rtp_credit` | RTP Credit |
+| `fednow_credit` | FedNow Credit. Inbound through [Automations](/guides/fednow-inbound) and outbound through [Transfers](/guides/fednow-outbound). Available on enabled accounts. |
+
+<Note>
+  The [Automation deposit simulator](/api-reference/brale/simulate-automation-deposit) takes its own input values (`ach`, `wire`, `fednow`). These are not `transfer_type` identifiers. A simulated `fednow` deposit produces a Transfer with `source.transfer_type: fednow_credit`.
+</Note>
 
 ## Testnet transfer types
 
@@ -57,22 +64,25 @@ Use these values when working in testnet. They mirror the corresponding mainnet 
 | transfer\_type (API id) | Network |
 | --- | --- |
 | `amoy` | Polygon Amoy Testnet |
+| `aptos_testnet` | Aptos Testnet |
 | `base_sepolia` | Base Sepolia Testnet |
 | `canton_testnet` | Canton Testnet |
+| `coreum_testnet` | Tx Testnet |
 | `monad_testnet` | Monad Testnet |
 | `pulsechain_testnet` | PulseChain Testnet |
 | `radius_testnet` | Radius Testnet |
+| `robinhood_testnet` | Robinhood Chain Testnet |
 | `sepolia` | Ethereum Sepolia Testnet |
 | `solana_devnet` | Solana Devnet |
 | `starknet_testnet` | Starknet Testnet |
 | `tempo_testnet` | Tempo Testnet |
 | `tron_testnet` | Tron Testnet |
 | `worldchain_testnet` | Worldchain Sepolia Testnet |
-| `xion_testnet` | Xion Testnet |
+| `xion_testnet` | Verona Testnet |
 
 ## Supported `transfer_type` values by `value_type`
 
-Not every `value_type` is available on every `transfer_type`. The tables below list the supported `transfer_type` values for USDC, USDT, RLUSD, and PYUSD.
+Not every `value_type` is available on every `transfer_type`. The tables below list the supported `transfer_type` values for USDC, USDT, RLUSD, PYUSD, and USDG.
 
 ### Supported `transfer_type` values for USDC
 
@@ -87,11 +97,15 @@ Not every `value_type` is available on every `transfer_type`. The tables below l
 | `optimism` | Optimism |
 | `polygon` | Polygon |
 | `solana` | Solana |
+| `stellar` | Stellar |
+| `xrp_ledger` | XRP Ledger |
 
 ### Supported `transfer_type` values for USDT
 
 | transfer\_type (API id) | Name |
 | --- | --- |
+| `ethereum` | Ethereum |
+| `solana` | Solana |
 | `tron` | Tron |
 
 ### Supported `transfer_type` values for RLUSD
@@ -106,6 +120,14 @@ Not every `value_type` is available on every `transfer_type`. The tables below l
 | transfer\_type (API id) | Name |
 | --- | --- |
 | `ethereum` | Ethereum |
+
+### Supported `transfer_type` values for USDG
+
+| transfer\_type (API id) | Name |
+| --- | --- |
+| `robinhood` | Robinhood Chain |
+| `ethereum` | Ethereum |
+| `solana` | Solana |
 
 <Info>
   For Brale-issued `value_type` stablecoins (e.g., `SBC`, `USDGLO`), supported `transfer_type` values are configured during onboarding. Contact [support@brale.xyz](mailto:support@brale.xyz) for details.

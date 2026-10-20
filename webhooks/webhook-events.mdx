@@ -23,6 +23,17 @@ All webhook events use a JSON envelope:
 | `created` | string | UTC timestamp when the event was created. |
 | `data` | object | Event-specific payload. `data.id` is the resource ID (e.g., transfer ID or payment ID), which may differ from the event `id`. |
 
+## Managing accounts and event fan-in
+
+If your integration uses [managed accounts](/guides/managed-accounts) or [individual accounts](/guides/individual-accounts), a single managing account can receive events for every account it manages.
+
+- A webhook subscription owned by a **managing account** receives events for every account it manages, plus its own.
+- A webhook subscription owned by a **managed account** receives only that account's own events.
+
+This is derived from the subscription's owner. There is no scope parameter to set when creating the subscription.
+
+To attribute an event to the correct managed account, read `data.account_id` from the payload. It is present on `payment.completed`, `transfer.created`, and `transfer.failed`, in addition to the `account.verification.*` events that already carry it.
+
 Your handler should branch on `type`.
 
 ```tsx
@@ -51,11 +62,12 @@ Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "36KkY9pF34Qy6nB3Wwd25rq4f5z",
   "type": "transfer.created",
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
-    "id": "3D4ExampleTransferId",
+    "id": "36Kr3QA7YeEEBY3ABp3e2zS8iq9",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "pending",
     "amount": {
       "value": "100.00",
@@ -68,6 +80,7 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
+- `data.account_id` identifies the account the transfer belongs to. Managing accounts use this to attribute events to a specific managed account.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
@@ -81,11 +94,11 @@ Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "36Ky7AjzQHb6BAEcn6zJ4A3DdvH",
   "type": "transfer.completed",
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
-    "id": "3D4ExampleTransferId",
+    "id": "36KyrNktBXtnjfObINf5AjxvUlK",
     "status": "complete",
     "amount": {
       "value": "100.00",
@@ -98,7 +111,8 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
-- Treat `data.status` as the completed transfer state.
+- Treat `data.status` as the completed transfer state. The event name is `transfer.completed`; the API status is `complete`.
+- For outbound domestic wires, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the wire, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
@@ -106,17 +120,18 @@ Notes:
 
 Emitted when a Brale transfer reaches `failed` status.
 
-Use this event to react to permanent transfer failures (e.g., ACH returns or other rail/provider failures). For ACH-specific return details, inspect `data.failure.ach_return`.
+Use this event to react to permanent transfer failures (e.g., ACH returns, outbound domestic wire returns, or other rail/provider failures). For ACH-specific return details, inspect `data.failure.ach_return`. For wire return details, inspect `data.failure.wire_return`.
 
 Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "36KsiC47wqaMl9Xvq2ZG4MzAOUQ",
   "type": "transfer.failed",
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
-    "id": "3D4ExampleTransferId",
+    "id": "36KklImCvBPt4R5YhuIG43KIjFA",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "failed",
     "amount": {
       "value": "100.00",
@@ -139,12 +154,56 @@ Example:
 Notes:
 
 - Treat `data.id` as the transfer ID.
+- `data.account_id` identifies the account the transfer belongs to. Managing accounts use this to attribute events to a specific managed account.
 - Treat `data.status` as the failed transfer state.
 - `data.failure` is usually populated for `transfer.failed`, but may be `null` when Brale does not have structured failure details. Always null-check before reading nested fields.
 - `data.failure.retriable` indicates whether the failure is retriable. Spelled `retriable`, not `retryable`.
 - `data.failure.ach_return` is only set for ACH return failures. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
+
+### Returned outbound wires
+
+Brale uses the existing `transfer.failed` event for returned outbound domestic wires. There is no separate returned or refunded event. The same transfer can produce `transfer.completed` and later `transfer.failed` if the wire is returned after completion.
+
+Example (illustrative, not an observed production payload):
+
+```json
+{
+  "id": "36KHQsiJoUGm1YtmaD7v3dNi8Lf",
+  "type": "transfer.failed",
+  "created": "2026-10-06T18:30:05.000000Z",
+  "data": {
+    "id": "36KppWTv5aspzhU8QrTzhJqmHUo",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "status": "failed",
+    "amount": {
+      "value": "100.00",
+      "currency": "USD"
+    },
+    "failure": {
+      "type": "wire_return",
+      "occurred_at": "2026-10-06T18:30:00Z",
+      "retriable": false,
+      "ach_return": null,
+      "wire_return": {
+        "code": "AC04",
+        "reason": "Account closed"
+      }
+    }
+  }
+}
+```
+
+How to handle it:
+
+- Read `data.status` for the payout state. Read `data.failure.type` for the failure classification when `data.failure` is present.
+- When `data.failure.type` is `wire_return`, read `data.failure.wire_return`, not `data.failure.ach_return`.
+- Do not require an ACH return code or a specific bank reason code to recognize a wire return. `data.failure.wire_return.code` is `WIRE_RETURN` when the provider supplies no code, and `data.failure.wire_return.reason` can be `null`.
+- Missing structured failure details do not mean the transfer succeeded. If `data.status` is `failed`, update your records even when `data.failure` is `null`.
+- `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins were refunded or that refunded funds are available.
+- Track payout state, return classification, and any refund credit separately.
+- Do not assume event ordering. Retrieve the [latest transfer](/api-reference/brale/get-transfer) when you need to reconcile its current state.
 
 ## `payment.completed`
 
@@ -154,11 +213,12 @@ Example:
 
 ```json
 {
-  "id": "3D4ExamplePaymentId",
+  "id": "36KZe95b9eGe0vRBbgi09qynDAk",
   "type": "payment.completed",
   "created": "2026-04-28T21:30:00.000000Z",
   "data": {
-    "id": "3D4ExamplePaymentId",
+    "id": "36KY8ISwYDFHL3tVTNYTHPzpppp",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "complete",
     "amount": {
       "value": "1000.00",
@@ -172,6 +232,15 @@ Example:
 }
 ```
 
+Notes:
+
+- `data.account_id` identifies the account the payment belongs to. Managing accounts use this to attribute events to a specific managed account.
+- `data.id` is a payment ID. It is not a Transfer ID. Brale creates a separate Transfer for Automation deposits.
+- `payment.completed` means Brale received the fiat payment. It does not mean the stablecoin mint was delivered. Use [`transfer.completed`](#transfer-completed) or the Transfer's `status` for that.
+- `data.type` identifies the payment rail. The example shows a wire. For FedNow deposits, do not hard-code an expected `data.type` value. Correlate with the Transfer instead.
+- To find the Transfer for an Automation deposit, list Transfers with `automation_id` and `transfer_type` (for example, `transfer_type=fednow_credit`), then match `data.account_id`, the amount, and `source.payment_details.received_at`. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+- Brale also emits `payment.completed` for inbound payments created by [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) on testnet. There is no simulation-specific webhook type, so the same handler covers simulated and real deposits.
+
 ## `transfer.canceled`
 
 Emitted when a Brale transfer is canceled.
@@ -180,11 +249,11 @@ Example:
 
 ```json
 {
-  "id": "3D4ExampleEventId",
+  "id": "36K6uEp3c4dsa7lC360A9y6YnD1",
   "type": "transfer.canceled",
   "created": "2026-04-29T23:30:00.000000Z",
   "data": {
-    "id": "3D4ExampleTransferId",
+    "id": "36K4TdDo9EgZmCnu77Svtuuj596",
     "status": "canceled",
     "amount": {
       "value": "100.00",
@@ -269,6 +338,37 @@ Notes:
 - Treat `data.status` as the completed verification state (`complete`).
 - This event fires only when the account reaches `complete` status.
 - Your integration should ignore unknown fields.
+
+## `account.verification.rejected`
+
+Emitted when account verification is declined. This is the terminal outcome for a review: the account will not become `complete` on its own, and no further verification events follow.
+
+Example:
+
+```json
+{
+  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "type": "account.verification.rejected",
+  "created": "2026-06-09T16:00:00Z",
+  "data": {
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "status": "rejected",
+    "updated_at": "2026-06-09T16:00:00Z"
+  }
+}
+```
+
+Notes:
+
+- Treat `data.account_id` as the account ID.
+- Treat `data.status` as the declined verification state (`rejected`).
+- The account's `status` from `GET /accounts/{account_id}` becomes `rejected` at the same time, so polling and webhooks agree.
+- Uploading more documents does not reopen a declined account. Contact Brale if you believe a decline is incorrect.
+- Your integration should ignore unknown fields.
+
+<Note>
+Subscriptions to the `account.verification.*` wildcard receive this event automatically. If you subscribed to `account.verification.completed` by name, add `account.verification.rejected` to your subscription to be told about declines.
+</Note>
 
 ## Handling future event types
 

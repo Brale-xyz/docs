@@ -1,0 +1,78 @@
+---
+title: 'Create Token Mint'
+description: 'Mint new tokens into a destination address. Only available for tokenization (self-attested) accounts.'
+openapi: 'POST /accounts/{account_id}/tokens/mints'
+---
+
+```
+POST /accounts/{account_id}/tokens/mints
+```
+
+Required scope: `self_attested_tokens:mint`.
+
+Use an `Idempotency-Key` header. Only available for tokenization (self-attested) accounts.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account performing the mint. |
+
+## Request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `amount` | string | Yes | Amount to mint, as a decimal string. |
+| `destination.address_id` | string | Yes | KSUID of the destination address that will receive the minted tokens. |
+| `destination.value_type` | string | Yes | The token value type (e.g., `MY_TOKEN`). |
+| `destination.transfer_type` | string | Yes | The chain to mint on (e.g., `base`, `solana`). |
+
+## Example request
+
+```bash
+curl --request POST \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/mints \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --header 'Idempotency-Key: <uuid>' \
+  --data '{
+    "amount": "1000.50",
+    "destination": {
+      "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+      "value_type": "MY_TOKEN",
+      "transfer_type": "base"
+    }
+  }'
+```
+
+## Example success response
+
+```json
+{
+  "id": "2XyMintKsuid000000000000000",
+  "status": "pending",
+  "amount": "1000.50",
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "created_at": "2025-01-15T12:00:00Z"
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 403,
+  "title": "Forbidden",
+  "detail": "Account is not configured as a tokenization (self-attested) account."
+}
+```
+
+## Related endpoints
+
+- [List token mints](/api-reference/brale/list-token-mints)
+- [Get token mint](/api-reference/brale/get-token-mint)
+- [Tokenization guide](/guides/tokenization)

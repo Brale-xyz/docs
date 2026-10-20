@@ -81,6 +81,10 @@ curl --request POST \
 
 This is different from permanent validation failures (e.g. `invalid_account_number`), which will always fail regardless of account state. For those, the request itself must change, which requires a new key.
 
+### Simulated testnet deposits
+
+For [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit), each new key creates a new simulated deposit. Retrying with the same key and body returns the original `202` response without creating another payment, Transfer, or mint. Reusing the key with a different body or URI returns `422`.
+
 ## Troubleshooting
 
 | Error                            | Likely cause                            | Fix                                        |

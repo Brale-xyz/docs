@@ -1,5 +1,5 @@
 ---
-title: 'Update a Webhook Subscription'
+title: 'Update Webhook Subscription'
 description: 'Update the URL or subscribed event types for an active webhook subscription.'
 openapi: 'PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}'
 ---
@@ -7,8 +7,6 @@ openapi: 'PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}'
 ```
 PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}
 ```
-
-Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
 Updates an active webhook subscription. At least one of `url` or `events` must be provided. When `events` is sent, it replaces the full set of subscribed event types — it is not additive.
 

@@ -1,7 +1,11 @@
 ---
 title: "Get A Balance"
-description: "Query the stablecoin balance of an internal (custodial) address."
+description: "Query the stablecoin balance of an internal (custodial) address or the USD balance of a Plaid-linked bank address."
 ---
+
+Use `GET /accounts/{account_id}/addresses/{address_id}/balance` for both address types. Balances require both `transfer_type` and `value_type`.
+
+## Wallet balance
 
 <Steps>
   <Step title="Prerequisites">
@@ -15,7 +19,7 @@ description: "Query the stablecoin balance of an internal (custodial) address."
     ```
   </Step>
   <Step title="Call the balance endpoint">
-    Use your `account_id` and an internal `address_id`. Balances require both `transfer_type` and `value_type`.
+    Use your `account_id` and an internal `address_id`.
 
     `GET /accounts/{account_id}/addresses/{address_id}/balance`
 
@@ -48,12 +52,57 @@ description: "Query the stablecoin balance of an internal (custodial) address."
   </Step>
 </Steps>
 
+## Plaid-linked bank balance
+
+<Steps>
+  <Step title="Prerequisites">
+    - Get your `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
+    - Get the `address_id` of a bank account registered through Plaid. See [Create addresses through Plaid](/key-concepts/addresses#create-via-plaid-linked-bank-account).
+  </Step>
+  <Step title="Call the balance endpoint">
+    | Parameter       | Value       |
+    | --------------- | ----------- |
+    | `transfer_type` | `ach_debit` |
+    | `value_type`    | `USD`       |
+
+    ```bash
+    curl --request GET \
+      --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}/balance?transfer_type=ach_debit&value_type=USD" \
+      --header "Authorization: Bearer ${AUTH_TOKEN}"
+    ```
+  </Step>
+  <Step title="Review the response">
+    ```json
+    {
+      "address": {
+        "id": "34yknnMShvDbSW6tQg4HLlN41QO",
+        "address": null,
+        "account_number": "****1234"
+      },
+      "balance": {
+        "value": "1250.42",
+        "currency": "USD"
+      },
+      "value_type": "USD",
+      "transfer_type": "ach_debit"
+    }
+    ```
+  </Step>
+</Steps>
+
+- Brale uses Plaid's available balance when Plaid supplies it. Otherwise, Brale uses the current balance.
+- Successful reads may be cached for up to 30 seconds.
+- The balance is a point-in-time snapshot. It does not guarantee that an ACH debit will settle.
+- Brale never returns the full bank account number. `account_number` is masked.
+- Only Plaid-linked USD bank addresses support balance lookup. Bank addresses created through Direct bank entry do not.
+
+For error responses, see [Get an address balance](/api-reference/brale/get-address-balance#errors).
+
 <Note>
-  Balances are only available for `type=internal` custodial addresses managed by Brale.
+  Balance queries are supported for internal custodial addresses and Plaid-linked bank addresses. Other external addresses—including self-custody wallets and bank addresses created through Direct bank entry—do not expose balances through Brale.
 </Note>
 
 ## Notes
 
-- Works only for internal custodial addresses (`type=internal`).
 - Always send both `transfer_type` and `value_type`; a custodial address can hold multiple tokens across chains.
 - See [Value Types](/coverage/value-types) and [Transfer Types](/coverage/transfer-types) for supported combinations.

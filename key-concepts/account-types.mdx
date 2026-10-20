@@ -1,0 +1,53 @@
+---
+title: "Account types"
+description: "Choose between business (KYB) and individual (KYC) accounts, custodial or transactional, using three optional dimension fields on POST /accounts."
+---
+
+`POST /accounts` accepts three optional discriminator fields that determine how Brale verifies the account and what it can do:
+
+| Field | Values | Default when omitted |
+| --- | --- | --- |
+| `entity_type` | `business`, `individual` | `business` |
+| `account_type` | `custodial`, `transactional` | `custodial` |
+| `verification_mode` | `standard`, `reliance` | `standard` |
+
+<Note>
+Omitting all three dimension fields produces exactly today's behavior. Existing integrations that create business accounts do not need to change.
+</Note>
+
+## Supported combinations
+
+All eight combinations of the three dimension fields are supported:
+
+| `entity_type` | `account_type` | `verification_mode` | Verification |
+| --- | --- | --- | --- |
+| `business` | `custodial` | `standard` or `reliance` | KYB (default when all three fields are omitted) |
+| `business` | `transactional` | `standard` or `reliance` | KYB |
+| `individual` | `custodial` | `standard` or `reliance` | KYC |
+| `individual` | `transactional` | `standard` or `reliance` | KYC |
+
+`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
+
+An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
+
+Where each combination is geographically available depends on the account's location: the U.S. state for individual custodial accounts, the U.S. state or (for regulated businesses) approved country for business custodial accounts, and the U.S. state or approved country for transactional accounts. See [Account availability](/coverage/account-availability) for the canonical state table and the approved country list.
+
+## When to choose each
+
+- **Business, custodial** — a business entity that will hold stablecoin balances in Brale-custodied wallets, initiate transfers, and use Brale as its record of funds. Available in supported U.S. states, and outside the United States to regulated businesses in approved countries that send a `regulatory_profile`. See [Account availability](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [Custodial Accounts](/guides/custodial-accounts).
+- **Business, transactional** — a KYB-verified business that is non-custodial: it has no internal Brale wallet and no stored balance at Brale. It can register external, self-custody destination addresses, which are destination-only. Available in supported U.S. states and in approved countries outside the United States. See [Account availability](/coverage/account-availability) and [Transactional Accounts](/guides/transactional-accounts).
+- **Individual, custodial** — a natural person who holds stablecoin balances in Brale-custodied wallets. The request shape is identical to the individual transactional path; only `account_type` changes. U.S.-only, with a narrower state list than business custodial — see [Account availability](/coverage/account-availability).
+- **Individual, transactional** — a natural person who receives value on-chain (for example, as the destination of an on-ramp) but does not hold custody with Brale. See [Individual accounts](/guides/individual-accounts).
+
+On any of these rows, `verification_mode` is `standard` by default. Use `reliance` only when your integration operates under an agreement with Brale that specifies a reliance model and Brale has enabled it for your managing account.
+
+## Backward compatibility
+
+The dimension fields are optional and default to the values that describe today's account. A request that omits `entity_type`, `account_type`, and `verification_mode` continues to create a KYB-verified business account with Brale-custodied wallets, exactly as before.
+
+## Related
+
+- [Account availability](/coverage/account-availability) — where each customer and account type is available.
+- [Accounts](/key-concepts/accounts) — the full account resource, fields, and lifecycle.
+- [Individual accounts](/guides/individual-accounts) — end-to-end workflow for creating and using an individual account.
+- [`POST /accounts`](/api-reference/brale/create-account) — API reference.

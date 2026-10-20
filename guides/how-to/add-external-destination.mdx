@@ -145,7 +145,7 @@ Use this `id` as the `address_id` in transfers.
 ## Notes
 
 - External addresses have `type: external` when fetched via `GET /addresses`.
-- You cannot query balances for external addresses—only internal (custodial) ones.
+- Balance queries are supported for internal custodial addresses and Plaid-linked bank addresses. Other external addresses—including self-custody wallets and bank addresses created through Direct bank entry—do not expose balances through Brale.
 - Bank accounts can also be linked via [Plaid](/key-concepts/addresses#register-address-exchange-the-public-token) instead of manual entry.
 - You can add `transfer_types` to an existing address via [`PATCH /accounts/{account_id}/addresses/{address_id}`](/api-reference/brale/update-address).
 - If you need to stop using a previously linked external bank address without deleting the record, use the [PATCH address endpoint](/api-reference/brale/update-address) to archive it (`{ "status": "archived" }`). You can later restore it by unarchiving (`{ "status": "active" }`).

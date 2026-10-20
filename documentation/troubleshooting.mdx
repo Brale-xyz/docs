@@ -64,6 +64,44 @@ Use this checklist when integrating and operating at volume.
   - `address_id` does not belong to the specified `account_id` on an account-scoped route
 - Fix: verify the `address_id` belongs to the `account_id`, ensure the address supports the `transfer_type`, and double-check casing.
 
+### 422 `compatible_address_not_found` (transactional accounts)
+
+- Cause: the source account is a transactional account. Transactional accounts cannot originate on-chain transfers — their external addresses are destination-only, and they hold no internal (custodial) addresses. Checking the address balance first does not predict this; the constraint is about the address role, not funds.
+- Fix: route outbound value through a custodial account. See [Individual accounts](/guides/individual-accounts) and [Account types](/key-concepts/account-types) for what a transactional account can and cannot do.
+
+### 422 `unsupported_account_combination`
+
+- Causes:
+  - `verification_mode: bypass`, which is not supported for any combination
+  - `verification_mode: reliance` from a caller without reliance enabled — reliance is enabled per managing account by Brale and is not self-serve
+- All eight combinations of `entity_type` (`business`, `individual`), `account_type` (`custodial`, `transactional`), and `verification_mode` (`standard`, `reliance`) are supported.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: adjust the dimension fields to a supported combination. See [Account types](/key-concepts/account-types).
+
+### 422 `unsupported_jurisdiction`
+
+- Cause: Brale does not serve the applicant's jurisdiction for the requested account type. Individual custodial accounts are U.S.-only and per-state. Business custodial accounts are per-state in the U.S.; outside the U.S. they are refused unless the business sends a `regulatory_profile` and is in an approved country. Transactional accounts are unavailable in some U.S. states and outside the approved country list.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: check [Account availability](/coverage/account-availability) for where each customer and account type combination is available.
+
+### 400 `regulator_required`
+
+- Cause: a business request sent `regulatory_profile` with `regulator` missing or blank.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: set `regulatory_profile.regulator` to the authority the business is licensed or registered with, for example `FINTRAC`. If the business is not regulated, omit `regulatory_profile` entirely. See [Accounts](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
+
+### 400 `license_number_required`
+
+- Cause: a business request sent `regulatory_profile` with `license_number` missing or blank.
+- The rejection is permanent, so it is safe to cache this error against your idempotency key.
+- Fix: set `regulatory_profile.license_number` to the license or registration number the regulator issued. If the business is not regulated, omit `regulatory_profile` entirely.
+
+### 422 `invalid_us_state`
+
+- Cause: the individual's `country` is `US` and `address.state` is missing, blank, or not a recognized US state or territory. Abbreviations and full names are both accepted (`CA`, `California`, `PR`).
+- A US territory is a US jurisdiction, not a separate country: send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`).
+- Fix: send a valid US state or territory in `address.state`. For a non-US individual, `address.state` is optional and free-form.
+
 ## When in doubt
 
 - Re-read Coverage for exact identifiers (case and spelling).

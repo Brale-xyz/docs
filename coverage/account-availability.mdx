@@ -1,0 +1,168 @@
+---
+title: "Account availability"
+description: "Geographic availability for Brale business and individual accounts, custodial and transactional, in the United States and internationally."
+---
+
+This page is the canonical source for geographic account eligibility. It states where each customer type and account type combination is available, in the United States and internationally.
+
+## U.S. availability by customer and account type
+
+| Customer type | Account type | Availability |
+| --- | --- | --- |
+| Business | Custodial | Available in 44 states and territories, plus California, Massachusetts, Montana, and North Carolina. Unavailable in New York, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
+| Business | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+| Individual | Custodial | Available in 44 states and territories. Unavailable in California, Massachusetts, Montana, New York, North Carolina, Tennessee, Texas, Virginia, and the territories American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands. See [Custodial availability by state](#custodial-availability-by-state). |
+| Individual | Transactional | Available in every U.S. state except New York, North Carolina, Tennessee, Texas, and Virginia. Also available in Washington, D.C. and Puerto Rico. |
+
+Individual custodial accounts are U.S.-only. Outside the United States, business custodial accounts are available only to regulated businesses in the [approved countries](#approved-countries-131) that send a `regulatory_profile`. See [International custodial availability for regulated businesses](#international-custodial-availability-for-regulated-businesses). Any other non-US country on a custodial request is refused with `422 unsupported_jurisdiction`.
+
+A request from a jurisdiction Brale does not serve for the requested account type returns `422 unsupported_jurisdiction`. The rejection is permanent, so retrying the same request will not succeed and it is safe to cache the error against an idempotency key.
+
+<Note>
+All account creation remains subject to verification, program approval, applicable compliance requirements, and Brale's [prohibited businesses](/coverage/prohibited-businesses) policy. Availability in a state or country does not guarantee approval.
+</Note>
+
+## Custodial availability by state
+
+Individual custodial accounts are supported in these 44 states and territories:
+
+| | | | |
+| --- | --- | --- | --- |
+| Alaska (AK) | Idaho (ID) | Missouri (MO) | Pennsylvania (PA) |
+| Alabama (AL) | Illinois (IL) | Mississippi (MS) | Puerto Rico (PR) |
+| Arkansas (AR) | Indiana (IN) | North Dakota (ND) | Rhode Island (RI) |
+| Arizona (AZ) | Kansas (KS) | Nebraska (NE) | South Carolina (SC) |
+| Colorado (CO) | Kentucky (KY) | New Hampshire (NH) | South Dakota (SD) |
+| Connecticut (CT) | Louisiana (LA) | New Jersey (NJ) | Utah (UT) |
+| Washington, D.C. (DC) | Maryland (MD) | New Mexico (NM) | Vermont (VT) |
+| Delaware (DE) | Maine (ME) | Nevada (NV) | Washington (WA) |
+| Florida (FL) | Michigan (MI) | Ohio (OH) | Wisconsin (WI) |
+| Georgia (GA) | Minnesota (MN) | Oklahoma (OK) | West Virginia (WV) |
+| Hawaii (HI) | Iowa (IA) | Oregon (OR) | Wyoming (WY) |
+
+Individual custodial accounts are **not** available in California (CA), Massachusetts (MA), Montana (MT), North Carolina (NC), New York (NY), Tennessee (TN), Texas (TX), Virginia (VA), or the territories American Samoa (AS), Guam (GU), the Northern Mariana Islands (MP), and the U.S. Virgin Islands (VI).
+
+Business custodial accounts are supported in the 44 jurisdictions above plus California (CA), Massachusetts (MA), Montana (MT), and North Carolina (NC). They are unavailable in New York (NY), Tennessee (TN), Texas (TX), Virginia (VA), and the territories American Samoa (AS), Guam (GU), the Northern Mariana Islands (MP), and the U.S. Virgin Islands (VI).
+
+### US states and territories in requests
+
+- When the individual's `country` is `US`, `address.state` is required and must be a US state or territory, as an abbreviation or full name (`"CA"`, `"California"`, and `"PR"` all work). Otherwise the request returns `422 invalid_us_state`.
+- A US territory is a US jurisdiction, not a separate country. Send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`), which is how a territory address is normally written. Do not put a territory in a country field.
+- For a non-US individual, `address.state` is optional and free-form (a province or region).
+- The same rules apply to a business `address.state`, based on the business's `address.country`: a US state or territory is required when `address.country` is `US` or omitted, and `address.state` is optional and free-form otherwise. A business postal code accepts any format.
+
+## International transactional availability
+
+Business transactional and individual transactional accounts are available in the same set of 131 approved countries outside the United States, listed below. Transactional accounts are non-custodial: they receive no Brale-managed internal wallets, hold no balances at Brale, and register external destination-only addresses.
+
+Coverage remains subject to identity verification, sanctions screening, program approval, product support, applicable law, and Brale's [prohibited businesses](/coverage/prohibited-businesses) policy. A country appearing in this list does not guarantee that an applicant from that country is approved.
+
+<Note>
+Country eligibility and verification method are separate. In some countries Brale can verify an identity number against a government registry; in others, no registry check is available and verification is completed through identity document collection instead. An eligible applicant may therefore be asked for documents even though their country is approved. The document request flow is the same as for U.S. accounts — see [Verification](/key-concepts/accounts#verification).
+</Note>
+
+Individual transactional accounts in these countries are created through the standard API flow: set the top-level `individual.country` and send a matching identity document type. See [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account).
+
+Business transactional accounts in these countries are created through the standard API flow: send `entity_type: "business"`, `account_type: "transactional"`, and the business's country in `address.country`. A non-US business does not need a `regulatory_profile` to open a transactional account. See [Creating a non-US business account](/key-concepts/accounts#creating-a-non-us-business-account).
+
+### Approved countries (131)
+
+| Country | Code | Country | Code | Country | Code |
+| --- | --- | --- | --- | --- | --- |
+| Andorra | AD | Guinea | GN | Paraguay | PY |
+| Antigua and Barbuda | AG | Guyana | GY | Peru | PE |
+| Argentina | AR | Honduras | HN | Philippines | PH |
+| Armenia | AM | Hungary | HU | Poland | PL |
+| Australia | AU | Iceland | IS | Portugal | PT |
+| Austria | AT | Ireland | IE | Romania | RO |
+| Azerbaijan | AZ | Israel | IL | Rwanda | RW |
+| Bahamas | BS | Italy | IT | Saint Kitts and Nevis | KN |
+| Bahrain | BH | Jamaica | JM | Saint Lucia | LC |
+| Belgium | BE | Japan | JP | Saint Vincent and the Grenadines | VC |
+| Belize | BZ | Kazakhstan | KZ | Samoa | WS |
+| Benin | BJ | Kiribati | KI | San Marino | SM |
+| Brazil | BR | Korea, South | KR | Sao Tome and Principe | ST |
+| Brunei | BN | Kuwait | KW | Senegal | SN |
+| Bulgaria | BG | Latvia | LV | Seychelles | SC |
+| Cabo Verde | CV | Lesotho | LS | Sierra Leone | SL |
+| Canada | CA | Liberia | LR | Singapore | SG |
+| Chad | TD | Liechtenstein | LI | Slovakia | SK |
+| Chile | CL | Lithuania | LT | Slovenia | SI |
+| Colombia | CO | Luxembourg | LU | Solomon Islands | SB |
+| Comoros | KM | Madagascar | MG | South Africa | ZA |
+| Congo, Republic of the | CG | Malawi | MW | Spain | ES |
+| Costa Rica | CR | Malaysia | MY | Sri Lanka | LK |
+| Cyprus | CY | Maldives | MV | Suriname | SR |
+| Czech Republic | CZ | Malta | MT | Sweden | SE |
+| Denmark | DK | Marshall Islands | MH | Switzerland | CH |
+| Djibouti | DJ | Mauritania | MR | Taiwan | TW |
+| Dominica | DM | Mauritius | MU | Tajikistan | TJ |
+| Dominican Republic | DO | Mexico | MX | Tanzania | TZ |
+| El Salvador | SV | Micronesia | FM | Thailand | TH |
+| Equatorial Guinea | GQ | Moldova | MD | Timor-Leste | TL |
+| Estonia | EE | Monaco | MC | Togo | TG |
+| Eswatini | SZ | Mongolia | MN | Tonga | TO |
+| Fiji | FJ | Namibia | NA | Trinidad and Tobago | TT |
+| Finland | FI | Nauru | NR | Turkmenistan | TM |
+| France | FR | Netherlands | NL | Tuvalu | TV |
+| Gabon | GA | New Zealand | NZ | Uganda | UG |
+| Gambia | GM | Nigeria | NG | United Kingdom | GB |
+| Georgia | GE | North Macedonia | MK | Uruguay | UY |
+| Germany | DE | Norway | NO | Uzbekistan | UZ |
+| Ghana | GH | Oman | OM | Vanuatu | VU |
+| Greece | GR | Palau | PW | Vatican City | VA |
+| Grenada | GD | Panama | PA | Zambia | ZM |
+| Guatemala | GT | Papua New Guinea | PG |  |  |
+
+Countries not in this list are not currently eligible for transactional account creation, or for business custodial account creation outside the United States. Requests for individuals in unapproved countries are rejected before verification begins.
+
+## International custodial availability for regulated businesses
+
+A regulated business (for example, a money services business or a virtual asset service provider) in one of the [approved countries](#approved-countries-131) can be created as a business custodial account. Business custodial accounts outside the United States use the same approved-country list as transactional accounts.
+
+Send `entity_type: "business"` (or omit it), `account_type: "custodial"`, the business's country in `address.country`, and a `regulatory_profile` that identifies the regulator and the license or registration number it issued:
+
+```json
+{
+  "entity_type": "business",
+  "account_type": "custodial",
+  "address": {
+    "country": "CA"
+  },
+  "regulatory_profile": {
+    "regulator": "FINTRAC",
+    "license_number": "M12345678"
+  }
+}
+```
+
+The rest of the payload is the same as for any business account.
+
+`verification_mode` can be `standard`, or `reliance` if Brale has enabled reliance for your managing account. Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence.
+
+A non-US business that sends no `regulatory_profile`, or a regulated business outside the approved countries, is refused with `422 unsupported_jurisdiction` on a custodial request. U.S. business availability is still decided by the [state table](#custodial-availability-by-state), whether or not the business is regulated. See [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account) for the full payload.
+
+## Custodial vs. transactional
+
+- **Custodial accounts** receive Brale-managed internal wallet addresses and can hold Brale-custodied balances. See [Custodial Accounts](/guides/custodial-accounts).
+- **Transactional accounts** are non-custodial. They do not receive internal wallet addresses and cannot hold balances at Brale. See [Transactional Accounts](/guides/transactional-accounts).
+- Transactional accounts can register external, self-custody destination addresses.
+- External addresses belonging to a transactional account are destination-only. They cannot originate on-chain transfers.
+
+<Warning>
+Geographic account eligibility is not the same as workflow or rail availability. An account being available in a state does not mean that every payment rail, automation, transfer direction, industry, or funds flow is available to it. Consult the relevant workflow guides, [Transfer Types](/coverage/transfer-types), and [Value Types](/coverage/value-types) for capability-specific requirements.
+</Warning>
+
+## Which address determines eligibility
+
+- **Individual accounts** — the individual's principal residential address.
+- **Business accounts** — the business's principal operating address.
+
+A business's incorporation state or bank location does not, by itself, determine eligibility.
+
+## Related
+
+- [Account types](/key-concepts/account-types) — the `entity_type` and `account_type` fields on `POST /accounts`.
+- [Prohibited businesses](/coverage/prohibited-businesses) — business types Brale does not onboard.
+- [Accounts](/key-concepts/accounts) — the full account resource, fields, and lifecycle.
+- [`POST /accounts`](/api-reference/brale/create-account) — API reference.

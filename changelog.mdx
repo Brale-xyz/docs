@@ -3,6 +3,46 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-10-12" description="Week of October 12" tags={["New", "Update"]}>
+  ## FedNow deposits and payouts
+
+  Brale now supports FedNow, the Federal Reserve's instant payment service, on enabled accounts. FedNow runs 24/7/365 and typically settles in minutes.
+
+  - **Inbound:** Payers can send FedNow credits to an Automation's virtual account to mint stablecoins automatically.
+  - **Outbound:** Create a Transfer with `fednow_credit` to pay out USD from your stablecoin balance.
+  - **Testnet:** The Automation deposit simulator now accepts `fednow`.
+
+  See the [FedNow overview](/guides/fednow), [Receive FedNow deposits](/guides/fednow-inbound), and [Send FedNow payouts](/guides/fednow-outbound).
+
+  ## Wire payment reference fallback
+
+  For inbound wires, `payment_details.payment_reference` can now be populated from the sender's "Message to receiving bank" field when no memo, OBI, or remittance reference is available. See [Wire payment references](/guides/fiat-to-stablecoin-onramp#wire-payment-references).
+
+  ## Testnet branded Automations without mainnet verification
+
+  With testnet credentials, you can now create branded Automations for business or individual accounts without completing mainnet KYB/KYC. See [Branded Automations](/key-concepts/automations#branded-automations).
+
+  ## Required documents for regulated non-US businesses
+
+  The documents Brale requires from regulated non-US custodial businesses are now listed. See [Required documents for a regulated non-US business](/key-concepts/accounts#required-documents-for-a-regulated-non-us-business).
+
+  ## Prohibited businesses
+
+  A new [Prohibited businesses](/coverage/prohibited-businesses) page lists the business types Brale cannot onboard.
+</Update>
+
+<Update label="2026-10-01" description="October 2026" tags={["New"]}>
+  ## Custodial accounts for regulated non-US businesses
+
+  Regulated businesses outside the United States, such as money services businesses and virtual asset service providers, can now open business custodial accounts in any of the approved countries. Send the new optional `regulatory_profile` object, with the `regulator` and `license_number`, on `POST /accounts`. Requests that omit `regulatory_profile` are unaffected. See [International custodial availability for regulated businesses](/coverage/account-availability#international-custodial-availability-for-regulated-businesses) and [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account).
+</Update>
+
+<Update label="2026-09-29" description="September 2026" tags={["New"]}>
+  ## Testnet Automation deposit simulation
+
+  Developers can now simulate inbound ACH and wire deposits into testnet Automations, exercise the normal payment and mint lifecycle, and test webhook handling without moving real fiat. See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit).
+</Update>
+
 <Update label="2026-07-05" description="Week of June 29" tags={["New", "Update"]}>
   This week's updates focused on programmatic management of webhook subscriptions.
 
