@@ -27,10 +27,13 @@ For Direct bank entry, required fields depend on the transfer types you request.
 | `routing_number`      | Required   | Required            | Required   | Required      | Required |
 | `account_type`        | Required   | Required            | Required   | Required      | Required |
 | `transfer_types`      | Required   | Required            | Required   | Required      | Required |
+| `account_holder_type` | Optional   | Optional            | Optional   | Optional      | Optional |
 | `bank_address`        | Optional   | Optional            | Optional   | Optional      | Required |
 | `beneficiary_address` | Optional   | Optional            | Optional   | Optional      | Required |
 
 If `transfer_types` includes `wire`, wire requirements apply. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values. Send `account_number` and `routing_number` as strings so leading zeros are preserved.
+
+`account_holder_type` accepts `"individual"` or `"business"`. Brale uses it to choose the ACH SEC code for payouts to the address: `individual` uses PPD and `business` uses CCD. If you omit it, Brale uses the entity type of the account that owns the address. Once set, it cannot be changed. See [External bank addresses](/key-concepts/external-bank-addresses#account-holder-type).
 
 ### Direct bank entry examples
 
@@ -45,6 +48,7 @@ Omit `bank_address` and `beneficiary_address` for ACH-only addresses.
   "account_number": "1234567890",
   "routing_number": "063108680",
   "account_type": "checking",
+  "account_holder_type": "business",
   "name": "Example Bank"
 }
 ```
