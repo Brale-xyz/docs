@@ -1774,6 +1774,15 @@ components:
           type: string
           description: User's date of birth
           example: '1990-01-01'
+        client_name:
+          type: string
+          maxLength: 30
+          default: Brale
+          description: Application name displayed to users in Plaid Link. Defaults
+            to `Brale` when omitted. Values longer than 30 characters return a validation
+            error. This value changes the displayed application name only. It does
+            not change logos, colors, or ACH bank statement descriptors.
+          example: Rhythmic
     LinkTokenResponse:
       type: object
       title: LinkTokenResponse
