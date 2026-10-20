@@ -13,9 +13,9 @@ If no transfers match the filters, the API returns `200` with an empty `transfer
 
 | Parameter | Filters by | Format | Example |
 | :--- | :--- | :--- | :--- |
-| `automation_id` | Automation that created the transfer | KSUID (26-char string) | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
+| `automation_id` | Automation that created the transfer | KSUID (27-char string) | `2MhCCIHuK4TGVgT9a4loQzJx1rj` |
 | `value_type` | Currency / token on source **or** destination | Canonical API id (case-sensitive) | `USDC`, `SBC`, `usd` |
-| `transfer_type` | Payment rail / chain on source **or** destination | Canonical API id (case-sensitive) | `polygon`, `wire`, `solana` |
+| `transfer_type` | Blockchain on source **or** destination. Fiat rails such as `wire` and `fednow_credit` are not supported as filter values. | Canonical API id (case-sensitive) | `polygon`, `base`, `solana` |
 | `transaction_id` | On-chain transaction hash or off-chain payment reference | String (exact match, case-sensitive) | `0xdd5646ea…` |
 
 <Info>
@@ -68,6 +68,19 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?transfer_type=polyg
   -H "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
+### FedNow Transfers for an Automation
+
+Inbound FedNow deposits create Transfers with `source.transfer_type: "fednow_credit"` and the Automation's `automation_id`. Outbound FedNow payouts have `destination.transfer_type: "fednow_credit"`.
+
+The `transfer_type` query parameter filters by blockchain only. Fiat rails such as `fednow_credit`, `same_day_ach_credit`, and `wire` are not supported as filter values. Filter by `automation_id` (inbound) or `address_id` (outbound), then check `source.transfer_type` or `destination.transfer_type` on each Transfer.
+
+```bash
+curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+The payment ID in a `payment.completed` webhook is not a Transfer ID. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer) to correlate the two.
+
 ### Combined filters
 
 Return only Polygon USDC transfers created by a specific Automation, 10 per page:
@@ -104,7 +117,7 @@ A successful response returns `200` with the following structure:
         "transaction_id": "0xdd5646ea…"
       },
       "destination": {
-        "address_id": "2O6asmNK4TGVgT9a4loQzJx1rj",
+        "address_id": "2O6asmNK4TGVgT9a4loQzJx1rjH",
         "value_type": "USDC",
         "transfer_type": "polygon",
         "transaction_id": "0xdd5646ea…"
@@ -185,7 +198,7 @@ Wire transfers typically include the full set of fields. ACH transfers may inclu
 | `sender_name` | string \| null | Name of the originating sender, when available |
 | `sender_bank_name` | string \| null | Originating bank name, when available |
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
-| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
+| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available. For inbound wires, Brale may also populate this field from "Instruction for Creditor Agent," which some banks label "Message to receiving bank." This fallback is used only when no existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference is available. Existing reference precedence is preserved. |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
 | `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 

@@ -116,7 +116,17 @@ The workflow below shows the transactional flow. For a custodial account, set `a
    The account's external addresses can be used as the destination in transfers originating elsewhere (for example, an on-ramp automation owned by your managing account). Inbound events carry `data.account_id` so a subscription on the managing account can attribute them to the correct managed account. See [Webhook Events](/webhooks/webhook-events).
 
 5. **Do not attempt to originate transfers from this account.**\
-   Any attempt to use an external address on a transactional account as a transfer source returns `422 compatible_address_not_found`. Route outbound value through a different, custodial account.
+   Any attempt to use an external address on a transactional account as a transfer source returns `422 compatible_address_not_found`. To pay the individual out to their bank account, see [Off-ramp to a bank account](#off-ramp-to-a-bank-account).
+
+## Off-ramp to a bank account
+
+A transactional individual cannot off-ramp from their own account because it has no internal address. Route the payout through your managing account instead:
+
+1. The individual sends stablecoins from their self-custody wallet to an internal address on your managing account. This can be an omnibus address or a dedicated address per user.
+2. You register the individual's bank account as an external address, under either the managing account or the individual's account.
+3. You submit a stablecoin-to-USD transfer from the managing account's internal address to that bank address. For ACH, pass your managing account as `brand.account_id` so the individual sees your business as the sender.
+
+See [Off-ramp for transactional accounts](/guides/stablecoin-to-fiat-offramp#off-ramp-for-transactional-accounts) for the full walkthrough and request examples. A per-user off-ramp automation is expected in Q1 2027.
 
 ## Managed by the API key owner
 
@@ -124,7 +134,7 @@ An individual account created through the API is automatically managed by the ac
 
 ## Use an individual account as an Automation brand
 
-A verified individual account can be used as the `brand.account_id` on an onramp automation. The automation is still created under the managing account; `brand.account_id` selects the identity that appears on the funding instructions. When you pass an individual account, `source.funding_instructions.beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
+A verified individual account, custodial or transactional, can be used as `brand.account_id` on an onramp Automation, subject to applicable program eligibility. In this example, create the Automation under your managing account and pass the individual's account ID as `brand.account_id`. This selects the beneficiary identity without changing which account owns the Automation. When you pass an individual account, `source.funding_instructions.beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
 
 ```json Request
 {
@@ -133,7 +143,7 @@ A verified individual account can be used as the `brand.account_id` on an onramp
   "destination": {
     "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
 }

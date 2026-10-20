@@ -17,7 +17,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 | `sender_name` | string \| null | Name of the originating sender, when available |
 | `sender_bank_name` | string \| null | Originating bank name, when available |
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
-| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
+| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available. For inbound wires, Brale may also populate this field from "Instruction for Creditor Agent," which some banks label "Message to receiving bank." This fallback is used only when no existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference is available. Existing reference precedence is preserved. |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
 | `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
@@ -126,6 +126,37 @@ The object is optional and may be absent immediately after a transfer is created
 ```
 
 See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for full details.
+
+## FedNow transfers
+
+FedNow legs use `transfer_type: "fednow_credit"`. Wire-only fields such as `payment_details.imad` and `wire_memo` do not apply to FedNow, and ACH fields such as `trace_number` are not expected. Read only the `payment_details` fields present on the response.
+
+### Example: outbound FedNow payout
+
+```json Response
+{
+  "id": "36JqTB7hN3pQe5ZuWv0XkLr2sGc",
+  "status": "complete",
+  "amount": { "value": "1.00", "currency": "USD" },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "USDB",
+    "transfer_type": "spark"
+  },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "USD",
+    "transfer_type": "fednow_credit"
+  },
+  "automation_id": null,
+  "failure": null,
+  "note": null,
+  "created_at": "2026-10-15T16:10:03.531196Z",
+  "updated_at": "2026-10-15T16:10:41.204118Z"
+}
+```
+
+For an inbound FedNow deposit example, see [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
 
 ## `transaction_id`
 

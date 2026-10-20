@@ -65,7 +65,8 @@ curl --request POST \
   "legal_name": "John Doe",
   "email_address": "user@example.com",
   "phone_number": "+1234567890",
-  "date_of_birth": "1990-01-01"
+  "date_of_birth": "1990-01-01",
+  "client_name": "Rhythmic"
 }
 '
 ```
@@ -81,6 +82,28 @@ Response Body Example:
 ```
 
 - Your backend should call the endpoint indicated by `callback_url` (which is the Brale “register account” step) and pass the `public_token` (and your webhook URL, if applicable). This registers the bank account inside Brale and returns an `address_id` for subsequent transfers.
+
+### Customize the application name
+
+Pass the optional `client_name` field in the link token request body to set the application name that users see in Plaid Link.
+
+- `client_name` is a string with a maximum length of 30 characters.
+- If you omit `client_name`, Plaid Link displays `Brale`.
+- Values longer than 30 characters return a validation error.
+
+```json
+{
+  "legal_name": "John Doe",
+  "email_address": "user@example.com",
+  "phone_number": "+1234567890",
+  "date_of_birth": "1990-01-01",
+  "client_name": "Rhythmic"
+}
+```
+
+<Note>
+`client_name` changes the displayed application name only. It does not change logos, colors, or ACH bank statement descriptors. Logos and colors are configured separately through Plaid Link customizations, which are selected with `link_customization_name`. You cannot pass a logo URL through `client_name`, and customer-specific logo setup is not self-service.
+</Note>
 
 ## Setup addresses (Funding)
 

@@ -1,6 +1,6 @@
 ---
 title: "Stablecoin to Fiat (Offramp)"
-description: "Convert stablecoins to USD and withdraw to bank accounts via wire, ACH, or RTP payment rails."
+description: "Convert stablecoins to USD and withdraw to bank accounts via wire, ACH, RTP, or FedNow payment rails."
 ---
 
 In order to submit a stablecoin-to-fiat transaction, first you need to:
@@ -19,13 +19,14 @@ If stablecoins are currently in an external or self-custody wallet, they must fi
 Destination bank addresses can be created in two ways:
 
 - **Plaid-linked bank account** — Securely connect a bank account via the Plaid Link SDK. Supports `ach_debit`, `ach_credit`, and `rtp_credit`.
-- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`.
+- **Direct bank entry** — Submit bank details directly via the Addresses API. Supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`.
 
 | Capability   | Plaid-linked bank account | Direct bank entry |
 | ------------ | ------------------------- | ----------------- |
 | `ach_debit`  | Supported                 | Not supported     |
 | `ach_credit` | Supported                 | Supported         |
 | `rtp_credit` | Supported                 | Supported         |
+| `fednow_credit` | Supported              | Supported         |
 | `wire`       | Not supported             | Supported         |
 
 **Direct bank entry** is the right path when you already have bank account details or need `wire` transfers. For the full comparison and guidance, see [External bank addresses](/key-concepts/external-bank-addresses).
@@ -37,7 +38,7 @@ Here is an example of adding an ACH/RTP offchain address via Direct bank entry u
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
 <Note>
-For ACH/RTP-only Direct bank entry addresses, `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
+For Direct bank entry addresses without `wire` (ACH, RTP, or FedNow only), `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
 </Note>
 
 ```json title="Request (ACH/RTP Credit)"
@@ -104,6 +105,12 @@ Need `ach_debit`? Use the [Plaid-linked bank account flow](/api-reference/brale/
 
 Offramps via RTP use the `rtp_credit` transfer_type on the destination Address. RTP capability is enabled asynchronously by our banking partner, so a newly created bank Address may initially not show `rtp_credit` even though it is eligible for real-time payments. Only treat an Address as RTP-capable once `"rtp_credit"` appears in its `transfer_types`. See **Key Concepts → Addresses → Create External Address for RTP** for details.
 
+### FedNow payouts
+
+To pay out over FedNow, the destination Address must be `active` and list `fednow_credit` in `transfer_types`. Add `fednow_credit` when you create the Address, or add it to an existing Direct bank entry Address with `PATCH /accounts/{account_id}/addresses/{address_id}` and `{"additional_transfer_types": ["fednow_credit"]}`. The Address ID does not change. Then create a Transfer with `destination.transfer_type: "fednow_credit"`. Do not assume `fednow_credit` is enabled asynchronously like `rtp_credit`.
+
+See [Send FedNow payouts](/guides/fednow-outbound) for the full flow, including errors, safe retries, and handling pending payouts.
+
 ## Stablecoin to USD via Wire
 
 Once your customer has an address and stablecoins are held in a Brale controlled address, you can submit a Transfer request with the destination of the address. For outbound wire transfers, you can optionally pass `destination.wire_memo` to include a memo or payment reference with the wire.
@@ -119,7 +126,7 @@ Once your customer has an address and stablecoins are held in a Brale controlled
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
@@ -220,7 +227,7 @@ Once the stablecoins have arrived in the Brale internal address, submit the off-
   "source": {
     "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
     "value_type": "YSBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
   "destination": {
     "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
@@ -233,3 +240,56 @@ Once the stablecoins have arrived in the Brale internal address, submit the off-
 <Note>
 Brale cannot redeem directly from an external wallet it does not control. The stablecoins must first be received into a Brale internal address so Brale can complete the redemption and fiat payout flow.
 </Note>
+
+## Off-ramp for transactional accounts
+
+[Transactional accounts](/guides/transactional-accounts), including [individual transactional accounts](/guides/individual-accounts), have no internal address and cannot be the source of a transfer. To pay out a transactional account holder to their own bank account, route the off-ramp through your managing account. The managing account holds the stablecoins in its internal address and sends USD to the holder's bank account as a third-party payout.
+
+<Note>
+A per-user off-ramp automation is not available yet and is expected in Q1 2027. Until then, submit each payout as a transfer from the managing account.
+</Note>
+
+1. **Choose a deposit address on the managing account.**\
+   The end user sends stablecoins from their self-custody wallet to an internal address owned by your managing account. You can use one omnibus internal address for all users, or segment funds with a dedicated internal address per user created with [`POST /accounts/{account_id}/addresses/internal`](/api-reference/brale/create-internal-address). A dedicated address per user makes it easier to attribute each deposit to the right user. With an omnibus address, your platform tracks which deposit belongs to which user.
+
+   ```json Request (per-user internal address)
+   {
+     "name": "Jane Doe deposit wallet",
+     "transfer_types": ["base", "solana"]
+   }
+   ```
+
+2. **Register the user's bank account.**\
+   Create the user's bank account as an external address with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). You can register it under the managing account or under the user's transactional account. Use the same request shape shown in [Direct bank entry](#direct-bank-entry), with the user as `owner`.
+
+3. **Wait for the deposit to settle.**\
+   Confirm the on-chain deposit has arrived in the managing account's internal address before you submit the payout.
+
+4. **Submit the off-ramp transfer from the managing account.**\
+   Call `POST /accounts/{account_id}/transfers` with the managing account's `account_id`. Set the managing account's internal address as the source and the user's bank address as the destination.
+
+   For ACH payouts, pass a `brand` object to control the sender name the user sees on their bank statement. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit` and `same_day_ach_credit` only.
+
+   ```json Request
+   {
+     "amount": {
+       "value": "250",
+       "currency": "USD"
+     },
+     "source": {
+       "address_id": "<MANAGING_ACCOUNT_INTERNAL_ADDRESS_ID>",
+       "value_type": "SBC",
+       "transfer_type": "base"
+     },
+     "destination": {
+       "address_id": "<USER_BANK_ADDRESS_ID>",
+       "value_type": "USD",
+       "transfer_type": "ach_credit"
+     },
+     "brand": {
+       "account_id": "<MANAGING_ACCOUNT_ID>"
+     }
+   }
+   ```
+
+Brale burns the stablecoins from the managing account's internal address and sends USD to the user's bank account.
