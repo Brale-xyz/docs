@@ -20,7 +20,16 @@ Use an `Idempotency-Key` header.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `account_id` | string | The Brale account that will receive events for this subscription. |
+| `account_id` | string | The account that owns the webhook subscription. |
+
+<Note>
+  Which `account_id` to use:
+
+  - **Managing account ID:** The subscription receives subscribed events for the managing account and the accounts it manages. Use this if you onboard customers as managed accounts. You don't need a subscription per customer.
+  - **Managed account ID:** The subscription receives subscribed events for that managed account only.
+
+  Read `data.account_id` in each event to identify the account it concerns.
+</Note>
 
 ## Request body
 
@@ -88,4 +97,4 @@ curl -X POST https://api.brale.xyz/accounts/{account_id}/webhooks \
 }
 ```
 
-See the [Webhooks overview](/webhooks/overview) for account scope, environment scope (testnet/mainnet), and signature verification details.
+See the [Webhooks overview](/webhooks/overview) for subscription ownership, environment scope (testnet/mainnet), and signature verification details.

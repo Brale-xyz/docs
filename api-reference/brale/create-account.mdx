@@ -23,7 +23,7 @@ For the full account creation payload (business details, controller, beneficial 
 
 ## Choosing between a business and an individual account
 
-`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select the account shape. All eight combinations are supported: business or individual, custodial or transactional, `standard` or `reliance`. Reliance is enabled per managing account by Brale and is not self-serve; `verification_mode: "bypass"` is not supported for any combination. Omitting all three fields preserves the default business custodial behavior. See [Account types](/key-concepts/account-types) for the full matrix and [Account availability](/coverage/account-availability) for the U.S. states and approved countries where each combination can be created.
+`POST /accounts` accepts three optional dimension fields — `entity_type`, `account_type`, and `verification_mode` — that select the account shape. All eight combinations are supported: business or individual, custodial or transactional, `standard` or `reliance`. Reliance is enabled per managing account by Brale and is not self-serve; `verification_mode: "bypass"` is not supported for any combination. Omitting all three fields preserves the default business custodial behavior. See [Account types](/key-concepts/account-types) for the full matrix and [Account availability](/coverage/account-availability) for the U.S. states and approved countries where each combination can be created. Brale does not onboard the business types listed in [Prohibited businesses](/coverage/prohibited-businesses).
 
 ## Example request with documents (business)
 

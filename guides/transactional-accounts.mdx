@@ -33,6 +33,8 @@ If your customer needs Brale-managed wallet addresses and a stablecoin balance, 
 - **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
 </Warning>
 
+**Branded Automations:** Verified business and individual transactional accounts can be used as `brand.account_id`, subject to applicable program eligibility. Funding instructions show the business's verified name and address or the individual's legal name and address. This does not change the external-destination restrictions above. See [Branded Automations](/key-concepts/automations#branded-automations).
+
 ## How it works
 
 1. **Create the account.**\
@@ -45,6 +47,16 @@ If your customer needs Brale-managed wallet addresses and a stablecoin balance, 
    Use the external address as the destination in a transfer that originates elsewhere. A transactional account itself cannot be the source of an on-chain transfer. See [Transfers](/key-concepts/transfers) and [Automations](/key-concepts/automations) for supported funding and delivery flows.
 5. **Attribute activity.**\
    Inbound events carry `data.account_id`. A webhook subscription on your managing account receives events for every account it manages, so you can attribute activity to the correct managed customer account. See [Webhook Events](/webhooks/webhook-events).
+
+## Off-ramp to a bank account
+
+A transactional account cannot be the source of an off-ramp. To pay a transactional account holder out to their own bank account, route the payout through your managing account:
+
+1. The holder sends stablecoins from their self-custody wallet to an internal address on your managing account. This can be an omnibus address or a dedicated address per user.
+2. You register the holder's bank account as an external address, under either the managing account or the holder's transactional account.
+3. You submit a stablecoin-to-USD transfer from the managing account's internal address to that bank address.
+
+See [Off-ramp for transactional accounts](/guides/stablecoin-to-fiat-offramp#off-ramp-for-transactional-accounts) for the full walkthrough, branding guidance, and request examples.
 
 ## Business and individual accounts
 

@@ -1,0 +1,213 @@
+---
+title: "Receive FedNow deposits"
+description: "Mint stablecoins automatically when a payer sends a FedNow credit to an Automation's virtual account."
+keywords: ["FedNow", "fednow_credit", "onramp", "automation", "virtual account", "funding instructions", "deposit simulation"]
+---
+
+Inbound FedNow uses an [Automation](/key-concepts/automations). The Automation provides a virtual account. When a payer sends a FedNow credit from their bank to that account, Brale creates a Transfer and mints stablecoins to the Automation's destination.
+
+You do not call `POST /transfers` for each deposit. Brale does not pull or debit the payer's bank, and the payer does not need a Plaid-linked account to send funds.
+
+<Note>
+  FedNow deposits are available on Brale accounts where FedNow has been enabled. Contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement.
+</Note>
+
+## Prerequisites
+
+- A Brale [Account](/key-concepts/accounts) with `status: complete`.
+- API credentials with the `automations:write`, `automations:read`, and `transfers:read` scopes.
+- A destination [Address](/key-concepts/addresses) for the minted stablecoins, and a stablecoin `value_type` supported on its `transfer_type`. See [Transfer types](/coverage/transfer-types).
+- A [webhook subscription](/webhooks/quickstart) for `transfer.*` and `payment.completed` (recommended).
+
+### Destination and account-type restrictions
+
+- Automations on a transactional account (`account_type: transactional`) may only target external destinations. Brale rejects a Brale-custodied destination on those accounts. See [Account types](/key-concepts/account-types).
+- The destination `transfer_type` must be a network that supports the destination `value_type`. Use lowercase network identifiers, such as `solana` or `base`.
+
+## How it works
+
+1. You create an Automation with `source.value_type: "USD"` and a stablecoin destination.
+2. Brale provisions a virtual account. When the Automation is `active`, `source.funding_instructions` holds the bank coordinates.
+3. You share those coordinates with the payer.
+4. The payer sends a FedNow credit from their bank.
+5. Brale receives the payment, creates a Transfer with `source.transfer_type: "fednow_credit"` and your `automation_id`, and mints stablecoins to the destination.
+
+## Step 1: Create an Automation or reuse an existing one
+
+If you already have an `active` USD Automation for this destination, reuse it. Existing eligible virtual accounts are expected to accept FedNow without recreation, and you do not need a separate FedNow Automation.
+
+To create one, send `POST /accounts/{account_id}/automations`:
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "name": "Customer XYZ Onramp",
+    "source": { "value_type": "USD" },
+    "destination": {
+      "address_id": "35LWXNTO2jem13nXCLyciFdi162",
+      "value_type": "SBC",
+      "transfer_type": "solana"
+    }
+  }'
+```
+
+Do not set `source.transfer_type`. A USD Automation accepts the inbound rails enabled for its virtual account. Responses may show `source.transfer_type: null`. A null value does not mean FedNow is disabled.
+
+To show a managed account's verified identity as the beneficiary on the funding instructions, add `brand.account_id`. See [Branded Automations](/key-concepts/automations#branded-automations).
+
+## Step 2: Wait for the Automation to become active
+
+Automations start as `pending`. Poll `GET /accounts/{account_id}/automations/{automation_id}` until `status` is `active`.
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/35kVg1llbsOBYvx9XKr9eOtsD9z" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+## Step 3: Retrieve the funding instructions
+
+The `active` response includes `source.funding_instructions`:
+
+```json Response
+{
+  "id": "35kVg1llbsOBYvx9XKr9eOtsD9z",
+  "name": "Customer XYZ Onramp",
+  "status": "active",
+  "source": {
+    "value_type": "USD",
+    "transfer_type": null,
+    "funding_instructions": {
+      "beneficiary_name": "Company ABC",
+      "beneficiary_address": "25 Main Ave, Suite 100, Example City, IA 50000",
+      "bank_name": "Example Bank",
+      "bank_address": "123 Example St, Example City, NY 10001",
+      "routing_number": "000111222",
+      "account_number": "000123456789",
+      "memo": null
+    }
+  },
+  "destination": {
+    "address_id": "35LWXNTO2jem13nXCLyciFdi162",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "created_at": "2026-10-15T15:56:03.531196Z",
+  "updated_at": "2026-10-15T15:56:05.017508Z"
+}
+```
+
+Always share the values returned for your Automation. Do not hard-code bank coordinates from documentation or from another Automation. Treat `routing_number` and `account_number` as strings so leading zeros are preserved.
+
+## Step 4: The payer sends a FedNow credit
+
+Give the payer the `routing_number`, `account_number`, and `beneficiary_name`. The payer initiates an instant payment from their bank. Their bank must support sending FedNow payments. If it does not, the payer can use another rail the virtual account accepts, such as wire or ACH.
+
+## Step 5: Track the deposit and the mint
+
+Brale creates the Transfer automatically. Track it with webhooks, polling, or both.
+
+### Webhooks
+
+| Event | What it tells you |
+| --- | --- |
+| `payment.completed` | Brale received the fiat payment. `data.id` is a payment ID, not a Transfer ID. This does not confirm the mint. |
+| `transfer.created` | Brale created the Transfer. `data.id` is the Transfer ID. |
+| `transfer.completed` | The Transfer reached `complete`. The stablecoins were minted to the destination. |
+| `transfer.failed` / `transfer.canceled` | The Transfer did not complete. Inspect `failure` when present. |
+
+Deliveries are at-least-once and can arrive in any order. Deduplicate on the envelope `id` (or the `idempotency-key` delivery header), and use `data.account_id` to attribute events to a managed account. Retrieve the Transfer for its current state instead of relying on event order. See [Webhook events](/webhooks/webhook-events).
+
+### Find the Transfer
+
+Payment IDs and Transfer IDs are different. To find the Transfer for a deposit, list Transfers for the Automation, then keep the ones where `source.transfer_type` is `fednow_credit`. The `transfer_type` query parameter filters by blockchain only, so do not pass `fednow_credit` to it.
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=35kVg1llbsOBYvx9XKr9eOtsD9z" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Match a `payment.completed` event to a Transfer using the account (`data.account_id`), the amount, and the time received (`source.payment_details.received_at` on the Transfer).
+
+```json Response (inbound FedNow Transfer)
+{
+  "transfers": [
+    {
+      "id": "36JqT2nF4kW8xYbR1sLmPz9cVdA",
+      "status": "complete",
+      "automation_id": "35kVg1llbsOBYvx9XKr9eOtsD9z",
+      "amount": { "value": "1.00", "currency": "USD" },
+      "source": {
+        "value_type": "USD",
+        "transfer_type": "fednow_credit",
+        "payment_details": {
+          "received_at": "2026-10-15T16:02:11.514000Z"
+        }
+      },
+      "destination": {
+        "address_id": "35LWXNTO2jem13nXCLyciFdi162",
+        "value_type": "SBC",
+        "transfer_type": "solana",
+        "transaction_id": "5Fq9b2Zt7nYx3kq8E4mWc6Vh1sLp9aRd2GjU7oTe3NfB"
+      },
+      "failure": null,
+      "note": null,
+      "created_at": "2026-10-15T16:02:12.104000Z",
+      "updated_at": "2026-10-15T16:02:40.882000Z"
+    }
+  ]
+}
+```
+
+`payment_details` fields are optional and vary by rail. Wire fields such as `imad` and ACH fields such as `trace_number` do not apply to FedNow. When `status` is `complete`, `destination.transaction_id` is the onchain mint transaction.
+
+## Test on testnet
+
+Testnet Automations return placeholder bank coordinates that cannot receive real payments. Use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) to run the FedNow onramp flow without moving real money.
+
+Requirements:
+
+- Testnet API credentials with the `automations:write` and `network:testnet` scopes. See [Sandbox and testnet](/overview/sandbox-and-testnet).
+- An `active` Automation that belongs to the account in the path.
+- A testnet destination, such as `solana_devnet` or `base_sepolia`.
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: 6f1c2a9e-3b7d-4e0a-9c55-2d8e7f4b1a63" \
+  --data '{
+    "amount": { "value": "1.00", "currency": "USD" },
+    "transfer_type": "fednow"
+  }'
+```
+
+- The simulator input is `fednow`. The resulting Transfer has `source.transfer_type: "fednow_credit"`. Do not send `fednow_credit` to the simulator.
+- Brale returns `202 Accepted` with the Transfer, including `automation_id`. `202` means the simulated deposit was accepted, not that the mint is complete.
+- Retrying with the same `Idempotency-Key` and body returns the original response without creating another deposit. Use a new key for each new simulated deposit.
+- Brale emits the normal `payment.completed` and `transfer.*` events.
+- Fetch the Transfer with `GET /accounts/{account_id}/transfers/{transfer_id}`. When `status` is `complete`, look up `destination.transaction_id` on the testnet explorer to verify the mint.
+
+Simulation creates simulated fiat funding only. It does not test the payer's bank or the FedNow network.
+
+## Errors
+
+| Status | `type` | Cause |
+| --- | --- | --- |
+| `400` | Schema validation | Simulator `transfer_type` is not `ach`, `wire`, or `fednow`. |
+| `403` | | Credentials lack `network:testnet` or another required scope. |
+| `422` | `automation_not_active` | The Automation is not `active`. |
+| `422` | `mainnet_destination` | Simulation is only available for testnet Automations. |
+
+## Related
+
+- [FedNow overview](/guides/fednow)
+- [Send FedNow payouts](/guides/fednow-outbound)
+- [Fiat to stablecoin onramp](/guides/fiat-to-stablecoin-onramp)
+- [Automations](/key-concepts/automations)

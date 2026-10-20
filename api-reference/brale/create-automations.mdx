@@ -5,9 +5,17 @@ openapi: 'POST /accounts/{account_id}/automations'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
 
+## Source configuration
+
+Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automation is not tied to a single deposit rail. Its virtual account accepts the inbound rails enabled for it, such as wire, ACH, and FedNow (on accounts with FedNow enabled). Responses may return `source.transfer_type: null`.
+
+The rail used for each deposit appears on the resulting Transfer in `source.transfer_type`, for example `fednow_credit`. This is a Transfer response value, not an Automation setting. See [Receive FedNow deposits](/guides/fednow-inbound).
+
 ## Branded Automations
 
 You can optionally include a `brand` object in the request body to select the verified identity (business or individual) that appears as the beneficiary on the automation's funding instructions.
+
+Both custodial and transactional business or individual accounts can be used as `brand.account_id`, subject to applicable verification and program eligibility. See [Branded Automations](/key-concepts/automations#branded-automations) for the account-type matrix and ownership rules.
 
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
@@ -20,14 +28,17 @@ You can optionally include a `brand` object in the request body to select the ve
 
 The automation is still created under the account in the request path (`/accounts/{account_id}/automations`). `brand.account_id` does not change which account owns the automation — it only selects the identity shown on the funding instructions.
 
+<Note>
+  **Testnet branding.** With testnet credentials, you can create branded Automations using a business or individual account you have access to, without completing mainnet KYB/KYC or enabling that account for mainnet. Testnet funding instructions contain placeholder banking details and cannot receive real deposits. To fund a testnet Automation, use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Mainnet verification requirements are unchanged.
+</Note>
+
 ### Example: branded automation request (business account)
 
 ```json
 {
   "name": "XYZ Onramp",
   "source": {
-    "value_type": "USD",
-    "transfer_type": "wire"
+    "value_type": "USD"
   },
   "destination": {
     "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
@@ -40,14 +51,13 @@ The automation is still created under the account in the request path (`/account
 
 ### Example: branded automation request (individual account)
 
-Pass the `account_id` of a KYC-verified individual account to render that person's legal name and address as the beneficiary. See [Individual accounts](/guides/individual-accounts) for how to create one.
+Pass the `account_id` of an individual account to render that person's legal name and address as the beneficiary. On mainnet, the individual account must be KYC-verified. See [Individual accounts](/guides/individual-accounts) for how to create one.
 
 ```json
 {
   "name": "Jane Doe Onramp",
   "source": {
-    "value_type": "USD",
-    "transfer_type": "wire"
+    "value_type": "USD"
   },
   "destination": {
     "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
@@ -55,6 +65,22 @@ Pass the `account_id` of a KYC-verified individual account to render that person
     "transfer_type": "solana"
   },
   "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
+}
+```
+
+#### Excerpt from retrieving the Automation after it becomes active
+
+This partial response shows only the branded fields. It is not the immediate create response, and it does not contain usable banking instructions. Brale populates the full `source.funding_instructions` once the Automation becomes active.
+
+```json
+{
+  "status": "active",
+  "source": {
+    "funding_instructions": {
+      "beneficiary_name": "Jane Doe",
+      "beneficiary_address": "123 Main St, Des Moines, IA 50309"
+    }
+  }
 }
 ```
 
