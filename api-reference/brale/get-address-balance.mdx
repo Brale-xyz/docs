@@ -1,6 +1,59 @@
 ---
-title: 'Fetch the balance of an internal (custodial) address for a specific token'
-description: 'Returns balance data for a given address, chain, and token.   Provide `transfer_type` and `value_type` as query parameters.'
+title: 'Get an address balance'
+description: 'Returns the balance of a custodial wallet address or a Plaid-linked bank address. Provide `transfer_type` and `value_type` as query parameters.'
 openapi: 'GET /accounts/{account_id}/addresses/{address_id}/balance'
 ---
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
+
+## Query parameters by address type
+
+Both `transfer_type` and `value_type` are required.
+
+| Address type                         | `transfer_type`                          | `value_type`                  |
+| ------------------------------------ | ---------------------------------------- | ----------------------------- |
+| Custodial wallet (`type=internal`)   | Blockchain network, such as `base`       | Token ticker, such as `SBC`   |
+| Plaid-linked bank address            | `ach_debit`                              | `USD`                         |
+
+## Plaid-linked bank balances
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/${ADDRESS_ID}/balance?transfer_type=ach_debit&value_type=USD" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+```json Response
+{
+  "address": {
+    "id": "34yknnMShvDbSW6tQg4HLlN41QO",
+    "address": null,
+    "account_number": "****1234"
+  },
+  "balance": {
+    "value": "1250.42",
+    "currency": "USD"
+  },
+  "value_type": "USD",
+  "transfer_type": "ach_debit"
+}
+```
+
+- Brale uses Plaid's available balance when Plaid supplies it. Otherwise, Brale uses the current balance.
+- Successful reads may be cached for up to 30 seconds.
+- The balance is a point-in-time snapshot. It does not guarantee that an ACH debit will settle.
+- Brale never returns the full bank account number. `account_number` is masked.
+- Only Plaid-linked USD bank addresses support balance lookup. Bank addresses created through Direct bank entry do not.
+
+## Errors
+
+| Status | `type`                              | Meaning                                                                                  |
+| ------ | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `400`  | `invalid_address`                   | A bank balance request did not use `transfer_type=ach_debit`.                            |
+| `400`  | `invalid_value_type`                | A bank balance request did not use `value_type=USD`.                                     |
+| `400`  | `balance_not_supported_for_address` | The address is not Plaid-linked, or the currency is not supported.                       |
+| `400`  | `plaid_error` (`code: plaid_item_login_required`) | The user must relink the bank account through Plaid.                       |
+| `503`  | `service_unavailable`               | Plaid returned an error or balance data is unavailable.                                  |
+
+<Note>
+  `service_unavailable` does not mean the balance is zero or insufficient.
+</Note>

@@ -17,7 +17,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 | `sender_name` | string \| null | Name of the originating sender, when available |
 | `sender_bank_name` | string \| null | Originating bank name, when available |
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
-| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available |
+| `payment_reference` | string \| null | Sender-provided payment reference or memo, when available. For inbound wires, Brale may also populate this field from "Instruction for Creditor Agent," which some banks label "Message to receiving bank." This fallback is used only when no existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference is available. Existing reference precedence is preserved. |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
 | `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
@@ -127,6 +127,37 @@ The object is optional and may be absent immediately after a transfer is created
 
 See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for full details.
 
+## FedNow transfers
+
+FedNow legs use `transfer_type: "fednow_credit"`. Wire-only fields such as `payment_details.imad` and `wire_memo` do not apply to FedNow, and ACH fields such as `trace_number` are not expected. Read only the `payment_details` fields present on the response.
+
+### Example: outbound FedNow payout
+
+```json Response
+{
+  "id": "36JqTB7hN3pQe5ZuWv0XkLr2sGc",
+  "status": "complete",
+  "amount": { "value": "1.00", "currency": "USD" },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "USDB",
+    "transfer_type": "spark"
+  },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "USD",
+    "transfer_type": "fednow_credit"
+  },
+  "automation_id": null,
+  "failure": null,
+  "note": null,
+  "created_at": "2026-10-15T16:10:03.531196Z",
+  "updated_at": "2026-10-15T16:10:41.204118Z"
+}
+```
+
+For an inbound FedNow deposit example, see [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+
 ## `transaction_id`
 
 The `transaction_id` field appears on the `source` and `destination` objects in the response. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network.
@@ -138,18 +169,24 @@ You can also use `transaction_id` as a query-parameter filter on the [List trans
 Every transfer response includes a `failure` field.
 
 - `failure` is **usually `null`**.
-- `failure` is **populated** when `status` is `failed` and Brale has structured failure details. It is especially relevant for ACH returns and other rail/provider failures.
-- Clients should **not assume** `failure` is always present for every failed transfer — check for `null` before reading nested fields.
+- `failure` is **populated** when `status` is `failed` and Brale has structured failure details. It is especially relevant for ACH returns, outbound domestic wire returns, and other rail/provider failures.
+- Clients should **not assume** `failure` is always present for every failed transfer. Check for `null` before reading nested fields.
+- Rail-specific objects are only set for their rail. Do not require `ach_return` fields for a wire return, or `wire_return` fields for an ACH return.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `type` | string | Error classification for the failure (e.g. `ach_return`). |
-| `occurred_at` | string (ISO 8601) | When the failure occurred. |
+| `type` | string | Error classification for the failure (e.g. `ach_return`, `wire_return`). |
+| `occurred_at` | string (ISO 8601) | When Brale recorded the failure. This is not necessarily the exact time the bank returned the payment. |
 | `retriable` | boolean | Whether the failure is considered retriable. Note: spelled `retriable`, not `retryable`. |
-| `ach_return` | object \| null | ACH-only return details. Present for ACH return failures; not set for on-chain or other rail failures. |
+| `ach_return` | object \| null | ACH-only return details. Present for ACH return failures; `null` or not set for wire returns, on-chain failures, and other rail failures. |
 | `ach_return.code` | string | ACH return code (e.g. `R01` — Insufficient Funds). |
 | `ach_return.reason` | string | Human-readable description of the ACH return reason. |
-| `ach_return.category` | string | One of `administrative`, `unauthorized`, or `general`. |
+| `ach_return.category` | string | One of `administrative`, `unauthorized`, or `general`. ACH only. |
+| `wire_return` | object \| null | Wire-only return details. Present when `type` is `wire_return`; `null` or not set for other failures. |
+| `wire_return.code` | string | The provider's wire return reason code when available (e.g. `AC04`). When the provider supplies no code, Brale sets `WIRE_RETURN`. `WIRE_RETURN` is a Brale fallback marker, not an ISO 20022 bank reason code. |
+| `wire_return.reason` | string \| null | Human-readable return reason, when available. Can be `null`. |
+
+`wire_return` has no `category` field. The `administrative` / `unauthorized` / `general` taxonomy applies to ACH returns only.
 
 ### Example: failed ACH transfer
 
@@ -169,3 +206,30 @@ Every transfer response includes a `failure` field.
   }
 }
 ```
+
+### Example: returned outbound wire
+
+When Brale recognizes a bank return for an outbound domestic wire, it updates the original transfer to `status: "failed"`. This can happen while the transfer is `processing` or after it is `complete`. Brale does not use a separate `returned` status. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle).
+
+The following excerpt is illustrative. It is not an observed production payload.
+
+```json title="Response (failure excerpt, illustrative)"
+{
+  "id": "3D1RcbwVywOGyU2HBSenljm5dhV",
+  "status": "failed",
+  "failure": {
+    "type": "wire_return",
+    "occurred_at": "2026-10-06T18:30:00Z",
+    "retriable": false,
+    "ach_return": null,
+    "wire_return": {
+      "code": "AC04",
+      "reason": "Account closed"
+    }
+  }
+}
+```
+
+If the provider does not supply a return code, the failure is still classified as `type: "wire_return"`, with `wire_return.code` set to `WIRE_RETURN`. `wire_return.reason` may be `null`.
+
+Not every wire rejection produces a `wire_return` failure. Use `failure.type` to identify a recognized wire return rather than inferring it from the rail alone.

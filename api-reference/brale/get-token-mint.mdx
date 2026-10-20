@@ -1,0 +1,57 @@
+---
+title: 'Get Token Mint'
+description: 'Retrieve a single tokenization mint order by ID.'
+openapi: 'GET /accounts/{account_id}/tokens/mints/{mint_id}'
+---
+
+```
+GET /accounts/{account_id}/tokens/mints/{mint_id}
+```
+
+Required scope: `self_attested_tokens:read`.
+
+## Path parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `account_id` | string | KSUID of the tokenization account. |
+| `mint_id` | string | KSUID of the mint order to retrieve. |
+
+## Example request
+
+```bash
+curl --request GET \
+  --url https://api.brale.xyz/accounts/{account_id}/tokens/mints/{mint_id} \
+  --header 'Authorization: Bearer <token>'
+```
+
+## Example success response
+
+```json
+{
+  "id": "2XyMintKsuid000000000000000",
+  "status": "completed",
+  "amount": "1000.50",
+  "destination": {
+    "address_id": "2VcUIIsgARwVbEGlIYbhg6fGG57",
+    "value_type": "MY_TOKEN",
+    "transfer_type": "base"
+  },
+  "created_at": "2025-01-15T12:00:00Z"
+}
+```
+
+## Example error response
+
+```json
+{
+  "status": 404,
+  "title": "Not Found",
+  "detail": "Mint order not found for this account."
+}
+```
+
+## Related endpoints
+
+- [Create token mint](/api-reference/brale/create-token-mint)
+- [List token mints](/api-reference/brale/list-token-mints)

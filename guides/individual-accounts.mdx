@@ -1,0 +1,160 @@
+---
+title: "Individual accounts"
+description: "Create a KYC-verified individual account, custodial or transactional."
+---
+
+Individual accounts register a natural person as a Brale account, verified with KYC. They come in two shapes, selected by `account_type`:
+
+- **Custodial** — the account receives Brale-custodied wallets and can hold stablecoin balances at Brale. U.S.-only, with a narrower state list than business custodial accounts.
+- **Transactional** — the account is non-custodial: it receives no custodial wallets, cannot create custodial addresses, and is shaped for inbound value. Use it when your end user needs to receive stablecoins on-chain or be the destination of an on-ramp, but should not hold a Brale-custodied wallet.
+
+The request shape is identical for both; only `account_type` changes. For the dimension fields and how individual accounts relate to business accounts, see [Account types](/key-concepts/account-types). For the U.S. states where individual custodial accounts can be created, and the U.S. states and approved countries for individual transactional accounts, see [Account availability](/coverage/account-availability). Eligibility is based on the individual's principal residential address.
+
+## What it does
+
+- Registers a natural person as a Brale account (`entity_type: individual`, with `account_type: custodial` or `account_type: transactional`).
+- Runs KYC identity verification on the individual.
+- Emits the same `account.verification.*` webhook events as business KYB.
+- Custodial: provisions Brale-custodied (`type=internal`) wallets the account can hold balances in.
+- Transactional: lets you register external on-chain destination addresses so the account can receive value.
+
+## Who it's for
+
+Use cases include:
+
+- End users of a wallet or fintech app who hold stablecoin balances in Brale-custodied wallets (custodial).
+- Payout recipients who need to receive stablecoins on-chain but do not hold balances at Brale (transactional).
+- End users of a wallet or fintech app who receive on-ramps to their own self-custody wallet (transactional).
+- Any natural person your platform needs to identify and pay, without provisioning custody (transactional).
+
+## Choosing custodial or transactional
+
+Set `account_type: "custodial"` to create an individual custodial account. Everything else in the request is the same as the transactional path below: the `individual` object and `tos_attestation` are required, and business-only fields are rejected. A custodial individual account receives Brale-custodied wallets on supported chains, like a business custodial account.
+
+Individual custodial accounts are U.S.-only and are available in 44 states and territories — a narrower list than business custodial. See [Account availability](/coverage/account-availability#custodial-availability-by-state) for the state table. A request from an unsupported jurisdiction returns `422 unsupported_jurisdiction`.
+
+## What a transactional account cannot do
+
+<Warning>
+A transactional account is inbound by design. It does not get a Brale-custodied wallet and cannot originate on-chain transfers.
+</Warning>
+
+- **No Brale-custodied wallets, ever.** A transactional account has no automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses. This is enforced.
+- **External addresses are destination-only.** An external address on a transactional account can receive value but cannot be the source of a transfer.
+- **The account cannot originate an on-chain transfer.** An attempt returns `422` with type `compatible_address_not_found`. Checking the address balance first does not predict this, because the constraint is about the address role, not funds.
+- **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
+
+## How it works
+
+The workflow below shows the transactional flow. For a custodial account, set `account_type: custodial` in step 1; on approval the account receives Brale-custodied wallets automatically, and steps 3–5 do not apply — work with its internal addresses instead, as described in [Custodial Accounts](/guides/custodial-accounts).
+
+1. **Create the account.**\
+   Call [`POST /accounts`](/api-reference/brale/create-account) with `entity_type: individual`, `account_type: transactional`, an `individual` object, and a `tos_attestation`. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`) must not be sent. See [Accounts — Creating an individual account](/key-concepts/accounts#creating-an-individual-account) for the full payload and field reference.
+
+   ```json Request
+   {
+     "entity_type": "individual",
+     "account_type": "transactional",
+     "verification_mode": "standard",
+     "individual": {
+       "first_name": "Jane",
+       "last_name": "Doe",
+       "date_of_birth": "1990-01-01",
+       "email": "jane@example.com",
+       "phone_number": "2125550182",
+       "country": "US",
+       "address": {
+         "street_line_1": "123 Main St",
+         "street_line_2": "Apt 4",
+         "city": "Des Moines",
+         "state": "IA",
+         "zip": "50309"
+       },
+       "identity": {
+         "number": "222-22-2222",
+         "type": "SSN9"
+       }
+     },
+     "tos_attestation": {
+       "version": "2025-04-01",
+       "accepted_at": "2026-05-13T20:45:15Z",
+       "ip": "203.0.113.42",
+       "user_agent": "Mozilla/5.0 ..."
+     }
+   }
+   ```
+
+   ```json 201 Response
+   {
+     "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+     "name": "Jane Doe",
+     "status": "pending",
+     "created": "2026-05-13T20:45:16Z",
+     "updated": "2026-05-13T20:45:16Z"
+   }
+   ```
+
+   The created account's `name` is derived from the individual's first and last name.
+
+   Non-US individuals in approved countries are supported; see [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. `individual.address.state` is optional and free-form, and the postal code accepts any format; send the identity document type that matches the individual's country. See [Identity types](/key-concepts/accounts#identity-types) for the accepted values and [Creating a non-US individual account](/key-concepts/accounts#creating-a-non-us-individual-account) for an example.
+
+2. **Wait for verification.**\
+   Brale runs identity verification asynchronously. On approval the account is enabled, `status` becomes `complete`, and `account.verification.completed` fires. This is typically fast — on the order of seconds. If more documents are needed, `account.verification.documents_required` fires with the required documents; stage and link them exactly as [documented for business accounts](/key-concepts/accounts#verification). Polling is also supported.
+
+3. **Add an external destination address.**\
+   Register the on-chain wallet that will receive value with [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). External addresses on a transactional account are destination-only.
+
+   ```json Request
+   {
+     "name": "Recipient EVM Wallet",
+     "address": "0xb518d4d6221d9a41d23d71cbce8e106e7aab8f9b",
+     "transfer_types": ["ethereum", "base"]
+   }
+   ```
+
+4. **Receive value.**\
+   The account's external addresses can be used as the destination in transfers originating elsewhere (for example, an on-ramp automation owned by your managing account). Inbound events carry `data.account_id` so a subscription on the managing account can attribute them to the correct managed account. See [Webhook Events](/webhooks/webhook-events).
+
+5. **Do not attempt to originate transfers from this account.**\
+   Any attempt to use an external address on a transactional account as a transfer source returns `422 compatible_address_not_found`. To pay the individual out to their bank account, see [Off-ramp to a bank account](#off-ramp-to-a-bank-account).
+
+## Off-ramp to a bank account
+
+A transactional individual cannot off-ramp from their own account because it has no internal address. Route the payout through your managing account instead:
+
+1. The individual sends stablecoins from their self-custody wallet to an internal address on your managing account. This can be an omnibus address or a dedicated address per user.
+2. You register the individual's bank account as an external address, under either the managing account or the individual's account.
+3. You submit a stablecoin-to-USD transfer from the managing account's internal address to that bank address. For ACH, pass your managing account as `brand.account_id` so the individual sees your business as the sender.
+
+See [Off-ramp for transactional accounts](/guides/stablecoin-to-fiat-offramp#off-ramp-for-transactional-accounts) for the full walkthrough and request examples. A per-user off-ramp automation is expected in Q1 2027.
+
+## Managed by the API key owner
+
+An individual account created through the API is automatically managed by the account that owns the API key. The managing account's credentials authorize requests scoped to it. These accounts are managed entirely through the API — there is no end-user dashboard for them. See [Custodial Accounts](/guides/custodial-accounts) for the sibling business flow, and [Managed Accounts](/guides/managed-accounts) for an overview of the account models.
+
+## Use an individual account as an Automation brand
+
+A verified individual account, custodial or transactional, can be used as `brand.account_id` on an onramp Automation, subject to applicable program eligibility. In this example, create the Automation under your managing account and pass the individual's account ID as `brand.account_id`. This selects the beneficiary identity without changing which account owns the Automation. When you pass an individual account, `source.funding_instructions.beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
+
+```json Request
+{
+  "name": "Jane Doe Onramp",
+  "source": { "value_type": "USD" },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "brand": { "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL" }
+}
+```
+
+See [Branded Automations](/key-concepts/automations#branded-automations) for the full behavior and business-account example.
+
+## Related API references
+
+- [`POST /accounts`](/api-reference/brale/create-account) — create an individual account.
+- [`GET /accounts/{account_id}`](/api-reference/brale/get-account) — check verification status.
+- [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address) — register a destination address.
+- [`POST /documents`](/api-reference/brale/stage-verification-document) and [Link verification documents](/api-reference/brale/link-verification-documents) — supply KYC documents when requested.
+- [Webhook Events](/webhooks/webhook-events) — `account.verification.completed`, `account.verification.rejected`, `account.verification.documents_required`, and inbound payment events with `data.account_id`.

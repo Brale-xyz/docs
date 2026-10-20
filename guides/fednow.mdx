@@ -1,0 +1,81 @@
+---
+title: "FedNow overview"
+description: "Receive FedNow deposits that mint stablecoins through Automations, and send FedNow payouts from stablecoin balances with Transfers."
+keywords: ["FedNow", "fednow_credit", "instant payments", "onramp", "offramp", "real-time payments"]
+---
+
+FedNow is the Federal Reserve's instant payment service. Brale supports FedNow in two directions, and each direction uses a different API object:
+
+| Direction | What happens | API object | You call |
+| --- | --- | --- | --- |
+| Inbound (onramp) | A payer sends a FedNow credit from their bank to an Automation's virtual account. Brale creates a Transfer and mints stablecoins. | [Automation](/key-concepts/automations) | `POST /accounts/{account_id}/automations` once. No per-deposit API call. |
+| Outbound (offramp) | Brale pays out USD over FedNow from stablecoins held in a Brale internal Address. | [Transfer](/key-concepts/transfers) | `POST /accounts/{account_id}/transfers` for each payout. |
+
+<Note>
+  FedNow is available on Brale accounts where it has been enabled. If a request that uses FedNow is rejected on your account, contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement. Limits and fees follow your Brale agreement.
+</Note>
+
+## Identifiers
+
+FedNow uses different identifiers depending on context. Use the value that matches the field you are setting.
+
+| Context | Field | Value |
+| --- | --- | --- |
+| Transfer rail (requests and responses) | `source.transfer_type` or `destination.transfer_type` | `fednow_credit` |
+| Bank Address capability | `transfer_types`, `additional_transfer_types` | `fednow_credit` |
+| Automation configuration | `source.value_type` | `USD`. Do not set a deposit rail. |
+| Testnet deposit simulator input | `transfer_type` on the simulate request | `fednow` |
+| Transfer list filter | `transfer_type` query parameter | `fednow_credit` |
+
+## Guides
+
+<CardGroup cols={2}>
+  <Card title="Receive FedNow deposits" icon="arrow-down-to-line" href="/guides/fednow-inbound">
+    Share Automation funding instructions, let payers push FedNow credits, and mint stablecoins automatically.
+  </Card>
+  <Card title="Send FedNow payouts" icon="arrow-up-from-line" href="/guides/fednow-outbound">
+    Register or upgrade a recipient bank Address and create a `fednow_credit` Transfer.
+  </Card>
+</CardGroup>
+
+## Lifecycle and timing
+
+- FedNow operates 24 hours a day, 7 days a week, including weekends and holidays. Business-day cut-off times on [Transfer timing](/documentation/platform/transfer-timing) apply to wire and ACH, not to FedNow.
+- FedNow availability does not guarantee instant end-to-end completion. Brale reviews, bank processing, and onchain settlement of the stablecoin leg can add time.
+- HTTP `201 Created` (Transfers, Automations, Addresses) and `202 Accepted` (deposit simulation) mean Brale accepted or created the resource. They do not mean funds have settled.
+- A Transfer's terminal statuses include `complete`, `canceled`, and `failed`. `pending` and `processing` are in progress. The `status` enum also includes `compliance review`, `refunding`, and `refunded`. None of these mean the Transfer is complete.
+- An Automation with `status: active` is ready to receive deposits. That is different from a Transfer with `status: complete` and from the `transfer.completed` webhook event.
+- `payment.completed` reports that Brale received the fiat payment. It does not confirm that the stablecoin mint was delivered. Use the Transfer's `status` or `transfer.completed` for that.
+
+## Safety rules
+
+- **Idempotency.** Send an `Idempotency-Key` on every `POST`. Retry the same logical operation with the same key and the same body. See [Idempotency](/key-concepts/idempotency).
+- **Pending payouts.** Do not submit a replacement payout because a Transfer is `pending` or `processing`. Keep tracking the original Transfer until it reaches a terminal status.
+- **Cancellation.** Brale can cancel a payout only before it submits the payment to FedNow. A `processing` payout cannot be canceled, and a `pending` status does not guarantee that cancellation is still possible.
+- **Returns.** Cancellation is different from a return after settlement. Do not assume a settled payout is refunded automatically.
+- **Rail fallback.** Do not assume Brale moves a FedNow payout to another rail. Read `destination.transfer_type` on the Transfer. When `payment_details.original_transfer_type`, `fallback_reason`, `fallback_reason_code`, or `fallback_at` are present, the payment was sent on a different rail than requested.
+- **Metadata.** Wire-only fields such as `wire_memo` and `payment_details.imad` do not apply to FedNow. Read only the `payment_details` fields that are present on the response.
+
+## FedNow errors
+
+Brale returns FedNow validation errors with the standard error envelope (`type`, `detail`, `status`).
+
+| Status | `type` | Meaning | What to do |
+| --- | --- | --- | --- |
+| `422` | `fednow_routing_number_not_supported` | The recipient's routing number does not participate in FedNow. | Do not retry the same request. Use another rail or another FedNow-participating account. |
+| `422` | `fednow_provider_registration_failed` | Brale could not register the recipient for FedNow. This can be temporary. | Retry the same request with the same `Idempotency-Key` and body after a backoff. If it keeps failing, contact support. |
+
+```json Response (422)
+{
+  "type": "fednow_routing_number_not_supported",
+  "detail": "The routing number does not support FedNow.",
+  "status": 422
+}
+```
+
+For timeouts, `429`, and `5xx` responses, retry with the same `Idempotency-Key` and body using exponential backoff.
+
+## Testing
+
+- **Inbound:** On testnet, [simulate a FedNow deposit](/guides/fednow-inbound#test-on-testnet) into an Automation with `transfer_type: "fednow"`. Simulated funding does not move real money.
+- **Outbound:** Testnet does not send real FedNow payouts. See [Test outbound payouts](/guides/fednow-outbound#test-outbound-payouts).

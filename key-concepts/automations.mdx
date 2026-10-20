@@ -6,16 +6,24 @@ description: "Configure automatic onramps, offramps, and swaps that trigger when
 ## Common Automation Flows
 
 - **Fiat to Stablecoin (Onramp)** - Automatically mints stablecoins when a fiat deposit is received.
-- **Stablecoin to Fiat (Offramp)** - Automatically converts stablecoins to fiat and withdraws to a bank account. _(Coming Q3 2026)_
+- **Stablecoin to Fiat (Offramp)** - Automatically converts stablecoins to fiat and withdraws to a bank account. _(Coming Q1 2027)_
 - **Stablecoin to Stablecoin (Swap)** - Automatically swaps one stablecoin for another. _(Coming Q3 2026)_
 
 <Tip>
   Automations can also be created in the Brale Dashboard on the Automations tab.
 </Tip>
 
+<Note>
+  A USD Automation mints a Brale-issued stablecoin, such as `SBC`, to its destination. Set `destination.value_type` to a Brale-issued stablecoin. USDC is not a supported Automation destination, so a direct USD → USDC Automation is not available. To deliver USDC, see [Onramp to USDC](#onramp-to-usdc).
+</Note>
+
+<Warning>
+Automations on a transactional account (`account_type: transactional`) may only target external destinations. A Brale-custodied destination is rejected. See [Account types](/key-concepts/account-types), [Transactional Accounts](/guides/transactional-accounts), and [Individual accounts](/guides/individual-accounts).
+</Warning>
+
 ## Onramp Automation with Virtual Accounts
 
-Automations provide a unique account number and routing number for wire transfers and ACH deposits. When funds are received, stablecoins are automatically minted to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in a customer's wallet.
+Automations provide a unique account number and routing number for wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled). When funds are received, stablecoins are automatically minted to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in a customer's wallet.
 
 Here’s what happens end-to-end when you use an onramp automation:
 
@@ -24,7 +32,7 @@ Here’s what happens end-to-end when you use an onramp automation:
 2. **Virtual account is provisioned**\
    Brale provisions a virtual account and populates `source.funding_instructions` with bank details (routing number, account number, bank name, beneficiary).
 3. **Customer sends funds**\
-   You share those bank details with your customer. They send a wire or ACH to the virtual account - no additional API call is required.
+   You share those bank details with your customer. They send a wire, ACH, or FedNow payment to the virtual account. No additional API call is required. See [Receive FedNow deposits](/guides/fednow-inbound).
 4. **Stablecoins are minted automatically**\
    When funds arrive, Brale automatically creates a `Transfer` (USD → stablecoin), mints the stablecoin, and sends it to the `destination.address_id` configured on the automation.
 5. **Track activity via Transfers**\
@@ -45,19 +53,21 @@ Create an automation to receive USD and automatically mint SBC to a Solana walle
     "value_type": "USD"
   },
   "destination": {
-    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "address_id": "35LWXNTO2jem13nXCLyciFdi162",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   }
 }
 ```
 
-Automations are opened in a pending state and automatically transition into processing. Once virtual accounts are created and the automation is ready to use, it will transition to a completed status.
+Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automation is not tied to one deposit rail. Its virtual account accepts the inbound rails enabled for it, and responses may return `source.transfer_type: null`. The resulting Transfer records the rail that was actually used in `source.transfer_type`, such as `wire`, `ach_credit`, or `fednow_credit`. Existing USD Automations are expected to accept FedNow without recreation when FedNow is enabled.
+
+Automations are created in a `pending` state. Once virtual accounts are created and the automation is ready to use, it transitions to `active`. An `active` Automation is ready to receive deposits. It is not the same as a Transfer reaching `complete`.
 
 ```json Response
 {
   "id": "35kVg1llbsOBYvx9XKr9eOtsD9z",
-  "name": "Customer ABC Automation",
+  "name": "XYZ Onramp",
   "status": "pending",
   "source": {
     "transfer_type": null,
@@ -66,7 +76,7 @@ Automations are opened in a pending state and automatically transition into proc
   "destination": {
     "transfer_type": "solana",
     "address_id": "35LWXNTO2jem13nXCLyciFdi162",
-    "value_type": "ARB"
+    "value_type": "SBC"
   },
   "updated_at": "2025-11-20T15:56:03.531196Z",
   "created_at": "2025-11-20T15:56:03.531196Z"
@@ -75,36 +85,141 @@ Automations are opened in a pending state and automatically transition into proc
 
 When an automation becomes active, the `source.funding_instructions` object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
 
-## Branded Automations
+## Onramp to USDC
 
-Branded Automations let you control the beneficiary name shown on funding instructions for a virtual account.
+To turn a USD deposit into USDC, combine an Automation with a separate swap Transfer:
 
-With Branded Automations, you can control which business name appears on funding instructions by adding a `brand` object to the create request:
+1. **Mint a Brale-issued stablecoin with an Automation**\
+   Create a USD Automation with a Brale-issued stablecoin destination, such as `SBC` on `solana`. See [Creating an Automation](#creating-an-automation). Share the Automation's `source.funding_instructions` with the sender.
+2. **Swap to USDC with a Transfer**\
+   After the mint Transfer reaches `complete`, create a [stablecoin-to-stablecoin swap](/guides/stablecoin-to-stablecoin-swap) Transfer from `SBC` to `USDC`. Brale swaps Brale-issued stablecoins and USDC 1:1 without slippage. Set `destination.address_id` to the wallet that should receive the USDC, such as your customer's external address.
 
-| Field   | Where | Type   | Description                                                                                                                                                                     |
-| :------ | :---- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account whose business name and address will appear as the beneficiary on wire and ACH funding instructions. |
+**POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
 
 ```json Request
+{
+  "amount": {
+    "value": "100",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "35LWXNTO2jem13nXCLyciFdi162",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "destination": {
+    "address_id": "2VcUIjvaXjMUVAWLT8R9LzEUDed",
+    "value_type": "USDC",
+    "transfer_type": "solana"
+  }
+}
+```
+
+The swap is not part of the Automation. You create one swap Transfer for each amount you want to convert.
+
+<Note>
+  Funding instructions belong to the Automation, not to a token. Find them in `source.funding_instructions` from [Retrieve an Automation](#retrieve-an-automation), or on the Automation in the Brale Dashboard Automations tab. The USDC token view in the Dashboard does not show Automations or funding instructions.
+</Note>
+
+## Branded Automations
+
+Branded Automations let you select the verified identity (business or individual) shown as the beneficiary on funding instructions for a virtual account.
+
+Both custodial and transactional accounts can be used as `brand.account_id`, subject to applicable verification and program eligibility.
+
+| Brand account            | Beneficiary shown on funding instructions |
+| :----------------------- | :---------------------------------------- |
+| Individual transactional | Individual's legal name and address       |
+| Individual custodial     | Individual's legal name and address       |
+| Business transactional   | Business's verified name and address      |
+| Business custodial       | Business's verified name and address      |
+
+Add a `brand` object to the create request to control which account name appears on funding instructions:
+
+| Field   | Where | Type   | Description                                                                                                                                                                                                                                                                                       |
+| :------ | :---- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` — your own account or a managed account (business or individual) whose verified identity will appear as the beneficiary on wire and ACH funding instructions. |
+
+Behavior:
+
+- If `brand` is omitted, the beneficiary on funding instructions remains Brale.
+- If `brand.account_id` references a business account, `beneficiary_name` and `beneficiary_address` show the business name and address.
+- If `brand.account_id` references an individual account, `beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
+- The account in `/accounts/{account_id}/automations` owns the Automation. `brand.account_id` selects the beneficiary identity, and `destination.address_id` selects the wallet receiving minted stablecoins. Branding does not change ownership, custody, or destination restrictions. Automations owned by transactional accounts must still target external destinations.
+
+```json Request (business brand)
 {
   "name": "XYZ Onramp",
   "source": { "value_type": "USD" },
   "destination": {
     "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
     "value_type": "SBC",
-    "transfer_type": "Solana"
+    "transfer_type": "solana"
   },
-  "brand": { "account_id": "<ACCOUNT_ID>" }
+  "brand": { "account_id": "<BUSINESS_ACCOUNT_ID>" }
 }
 ```
 
-When the automation becomes active, `beneficiary_name` in `source.funding_instructions` will reflect that account’s business name.
+```json Request (individual brand)
+{
+  "name": "Jane Doe Onramp",
+  "source": { "value_type": "USD" },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "brand": { "account_id": "<INDIVIDUAL_ACCOUNT_ID>" }
+}
+```
+
+When the automation becomes active, `beneficiary_name` and `beneficiary_address` in `source.funding_instructions` reflect that account's verified identity — the business name and address for a business account, or the individual's legal name and address for an individual account. See [Individual accounts](/guides/individual-accounts) for how to create an individual account whose identity can be used as a brand.
+
+<Note>
+  With testnet credentials, you can create branded Automations using a business or individual account you have access to, without completing mainnet KYB/KYC or enabling that account for mainnet. Testnet funding instructions contain placeholder banking details and cannot receive real deposits. See [Simulate a testnet deposit](#simulate-a-testnet-deposit) to fund one. Mainnet verification requirements are unchanged.
+</Note>
 
 ## Testnet Behavior
 
 <Note>
-  Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. Deposits sent to these coordinates will not be processed, and no actual funds movement occurs.
+  Automations created on testnet deployments are fully functional for testing purposes, but no real banking account is provisioned. Instead of live banking coordinates, Brale returns placeholder account details in `source.funding_instructions`. These placeholder coordinates cannot receive real deposits, and no actual funds movement occurs.
+
+  For both branded and unbranded testnet Automations, `source.funding_instructions.account_number` contains the Automation's alphanumeric ID as a placeholder, not a numeric bank account number. This is expected.
 </Note>
+
+### Simulate a testnet deposit
+
+To fund a testnet Automation, call [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Brale creates a simulated inbound ACH, wire, or FedNow payment and runs the normal Automation mint path. Brale does not contact a bank, and no real fiat moves.
+
+Requirements:
+
+- Testnet API credentials with the `automations:write` and `network:testnet` scopes
+- An Automation with `status: "active"`
+- An Automation destination on a testnet chain, such as `base_sepolia` or `solana_devnet`
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/simulations/deposits`
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/automations/${AUTOMATION_ID}/simulations/deposits" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: $(uuidgen)" \
+  --data '{
+    "amount": { "value": "10.00", "currency": "USD" },
+    "transfer_type": "wire"
+  }'
+```
+
+`transfer_type` accepts `ach`, `wire`, or `fednow`. These are simulator inputs, not Transfer rail identifiers. A `fednow` simulation produces a Transfer with `source.transfer_type: "fednow_credit"`. Brale returns `202 Accepted` with the resulting [Transfer](/key-concepts/transfers), including `automation_id`. `202` means the simulated deposit was accepted, not that the mint is complete.
+
+After the simulated payment completes:
+
+- Brale emits the normal `payment.completed` [webhook event](/webhooks/webhook-events).
+- Brale mints the stablecoin to the Automation's testnet destination.
+- The Transfer moves through the normal statuses. Fetch it with `GET /accounts/{account_id}/transfers/{transfer_id}` and read `destination.transaction_id` for the testnet mint.
+
+Use a new `Idempotency-Key` for each new simulated deposit. Retrying with the same key and body returns the original response without creating another payment, Transfer, or mint. See [Idempotency](/key-concepts/idempotency).
 
 ## Listing Automations for a Customer
 

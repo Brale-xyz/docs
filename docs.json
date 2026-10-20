@@ -65,6 +65,8 @@
           {
             "group": "Coverage",
             "pages": [
+              "coverage/account-availability",
+              "coverage/prohibited-businesses",
               "coverage/transfer-types",
               "coverage/value-types"
             ]
@@ -86,13 +88,6 @@
             "group": "Calculators",
             "pages": [
               "tools/calculators/stablecoin-calculators"
-            ]
-          },
-          {
-            "group": "IO",
-            "hidden": true,
-            "pages": [
-              "io/introduction"
             ]
           },
           {
@@ -122,6 +117,7 @@
               "key-concepts/authentication",
               "key-concepts/transfers",
               "key-concepts/accounts",
+              "key-concepts/account-types",
               "key-concepts/addresses",
               "key-concepts/external-bank-addresses",
               "key-concepts/automations",
@@ -160,11 +156,27 @@
               "guides/ach-on-ramp",
               "guides/fiat-to-stablecoin-onramp",
               "guides/stablecoin-to-fiat-offramp",
+              {
+                "group": "FedNow",
+                "pages": [
+                  "guides/fednow",
+                  "guides/fednow-inbound",
+                  "guides/fednow-outbound"
+                ]
+              },
               "guides/stablecoin-to-stablecoin-swap",
               "guides/stablecoin-issuance",
               "guides/stablecoin-payouts",
               "guides/2nd-and-3rd-party-transfers",
-              "guides/managed-accounts",
+              {
+                "group": "Managed Accounts",
+                "pages": [
+                  "guides/managed-accounts",
+                  "guides/custodial-accounts",
+                  "guides/transactional-accounts",
+                  "guides/individual-accounts"
+                ]
+              },
               "guides/self-custody-wallets",
               "guides/canton-token-standard",
               "guides/tokenization",
@@ -217,7 +229,8 @@
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
               "api-reference/brale/get-automations",
-              "api-reference/brale/archive-automation"
+              "api-reference/brale/archive-automation",
+              "api-reference/brale/simulate-automation-deposit"
             ]
           },
           {
@@ -248,6 +261,20 @@
               "api-reference/brale/update-webhook-subscription",
               "api-reference/brale/archive-webhook-subscription",
               "api-reference/brale/list-webhook-delivery-attempts"
+            ]
+          },
+          {
+            "group": "Tokenization",
+            "pages": [
+              "api-reference/brale/create-token-mint",
+              "api-reference/brale/list-token-mints",
+              "api-reference/brale/get-token-mint",
+              "api-reference/brale/create-token-burn",
+              "api-reference/brale/list-token-burns",
+              "api-reference/brale/get-token-burn",
+              "api-reference/brale/create-token-transfer",
+              "api-reference/brale/list-token-transfers",
+              "api-reference/brale/get-token-transfer"
             ]
           }
         ]

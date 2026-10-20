@@ -141,7 +141,7 @@ Persist the returned id as the user’s Brale address\_id. This is the reference
 - If the same address format is valid across multiple networks (for example, EVM chains), include all relevant onchain transfer\_types in a single call.
 - If the address format differs by chain (for example, non-EVM), create separate external Addresses.
 
-**Note:** Balance queries are only supported for type=internal (Brale-custodied) addresses. External addresses do not expose a Brale balance endpoint. Read balances directly from the chain.
+**Note:** Balance queries are supported for internal custodial addresses and Plaid-linked bank addresses. Other external addresses—including self-custody wallets and bank addresses created through Direct bank entry—do not expose balances through Brale. Read self-custody wallet balances directly from the chain.
 
 ## **Onramp: send stablecoins to the Turnkey wallet**
 

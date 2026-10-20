@@ -42,6 +42,7 @@ During KYB review, Brale may request additional documents. Subscribe to `account
 | `400`  | `doc_submission_ids` is empty or missing.                      |
 | `404`  | Account not found.                                             |
 | `422`  | Document upload not allowed for this account's current state.  |
+| `422`  | `document_not_required`: a staged document is not one the account currently requires. `other` and, for a business, `aml_program` are accepted at any time. |
 
 ## Verification webhooks
 
@@ -51,6 +52,7 @@ Subscribe to verification events so your integration is notified when documents 
 | --- | --- |
 | `account.verification.documents_required` | Brale's KYB review determines one or more documents must be uploaded. |
 | `account.verification.completed` | Account verification passes and the account is enabled (`status` becomes `complete`). |
+| `account.verification.rejected` | Account verification is declined (`status` becomes `rejected`). Terminal: uploading more documents does not reopen it. |
 
 **Typical reactive flow** (documents requested after initial submission):
 

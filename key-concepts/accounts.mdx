@@ -1,19 +1,59 @@
 ---
 title: "Accounts"
-description: "Accounts represent KYB-verified business entities with `account_id` values used to scope API requests and manage custodial wallets."
+description: "Accounts represent verified entities identified by `account_id`: KYB-verified businesses and KYC-verified individuals, each custodial or transactional."
 ---
 
-Accounts are represented by `account_id` values, which are assigned to KYB'd (business) entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients.
+Accounts are represented by `account_id` values, which are assigned to verified entities. If you have an API Key and Secret, your application has its own `account_id`. You can also create additional `account_id` values for your business clients or for individual end users. See [Managed Accounts](/guides/managed-accounts) for how your platform creates and operates accounts for its customers.
 
-Each `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
+Four shapes are supported:
+
+- **Business, custodial (KYB)** — the existing behavior. The account holds one or more Brale-custodied (`type=internal`) on-chain wallets, can originate transfers, and can hold off-chain bank Addresses.
+- **Business, transactional (KYB)** — a KYB-verified business that is non-custodial. It has no internal Brale wallet and no stored balance at Brale, and it registers external, self-custody destination addresses.
+- **Individual, custodial (KYC)** — a natural person verified with KYC whose account receives Brale-custodied (`type=internal`) wallets. The request shape is identical to the individual transactional path; only `account_type` differs. See [Individual accounts](/guides/individual-accounts).
+- **Individual, transactional (KYC)** — a natural person verified with KYC. The account holds no custody at Brale, cannot originate on-chain transfers, and only receives value through external destination addresses. See [Individual accounts](/guides/individual-accounts).
+
+Geographic eligibility for each shape is defined in [Account availability](/coverage/account-availability), the canonical page for U.S. state rules and the approved country list for transactional accounts. Brale does not onboard the business types listed in [Prohibited businesses](/coverage/prohibited-businesses), for either custodial or transactional accounts.
+
+Which shape you get is controlled by three optional dimension fields on `POST /accounts`. Omitting them all preserves today's business/KYB behavior. See [Account types](/key-concepts/account-types) for the full matrix.
+
+Each custodial `account_id` is associated with one or more custodial (`type=internal`) onchain wallets, which are represented by `address_id` values. Off-chain bank accounts are also represented as Addresses (using `address_id`). Transactional accounts (business or individual) have no internal addresses. The legacy `financial_institution_id` is deprecated — new integrations should use `address_id` and the [Addresses](/key-concepts/addresses) resource instead.
 
 The `account_id` is used in the request URL across many Brale API endpoints to scope the request to a specific application or client.
 
-To KYB and approve an account, we collect key details such as business name and EIN. For more information, see our Compliance Requirements. If additional details are required, we will notify you with the necessary steps to complete KYB.
+To KYB and approve a business account, we collect key details such as business name and EIN. To KYC an individual account, we collect the person's legal name, date of birth, address, and government identifier. For more information, see our Compliance Requirements. If additional details are required, Brale will notify you with the steps to complete verification.
 
-<Tip>Customers can also self onboard at https://app.brale.xyz/signup.</Tip>
+<Tip>Business customers can also self onboard at https://app.brale.xyz/signup. Individual accounts are managed entirely through the API — there is no end-user dashboard for them.</Tip>
 
-## Creating an account
+## Account dimensions
+
+`POST /accounts` accepts three optional discriminator fields:
+
+| Field | Values | Default when omitted |
+| --- | --- | --- |
+| `entity_type` | `business`, `individual` | `business` |
+| `account_type` | `custodial`, `transactional` | `custodial` |
+| `verification_mode` | `standard`, `reliance` | `standard` |
+
+Supported combinations:
+
+| `entity_type` | `account_type` | `verification_mode` | Verification |
+| --- | --- | --- | --- |
+| `business` | `custodial` | `standard` or `reliance` | KYB (default when all three fields are omitted) |
+| `business` | `transactional` | `standard` or `reliance` | KYB |
+| `individual` | `custodial` | `standard` or `reliance` | KYC |
+| `individual` | `transactional` | `standard` or `reliance` | KYC |
+
+`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
+
+An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
+
+<Note>
+Omitting all three dimension fields produces exactly today's behavior. Existing integrations that create business accounts do not need to change.
+</Note>
+
+For a fuller discussion of when to choose each combination, see [Account types](/key-concepts/account-types). For where each combination is available, see [Account availability](/coverage/account-availability).
+
+## Creating a business account
 
 You are required to pass in business information, controller information, and ultimate beneficial owner information.
 
@@ -28,7 +68,7 @@ You are required to pass in business information, controller information, and ul
     "street_line_2": "Apt C",
     "city": "Des Moines",
     "state": "IA",
-    "zip": "12345"
+    "zip": "50309"
   },
   "phone_number": "2134678902",
   "email": "mark@example.com",
@@ -80,7 +120,7 @@ You are required to pass in business information, controller information, and ul
 
 Partners must show the exact Brale End-User Agreement (EUA) to their end users before calling `POST` `/accounts` and capture consent. The most recent version is hosted at https://brale.xyz/legal/end-user-agreement.
 
-## Accounts - Required vs. Optional Fields
+### Business account — Required vs. Optional Fields
 
 | Field                            | Type   | Required | Description                                                                                                                                                                                       |
 | -------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -90,11 +130,350 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | `business.address.street_line_1` | string | Yes      |                                                                                                                                                                                                   |
 | `business.address.street_line_2` | string | No       | Apt / Suite / Floor.                                                                                                                                                                              |
 | `business.address.city`          | string | Yes      |                                                                                                                                                                                                   |
-| `business.address.state`         | string | Yes      | Abbreviated format (NY, FL)                                                                                                                                                                       |
-| `business.address.zip`           | string | Yes      |                                                                                                                                                                                                   |
-| `business_controller`            | object | Yes      | One natural person who exercises control. API accepts U.S.-based controllers only; email [support@brale.xyz](mailto:support@brale.xyz) if your controller is non-U.S. and we'll process manually. |
-| `beneficial_owners`              | array  | Yes      | Individual with ≥25% ownership                                                                                                                                                                    |
+| `business.address.state`         | string | US only  | Required when the business's country is `US` or omitted, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, `PR`). Optional and free-form for a non-US business. |
+| `business.address.zip`           | string | Yes      | Postal code. Any format is accepted.                                                                                                                                                              |
+| `business.address.country`       | string | No       | ISO 3166-1 alpha-2 country code of the business. Defaults to `US` when omitted. A non-US business can be created as a transactional account, or as a custodial account if it is regulated and sends `regulatory_profile`; see [Creating a non-US business account](#creating-a-non-us-business-account). |
+| `business_controller`            | object | Yes      | One natural person who exercises control. Controllers outside the US are supported; see [Non-US controllers and beneficial owners](#non-us-controllers-and-beneficial-owners).                     |
+| `beneficial_owners`              | array  | Yes      | Individuals with ≥25% ownership. Owners outside the US are supported on the same terms as the controller.                                                                                          |
+| `regulatory_profile`             | object | No       | Regulated businesses only, for example money services businesses (MSBs) and virtual asset service providers (VASPs). Sending it declares the business regulated; omitting it means the business is not regulated. Required for a non-US custodial business; see [Creating a regulated non-US custodial business account](#creating-a-regulated-non-us-custodial-business-account). |
+| `regulatory_profile.regulator`   | string | When `regulatory_profile` is sent | The authority the business is licensed or registered with, for example `FINTRAC`. Must be non-blank, otherwise the request returns `400 regulator_required`. |
+| `regulatory_profile.license_number` | string | When `regulatory_profile` is sent | The license or registration number that regulator issued. Must be non-blank, otherwise the request returns `400 license_number_required`. |
 | `tos_attestation`                | object | Yes      |                                                                                                                                                                                                   |
+
+### Non-US controllers and beneficial owners
+
+A controller or beneficial owner outside the US is created through the same `POST /accounts` call. Only the fields that depend on where the person lives change:
+
+| Field | US party | Party outside the US |
+| --- | --- | --- |
+| `address.country` | `US`, or omitted | ISO 3166-1 code or country name, e.g. `CO` |
+| `address.state` | Required, must be a US state abbreviation | Optional and free-form; omit it for countries with no state or province |
+| `address.zip` | `#####` or `#####-####` | Any format |
+| `ssn` | Required, `###-##-####` | Not accepted |
+| `identity` | Optional, for a document other than an SSN | Required: the number and the document type |
+| `phone_number` | US number | Parsed against `address.country`, so a national-format number is accepted |
+
+`ssn` and `identity` are mutually exclusive and exactly one is required. Sending `ssn` for a party outside the US returns `400`, because an SSN has no meaning there. Use the [identity type](#identity-types) that matches the document.
+
+The business address follows its own `address.country`. For a business outside the US, see [Creating a non-US business account](#creating-a-non-us-business-account).
+
+```json Request
+{
+  "business_name": "ABC Company Inc",
+  "ein": "12-3456789",
+  "address": {
+    "street_line_1": "123 Main St",
+    "city": "Des Moines",
+    "state": "IA",
+    "zip": "50309"
+  },
+  "phone_number": "2134678902",
+  "email": "mark@example.com",
+  "website": "https://abccompany.com",
+  "business_controller": {
+    "first_name": "Ana",
+    "last_name": "Gomez",
+    "dob": "1985-01-15",
+    "email": "ana@abccompany.com",
+    "phone_number": "3001234567",
+    "ownership_percentage": "40",
+    "identity": {
+      "number": "1020304050",
+      "type": "NATIONAL_ID"
+    },
+    "address": {
+      "street_line_1": "Calle 93 #11-27",
+      "street_line_2": "Oficina 402",
+      "city": "Bogota",
+      "state": "Cundinamarca",
+      "zip": "110221",
+      "country": "CO"
+    }
+  },
+  "beneficial_owners": [
+    {
+      "first_name": "Wei",
+      "last_name": "Chen",
+      "dob": "1979-04-02",
+      "email": "wei@abccompany.com",
+      "phone_number": "+6591234567",
+      "ownership_percentage": "35",
+      "identity": {
+        "number": "S1234567D",
+        "type": "NATIONAL_ID"
+      },
+      "address": {
+        "street_line_1": "1 Raffles Place",
+        "city": "Singapore",
+        "zip": "048616",
+        "country": "SG"
+      }
+    }
+  ],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+The Singaporean owner above omits `state` entirely, which is what to do for a country with no subdivision to give.
+
+Owners and controllers can be mixed: a US controller sending `ssn` alongside an owner outside the US sending `identity` is a valid request.
+
+### Creating a non-US business account
+
+A business in an approved country outside the US can be created as a transactional account. A regulated business in an approved country can also be created as a custodial account by sending a `regulatory_profile`; see [Creating a regulated non-US custodial business account](#creating-a-regulated-non-us-custodial-business-account). See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. A non-US business without a `regulatory_profile` sent with `account_type: "custodial"` or with `account_type` omitted returns `422 unsupported_jurisdiction`.
+
+For a transactional account, send the same business payload with these changes:
+
+- `entity_type`: `"business"`
+- `account_type`: `"transactional"`
+- `address.country`: the business's ISO 3166-1 alpha-2 country code, for example `GB`
+- `address.state`: optional and free-form (a state, province, or region)
+- `address.zip`: any postal-code format
+- `ein`: required. This is the existing business identifier field, sent the same way as for a US business
+
+```json Request
+{
+  "entity_type": "business",
+  "account_type": "transactional",
+  "business_name": "Example Trading Ltd",
+  "ein": "12345678",
+  "address": {
+    "street_line_1": "10 Example Street",
+    "city": "London",
+    "zip": "EC1A 1BB",
+    "country": "GB"
+  },
+  "phone_number": "+442071234567",
+  "email": "ops@example.co.uk",
+  "website": "https://example.co.uk",
+  "business_controller": {
+    "first_name": "Oliver",
+    "last_name": "Smith",
+    "dob": "1985-03-14",
+    "email": "oliver@example.co.uk",
+    "phone_number": "+447700900123",
+    "identity": {
+      "number": "123456789",
+      "type": "PASSPORT"
+    },
+    "address": {
+      "street_line_1": "10 Example Street",
+      "city": "London",
+      "zip": "EC1A 1BB",
+      "country": "GB"
+    }
+  },
+  "beneficial_owners": [],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+#### Creating a regulated non-US custodial business account
+
+A regulated business (for example, an MSB or a VASP) in one of the [approved countries](/coverage/account-availability#approved-countries-131) can be created as a business custodial account. Send the same payload as the transactional example above with these changes:
+
+- `account_type`: `"custodial"`, or omit it
+- `regulatory_profile.regulator`: the authority the business is licensed or registered with
+- `regulatory_profile.license_number`: the license or registration number that regulator issued
+- `verification_mode`: `"standard"`, or `"reliance"` if Brale has enabled reliance for your managing account
+
+Both `regulatory_profile` fields are required when the object is sent. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence listed under [Required documents for a regulated non-US business](#required-documents-for-a-regulated-non-us-business). A regulated business outside the approved countries returns `422 unsupported_jurisdiction`.
+
+```json Request
+{
+  "entity_type": "business",
+  "account_type": "custodial",
+  "verification_mode": "standard",
+  "business_name": "Example Payments Inc",
+  "ein": "123456789",
+  "address": {
+    "street_line_1": "100 King Street West",
+    "city": "Toronto",
+    "state": "ON",
+    "zip": "M5X 1A9",
+    "country": "CA"
+  },
+  "phone_number": "+14165550123",
+  "email": "ops@example.ca",
+  "website": "https://example.ca",
+  "regulatory_profile": {
+    "regulator": "FINTRAC",
+    "license_number": "M12345678"
+  },
+  "business_controller": {
+    "first_name": "Emma",
+    "last_name": "Tremblay",
+    "dob": "1984-06-21",
+    "email": "emma@example.ca",
+    "phone_number": "+14165550188",
+    "identity": {
+      "number": "AB123456",
+      "type": "PASSPORT"
+    },
+    "address": {
+      "street_line_1": "100 King Street West",
+      "city": "Toronto",
+      "state": "ON",
+      "zip": "M5X 1A9",
+      "country": "CA"
+    }
+  },
+  "beneficial_owners": [],
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+##### Required documents for a regulated non-US business
+
+Brale requires these documents from every regulated non-US custodial business created with `verification_mode: "standard"`. [Stage them](/api-reference/brale/stage-verification-document) and pass the IDs in `doc_submission_ids` on `POST /accounts`, or [link them](/api-reference/brale/link-verification-documents) after the account is created. Until each one is uploaded, [List Verification Documents](/api-reference/brale/list-verification-documents) shows it as `pending_upload`.
+
+| `document_kind` | Document |
+| --- | --- |
+| `regulatory_license` | Proof of the business's license or registration with the regulator named in `regulatory_profile` |
+| `entity_registration` | The business's registration with its company or corporate registry |
+| `articles_of_incorporation` | Formation documents: articles of incorporation or organization, or the equivalent in the business's country |
+| `certificate_of_good_standing` | Certificate of good standing, or the equivalent issued in the business's country |
+
+An EIN letter is not requested from a business outside the US.
+
+Also send the business's most recent independent AML assessment as `aml_program`. If no independent assessment is available, send the full AML program instead. `aml_program` is reviewed with the rest of the application but is not a required document, so it never appears in the required documents list. It can be sent at account creation or linked later.
+
+## Creating an individual account
+
+On the individual path, set `entity_type` to `individual` and `account_type` to `custodial` or `transactional`. The request shape is identical for both account types. The `individual` object and `tos_attestation` are required. Business-only fields (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`) must not be sent — they are rejected with `400 unexpected_business_fields`.
+
+A custodial individual account receives Brale-custodied (`type=internal`) wallets. A transactional individual account is non-custodial: it receives no custodial wallets and cannot create custodial addresses. Custodial individual accounts are U.S.-only and available in a narrower set of states than business custodial accounts — see [Account availability](/coverage/account-availability).
+
+**POST** `https://api.brale.xyz/accounts`
+
+```json Request
+{
+  "entity_type": "individual",
+  "account_type": "transactional",
+  "verification_mode": "standard",
+  "individual": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "date_of_birth": "1990-01-01",
+    "email": "jane@example.com",
+    "phone_number": "2125550182",
+    "country": "US",
+    "address": {
+      "street_line_1": "123 Main St",
+      "street_line_2": "Apt 4",
+      "city": "Des Moines",
+      "state": "IA",
+      "zip": "50309"
+    },
+    "identity": {
+      "number": "222-22-2222",
+      "type": "SSN9"
+    }
+  },
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z",
+    "ip": "203.0.113.42",
+    "user_agent": "Mozilla/5.0 ..."
+  }
+}
+```
+
+The created account's `name` is derived from the individual's first and last name.
+
+### Individual account — Required vs. Optional Fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `entity_type` | string | Yes (for this path) | Must be `individual`. |
+| `account_type` | string | Yes (for this path) | `custodial` or `transactional`. |
+| `verification_mode` | string | No | `standard` (default) or `reliance`. Reliance is enabled per managing account by Brale and is not self-serve. |
+| `individual.first_name` | string | Yes | Legal first name. |
+| `individual.last_name` | string | Yes | Legal last name. |
+| `individual.date_of_birth` | string | Yes | ISO date, `YYYY-MM-DD`. |
+| `individual.email` | string | Yes | Contact email for the individual. |
+| `individual.phone_number` | string | Yes | Accepts common formats (digits only, dashed, with country code). |
+| `individual.country` | string | Yes | Top-level jurisdiction used for verification. Separate from `individual.address`. When `US` or `USA`, `individual.address.state` must be a valid US state or territory. |
+| `individual.address.street_line_1` | string | Yes | |
+| `individual.address.street_line_2` | string | No | Apt / Suite / Floor. |
+| `individual.address.city` | string | Yes | |
+| `individual.address.state` | string | US only | Required when `individual.country` is `US` or `USA`, and must be a US state or territory, as an abbreviation or full name (`CA`, `California`, and `PR` all work). Otherwise the request returns `422 invalid_us_state`. A US territory is a US jurisdiction, not a separate country: send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`). Optional for non-US individuals, since many countries have no state or province; free-form and not validated when supplied. A blank value is treated as absent. |
+| `individual.address.zip` | string | Yes | Postal code. Any format is accepted, so non-US postal codes are supported. |
+| `individual.address.country` | string | No | Optional. The verification jurisdiction comes from the top-level `individual.country`, not from this field. |
+| `individual.identity.number` | string | Yes | The government identifier value. For US individuals with `type: SSN9`, the 9-digit Social Security number. |
+| `individual.identity.type` | string | Yes | The kind of identifier submitted. One of the values in [Identity types](#identity-types) below. |
+| `tos_attestation` | object | Yes | Consent record. See [Presenting the Brale End-User Agreement](#presenting-the-brale-end-user-agreement). |
+| `doc_submission_ids` | array of strings (KSUID) | No | Optional pre-staged verification documents. Works the same way it does for business accounts. |
+
+### Identity types
+
+One identity is submitted per person. Use `SSN9` for a US taxpayer, or the matching document type for someone outside the US. The same values apply wherever an `identity` object is accepted: an individual account, and a business controller or beneficial owner.
+
+| Region | Accepted `identity.type` values |
+| --- | --- |
+| United States | `SSN9`, `SSN4`, `DRIVER_LICENSE`, `TAX_ID`, `ALIEN_CARD` |
+| International | `PASSPORT`, `NATIONAL_ID`, `VOTER_ID`, `RESIDENT_ID`, `DRIVER_LICENSE` |
+| Nigeria | `BVN`, `NIN`, `NIN_SLIP` |
+| Ghana | `GHANA_CARD_NUMBER`, `SSNIT` |
+| Kenya | `KENYA_KRA_PIN` |
+| Colombia | `COLOMBIA_PPT` |
+
+The region column is guidance on which value to send, not a separate validation: any value in this list is accepted. Jurisdiction comes from the country on the person, `individual.country` for an individual account and `address.country` for a controlling party.
+
+### Creating a non-US individual account
+
+Non-US individuals in approved countries are supported. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. `individual.address.state` is optional and free-form, and the postal code accepts any format, so only the identity type and country change. Omit `state` for countries that have no state or province:
+
+```json Request
+{
+  "entity_type": "individual",
+  "account_type": "transactional",
+  "individual": {
+    "first_name": "Amara",
+    "last_name": "Okafor",
+    "date_of_birth": "1988-07-22",
+    "email": "amara@example.com",
+    "phone_number": "+2348012345678",
+    "country": "NG",
+    "address": {
+      "street_line_1": "12 Awolowo Road",
+      "city": "Lagos",
+      "state": "Lagos",
+      "zip": "101233"
+    },
+    "identity": {
+      "number": "22222222222",
+      "type": "BVN"
+    }
+  },
+  "tos_attestation": {
+    "version": "2025-04-01",
+    "accepted_at": "2026-05-13T20:45:15Z"
+  }
+}
+```
+
+### What a transactional account cannot do
+
+<Warning>
+Transactional accounts are inbound by design. The following constraints are enforced, not conventional:
+
+- **No Brale-custodied wallets, ever.** A transactional account has no automatic custodial wallet at creation and cannot hold internal (`type=internal`) addresses.
+- **External addresses are destination-only.** An external address on a transactional account can receive value but cannot be the source of a transfer.
+- **The account cannot originate an on-chain transfer.** An attempt returns `422` with type `compatible_address_not_found`. Checking the address balance first does not predict this, because the constraint is about the address role, not funds.
+- **Automations from a transactional account may only target external destinations.** A Brale-custodied destination is rejected.
+</Warning>
+
+The supported shape today is inbound: the account receives value on chain and can be the destination of an on-ramp. See [Transactional Accounts](/guides/transactional-accounts) and [Individual accounts](/guides/individual-accounts) for the end-to-end workflow.
 
 ## Common Errors when creating Accounts
 
@@ -102,9 +481,34 @@ Partners must show the exact Brale End-User Agreement (EUA) to their end users b
 | ----------- | ---------------------- | ----------------------------------------------------- | ----------------------------------- | ----------------------- |
 | `422`       | `Unprocessable Entity` | Invalid format for business or controller information | Phone number area code is not valid | Include valid area code |
 
+### Business path errors
+
+| HTTP | Error type | Cause |
+| --- | --- | --- |
+| `400` | `controlling_party_identity_required` | A controller or beneficial owner sent neither `ssn` nor `identity`. |
+| `400` | `invalid_controlling_party_identity` | Both `ssn` and `identity` were sent, or `ssn` was sent for a party whose `address.country` is not the US. |
+| `422` | `invalid_country_code` | An `address.country` that is not a recognized ISO country code or name. |
+| `422` | `invalid_us_state` | `address.country` is the US and `address.state` is missing, blank, or not a recognized state or territory. |
+| `400` | `invalid_phone_number` | A `phone_number` that is not valid in that party's `address.country`. |
+| `400` | `regulator_required` | `regulatory_profile` was sent with `regulator` missing or blank. Permanent; safe to cache against an idempotency key. |
+| `400` | `license_number_required` | `regulatory_profile` was sent with `license_number` missing or blank. Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_jurisdiction` | Brale does not serve the business's jurisdiction for the requested account type. For example, a non-US business requested a custodial account without a `regulatory_profile`, a regulated business outside the approved countries requested a custodial account, or a US state where the combination is unavailable. Permanent; safe to cache against an idempotency key. See [Account availability](/coverage/account-availability). |
+
+### Individual path errors
+
+| HTTP | Error type | Cause |
+| --- | --- | --- |
+| `422` | `unsupported_account_combination` | Dimension combination outside the supported rows: any `verification_mode: bypass`, or `verification_mode: reliance` from a caller without reliance enabled. Permanent; safe to cache against an idempotency key. |
+| `422` | `unsupported_jurisdiction` | Brale does not serve the applicant's jurisdiction for the requested account type (for example, a non-US country for a custodial account, or a state where the combination is unavailable). Permanent; safe to cache against an idempotency key. See [Account availability](/coverage/account-availability). |
+| `400` | `individual_details_required` | `entity_type: individual` with no `individual` object. |
+| `400` | `tos_attestation_required` | Individual path with no `tos_attestation`. |
+| `400` | `unexpected_business_fields` | A business-only field was sent on the individual path (`business_name`, `ein`, `website`, `business_controller`, `beneficial_owners`, `regulatory_profile`). |
+| `422` | `invalid_us_state` | `individual.country` is `US` or `USA` and `individual.address.state` is missing, blank, or not a recognized state or territory (abbreviation or full name). |
+| `400` | `invalid_attestation_timestamp` | `tos_attestation.accepted_at` is not an ISO-8601 timestamp. |
+
 ## Account Status
 
-Brale will review the Account and return a `status` field denoting the customer's KYB status. If the customer is in a pending status, you will need to wait for the customer to be verified before creating or linking addresses or bank accounts.
+Brale will review the Account and return a `status` field denoting the customer's verification status (KYB for business accounts, KYC for individual accounts). If the customer is in a pending status, you will need to wait for the customer to be verified before creating or linking addresses or bank accounts.
 
 **GET** `https://api.brale.xyz/accounts/:id`
 
@@ -119,15 +523,15 @@ Brale will review the Account and return a `status` field denoting the customer'
 
 ### Account Statuses
 
-| Value      | Description                                  |
-| ---------- | -------------------------------------------- |
-| `pending`  | KYB is in progress                           |
-| `complete` | KYB is completed and the account is approved |
-| `rejected` | The account's KYB was rejected               |
+| Value      | Description                                                                          |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `pending`  | Verification is in progress (KYB for business accounts, KYC for individual accounts) |
+| `complete` | Verification is completed and the account is approved                                |
+| `rejected` | The account's verification was rejected                                              |
 
 ## Verification
 
-Account KYB verification is asynchronous. After creating an account, Brale reviews the submitted information. Two integration patterns are supported.
+Account verification is asynchronous. After creating an account, Brale reviews the submitted information — KYB for business accounts, KYC for individual accounts. The lifecycle and webhook events are identical in shape across both. Two integration patterns are supported.
 
 **Proactive (at onboarding):** [Stage documents](/api-reference/brale/stage-verification-document), then either pass `doc_submission_ids` when creating the account or [link them later](/api-reference/brale/link-verification-documents).
 
@@ -138,9 +542,12 @@ Create account → Brale reviews → [documents required?]
   → Yes: webhook account.verification.documents_required
     → Stage document → Link to account
   → Brale re-reviews → account.verification.completed (status: complete)
+                     or account.verification.rejected  (status: rejected)
 ```
 
-When verification succeeds, Brale emits `account.verification.completed` and the account `status` transitions to `complete`. If verification is declined, `status` becomes `rejected`.
+When verification succeeds, Brale emits `account.verification.completed` and the account `status` transitions to `complete`. When it is declined, Brale emits [`account.verification.rejected`](/webhooks/webhook-events#accountverificationrejected) and `status` becomes `rejected`.
+
+A decline is terminal. The account will not reach `complete` on its own and uploading further documents does not reopen it, so do not keep polling a rejected account. Contact Brale if you believe a decline is incorrect.
 
 ## Using Account ID in every request
 

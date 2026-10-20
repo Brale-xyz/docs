@@ -11,3 +11,13 @@ Most LLMs have unique terminology and steps to add an MCP server, yet they all r
 | ------------------------- | ---------------------------- |
 | **Name**                  | Brale Documentation          |
 | **Remote MCP Server URL** | `https://docs.brale.xyz/mcp` |
+
+## Example questions
+
+Once connected, your LLM client can search Brale guides and API reference pages. For example:
+
+- "How do I receive a FedNow deposit and mint stablecoins?" Inbound FedNow uses an Automation's funding instructions. You do not create a Transfer per deposit. See [Receive FedNow deposits](/guides/fednow-inbound).
+- "How do I send a FedNow payout?" Outbound FedNow uses `POST /accounts/{account_id}/transfers` with `destination.transfer_type: "fednow_credit"`. See [Send FedNow payouts](/guides/fednow-outbound).
+- "How do I simulate a FedNow deposit on testnet?" See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit).
+
+An index of all pages is available at `https://docs.brale.xyz/llms.txt`.
