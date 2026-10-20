@@ -1878,6 +1878,18 @@ components:
           enum:
             - checking
             - savings
+        account_holder_type:
+          type: string
+          enum:
+            - individual
+            - business
+          description: >
+            Whether the bank account is held by an individual or a business.
+            Optional. Determines the ACH SEC code for payouts to this address
+            (`individual` → PPD, `business` → CCD). If omitted, Brale uses the
+            entity type of the account that owns the address. Once set, it
+            cannot be changed.
+          example: business
         bank_address:
           description: >
             Bank physical address. Required when `transfer_types` includes
