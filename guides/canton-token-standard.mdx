@@ -65,11 +65,11 @@ curl -s \
 EOF
 ```
 
-Find the TransferInstruction you want to accept in the response and note it's contractId and interfaceId, which will be used in subsequent steps.
+Find the TransferInstruction you want to accept in the response and note its contractId and interfaceId, which will be used in subsequent steps.
 
 ### Step 2: Get the Contextual Data Needed to Accept the Transfer
 
-In order to exercise the choice to accept the transfer, it is necessary to obtain some contextual information about it that cannot easily be obtained using the ledger, for which a off-ledger Token Standard API has been implemented.
+In order to exercise the choice to accept the transfer, it is necessary to obtain some contextual information about it that cannot easily be obtained using the ledger, for which an off-ledger Token Standard API has been implemented.
 
 ```shell title="Use the Token Standard API to get the contextual information"
 curl -s \
