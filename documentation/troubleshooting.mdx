@@ -102,6 +102,20 @@ Use this checklist when integrating and operating at volume.
 - A US territory is a US jurisdiction, not a separate country: send `country: "US"` with the territory in `address.state` (`PR`, `GU`, `AS`, `VI`, `MP`).
 - Fix: send a valid US state or territory in `address.state`. For a non-US individual, `address.state` is optional and free-form.
 
+## Platform status
+
+Brale publishes real-time updates on incidents and scheduled maintenance at [status.brale.xyz](https://status.brale.xyz). Status is reported per transfer type and chain, for example Wire, ACH, Solana, and EVM, so you can see whether an issue affects your integration.
+
+What Brale publishes:
+
+- Incidents affecting the API, transaction processing, or specific transfer types
+- Scheduled maintenance, announced in advance
+- Updates as an incident progresses, and a notice when it's resolved
+
+<Tip>
+  **Subscribe before you go live.** Click **Subscribe to updates** on [status.brale.xyz](https://status.brale.xyz) to get notified when Brale opens, updates, or resolves an incident.
+</Tip>
+
 ## When in doubt
 
 - Re-read Coverage for exact identifiers (case and spelling).
