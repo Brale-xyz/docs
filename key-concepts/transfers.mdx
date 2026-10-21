@@ -555,6 +555,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - On 401, refresh the token and retry idempotently.
 - Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) to receive signed events when a transfer reaches `complete` or `failed`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.
 - For outbound domestic wires, do not treat `complete` as final for reconciliation. The same transfer can later emit `transfer.failed` if the wire is returned. Retrieve the latest transfer when you need to confirm its current state.
+- To track refunds, subscribe to [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded), or use `transfer.*`. Track payout failure and refund progress separately.
 
 ## Transfer Statuses
 
@@ -565,6 +566,8 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
 | `canceled`   | The transfer has been canceled. Brale can cancel a transfer only before it is submitted to the payment rail. A `pending` status does not guarantee that cancellation is still possible. |
 | `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Manual intervention may be required. |
+| `refunding`  | A refund for the transfer has started. The refund is not complete yet. |
+| `refunded`   | The refund for the transfer has completed. |
 
 ### Transfer Flow
 
@@ -576,6 +579,8 @@ Outbound domestic wires can be returned by the receiving bank. When Brale recogn
 - **Return received after completion:** `complete` → `failed`
 
 Brale does not use a separate `returned` status. A returned wire has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`. Keep accepting [`transfer.failed`](/webhooks/webhook-events#transfer-failed) events for transfers you already recorded as `complete`. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for details.
+
+A `failed` status means the payout failed or was returned. It does not mean a refund has started or completed, and not every failed or returned payout is refunded. When Brale refunds a transfer, `refunding` means the refund has started and `refunded` means it has completed. Brale emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) for these stages.
 
 ## Transfer Limits
 

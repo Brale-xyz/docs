@@ -157,6 +157,37 @@ Note: the subscription API has an intentional path-shape inconsistency:
 - `PATCH /accounts/{account_id}/webhooks/subscriptions/{subscription_id}` (update)
 - `DELETE /accounts/{account_id}/webhooks/subscriptions/{subscription_id}` (archive)
 
+## Subscribe to refund events
+
+Brale reports refunds with `transfer.refunding` (the refund process has started) and `transfer.refunded` (the refund has completed). See [Refund events](/webhooks/webhook-events#refund-events).
+
+If your subscription already includes `transfer.*`, it receives both refund events. You do not need to change it.
+
+To subscribe by name on a new subscription, include both event types:
+
+```json
+{
+  "url": "https://your-app.example.com/webhooks/brale",
+  "events": ["transfer.completed", "transfer.failed", "transfer.refunding", "transfer.refunded"]
+}
+```
+
+To add them to an existing subscription, first [get the subscription](#get-subscription) and read its current `events`. Then send `PATCH` with the full list: every existing event type plus the two refund events. For example, if the subscription currently has `["transfer.completed", "transfer.failed"]`:
+
+```bash
+curl -X PATCH https://api.brale.xyz/accounts/{account_id}/webhooks/subscriptions/{subscription_id} \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: {uuid}" \
+  -d '{
+    "events": ["transfer.completed", "transfer.failed", "transfer.refunding", "transfer.refunded"]
+  }'
+```
+
+<Warning>
+  `events` replaces the entire event set. If you send only `["transfer.refunding", "transfer.refunded"]`, the subscription stops receiving every other event it had.
+</Warning>
+
 ## Archive subscription
 
 ```

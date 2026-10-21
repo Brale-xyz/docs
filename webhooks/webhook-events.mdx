@@ -47,6 +47,10 @@ switch (event.type) {
   case "transfer.failed":
     await handleTransferFailed(event.data);
     break;
+  case "transfer.refunding":
+  case "transfer.refunded":
+    await handleRefundEvent(event);
+    break;
   case "payment.completed":
     await handlePaymentCompleted(event.data);
     break;
@@ -167,7 +171,7 @@ Notes:
 
 ### Returned outbound wires
 
-Brale uses the existing `transfer.failed` event for returned outbound domestic wires. There is no separate returned or refunded event. The same transfer can produce `transfer.completed` and later `transfer.failed` if the wire is returned after completion.
+Brale uses the existing `transfer.failed` event for returned outbound domestic wires. There is no separate returned event. If Brale later refunds the payout, it reports the refund with the separate [refund events](#refund-events) `transfer.refunding` and `transfer.refunded`. The same transfer can produce `transfer.completed` and later `transfer.failed` if the wire is returned after completion.
 
 Example (illustrative, not an observed production payload):
 
@@ -205,8 +209,71 @@ How to handle it:
 - Do not require an ACH return code or a specific bank reason code to recognize a wire return. `data.failure.wire_return.code` is `WIRE_RETURN` when the provider supplies no code, and `data.failure.wire_return.reason` can be `null`.
 - Missing structured failure details do not mean the transfer succeeded. If `data.status` is `failed`, update your records even when `data.failure` is `null`.
 - `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins were refunded or that refunded funds are available.
-- Track payout state, return classification, and any refund credit separately.
+- Track payout state, return classification, and any refund credit separately. Not every failed or returned payout is refunded. Use [`transfer.refunding`](#transfer-refunding) and [`transfer.refunded`](#transfer-refunded) to track a refund.
 - Do not assume event ordering. Retrieve the [latest transfer](/api-reference/brale/get-transfer) when you need to reconcile its current state.
+
+## Refund events
+
+Brale reports the refund lifecycle with two events in the transfer family. They are separate from `transfer.failed`:
+
+| Event | What it tells you | What it does not tell you |
+| --- | --- | --- |
+| `transfer.failed` | The payout failed or was returned. | That a refund has started or completed. |
+| `transfer.refunding` | The refund process has started. | That the refund is complete. |
+| `transfer.refunded` | The refund has completed. | — |
+
+A failed or returned payout is not automatically followed by a refund. Do not wait for `transfer.refunding` or `transfer.refunded` after every `transfer.failed`.
+
+Subscriptions that use the `transfer.*` wildcard already receive both refund events. Subscriptions that list event types by name receive them only after you add `transfer.refunding` and `transfer.refunded`. See [Subscribe to refund events](/webhooks/subscription-api-reference#subscribe-to-refund-events).
+
+### `transfer.refunding`
+
+Emitted when the refund process starts.
+
+Notes:
+
+- Treat this event as "refund in progress." It does not confirm that the refund is complete or that refunded funds are available.
+- Do not credit your end user's balance as final based on this event alone. Wait for `transfer.refunded`.
+
+### `transfer.refunded`
+
+Emitted when the refund completes.
+
+Notes:
+
+- Treat this event as confirmation that the refund has completed.
+- Delivery order is not guaranteed. You can receive `transfer.refunded` before `transfer.refunding`, or without having processed `transfer.refunding`.
+
+### Handle refund events
+
+This page does not include example payloads for refund events. Use the [event envelope](#event-envelope) fields (`id`, `type`, `created`, `data`) and ignore unknown fields in `data`. Retrieve the [latest transfer](/api-reference/brale/get-transfer) when you need its current state.
+
+```tsx
+async function handleRefundEvent(event) {
+  // Signature already verified against the raw request body.
+
+  // Process idempotently: skip events you have already handled.
+  if (await alreadyProcessed(event.id)) return;
+
+  if (event.type === "transfer.refunding") {
+    // Refund started. Do not treat it as complete.
+    // Do not overwrite a refund you already recorded as complete.
+    await markRefundInProgressUnlessComplete(event);
+  } else if (event.type === "transfer.refunded") {
+    // Refund completed.
+    await markRefundComplete(event);
+  }
+
+  await recordProcessed(event.id);
+}
+```
+
+How to handle them:
+
+- [Verify the signature](/webhooks/signatures) before you process the event.
+- Deduplicate on the event `id`. Brale can deliver the same event more than once.
+- Do not assume delivery order. Never move a refund you recorded as complete back to in progress.
+- Retrieve the latest transfer to reconcile when events arrive out of order or you are unsure of the current state.
 
 ## `payment.completed`
 

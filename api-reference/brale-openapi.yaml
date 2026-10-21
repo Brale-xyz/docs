@@ -351,6 +351,8 @@ components:
             - complete
             - canceled
             - failed
+            - refunding
+            - refunded
           example: pending
         failure:
           allOf:

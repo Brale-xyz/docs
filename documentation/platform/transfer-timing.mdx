@@ -213,7 +213,7 @@ A transfer moves to `failed` when it did not succeed or its payout was returned.
 - **Outbound domestic wire return** — The receiving bank returned the wire. Brale updates the original transfer to `failed` whether the return arrives while the transfer is `processing` or after it is `complete`. The [`failure`](/api-reference/brale/get-transfer#failure) object has `type: "wire_return"` and `retriable: false`.
 - **Other rail or provider failures** — For example, ACH returns. Check `failure` for details when it is present. `failure` can be `null`.
 
-A returned wire does not move to a separate `returned` status, and Brale does not retry it automatically. `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins have been credited back.
+A returned wire does not move to a separate `returned` status, and Brale does not retry it automatically. `transfer.failed` confirms that the payout failed or was returned. It does not confirm that stablecoins have been credited back. Not every failed or returned payout is refunded. When Brale refunds a transfer, it emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) when the refund starts and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) when the refund completes.
 
 ### Automatic Retries
 
