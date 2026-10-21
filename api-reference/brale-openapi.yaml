@@ -993,6 +993,11 @@ components:
           example: 612 Commerce St., Des Moines, IA 50309
         account_number:
           type: string
+          description: >-
+            Bank account number to fund the automation. On testnet, this field
+            contains the automation's alphanumeric ID as a placeholder, not a
+            numeric bank account number. This applies to both branded and
+            unbranded automations.
           example: '123456789'
         routing_number:
           type: string
