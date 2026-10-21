@@ -874,7 +874,9 @@ components:
       description: >-
         Optional. Selects the verified identity shown as the beneficiary on the
         automation's funding instructions. Pass the account_id of your own account or a
-        managed account (business or individual). The automation is still created under
+        managed account (business or individual). Both custodial and transactional
+        accounts can be used, subject to applicable verification and program
+        eligibility. The automation is still created under
         the account in the request path; `brand.account_id` only controls the identity
         rendered on the funding instructions. If omitted, Brale is the default beneficiary.
       properties:
