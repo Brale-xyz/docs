@@ -184,6 +184,8 @@ A recognized wire return has a [`failure`](/api-reference/brale/get-transfer#fai
 
 `transfer.failed` does not confirm that stablecoins have been credited back. Do not automatically credit your end user's balance solely because `transfer.failed` arrived. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for how statuses change.
 
+If Brale refunds the payout, it reports the refund separately with `transfer.refunding` (the refund has started) and `transfer.refunded` (the refund has completed). See [Refund events](/webhooks/webhook-events#refund-events).
+
 ## Self-custody redemption
 
 If your customer holds stablecoins in a self-custody or external wallet (for example, Crossmint), the redemption is a two-step process:

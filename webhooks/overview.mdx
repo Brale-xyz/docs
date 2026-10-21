@@ -114,15 +114,19 @@ Current supported events:
 | `transfer.completed` | A transfer reaches `complete` status | Replace polling transfer status; update ledgers, balances, and customer-facing status |
 | `transfer.canceled` | A transfer is canceled | Reverse provisional ledger entries and notify customers of cancellations |
 | `transfer.failed` | A transfer reaches `failed` status | React to permanent transfer failures (e.g., ACH returns or returned outbound wires, including wires returned after `complete`); inspect `data.failure` for details |
+| `transfer.refunding` | A refund process starts | Mark a refund as in progress. This event does not confirm that the refund is complete. |
+| `transfer.refunded` | A refund completes | Mark the refund as complete and update ledgers and customer-facing status |
 | `payment.completed` | A payment reaches `complete` status | React to completed fiat payments, including inbound wire, ACH, and FedNow deposits. Payment IDs are not Transfer IDs, and this event does not confirm the stablecoin mint. |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
 
 Use `transfer.completed` when your integration is tracking Brale Transfer objects and wants to know when a transfer has completed. Subscribe to `transfer.failed` as well, or use `transfer.*`. An outbound domestic wire can be returned after `transfer.completed`, and Brale reports the return with [`transfer.failed`](/webhooks/webhook-events#returned-outbound-wires).
 
+To track refunds, subscribe to `transfer.refunding` and `transfer.refunded`, or use `transfer.*`. `transfer.failed` reports that a payout failed or was returned. It does not mean a refund has started or completed. Not every failed or returned payout is refunded. See [Refund events](/webhooks/webhook-events#refund-events).
+
 ### Wildcard subscriptions
 
-The `events` array on create and update subscription requests accepts namespace wildcards of the form `<namespace>.*`. For example, subscribing to `transfer.*` gives you a single subscription that receives every event in the transfer family (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`, and any future `transfer.*` events).
+The `events` array on create and update subscription requests accepts namespace wildcards of the form `<namespace>.*`. For example, subscribing to `transfer.*` gives you a single subscription that receives every event in the transfer family (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`, `transfer.refunding`, `transfer.refunded`, and any future `transfer.*` events).
 
 Wildcards work for every major event family — not just transfers:
 
