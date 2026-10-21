@@ -45,6 +45,14 @@ curl https://api.brale.xyz/accounts/{account_id}/webhooks/event_types \
       "summary": "Emitted when a transfer (token order) reaches failed status."
     },
     {
+      "event_type": "transfer.refunding",
+      "summary": "Emitted when a refund for a transfer (token order) starts."
+    },
+    {
+      "event_type": "transfer.refunded",
+      "summary": "Emitted when a refund for a transfer (token order) completes."
+    },
+    {
       "event_type": "payment.completed",
       "summary": "Emitted when a payment reaches complete status."
     },
@@ -66,7 +74,7 @@ curl https://api.brale.xyz/accounts/{account_id}/webhooks/event_types \
 
 ## Subscribing with wildcards
 
-When you create or update a subscription, the `events` array accepts either a concrete event type from the list above or a namespace wildcard of the form `<namespace>.*`. For example, `transfer.*` subscribes to all `transfer.*` events (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`), and `account.*` subscribes to all `account.*` events including `account.verification.*` variants.
+When you create or update a subscription, the `events` array accepts either a concrete event type from the list above or a namespace wildcard of the form `<namespace>.*`. For example, `transfer.*` subscribes to all `transfer.*` events (`transfer.created`, `transfer.completed`, `transfer.canceled`, `transfer.failed`, `transfer.refunding`, `transfer.refunded`), and `account.*` subscribes to all `account.*` events including `account.verification.*` variants.
 
 Wildcards are supported for every event family Brale exposes. New events added to a family in the future are automatically included in any matching wildcard subscription — no subscription update required.
 
