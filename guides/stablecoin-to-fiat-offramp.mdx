@@ -105,6 +105,8 @@ Need `ach_debit`? Use the [Plaid-linked bank account flow](/api-reference/brale/
 
 Offramps via RTP use the `rtp_credit` transfer_type on the destination Address. RTP capability is enabled asynchronously by our banking partner, so a newly created bank Address may initially not show `rtp_credit` even though it is eligible for real-time payments. Only treat an Address as RTP-capable once `"rtp_credit"` appears in its `transfer_types`. See **Key Concepts → Addresses → Create External Address for RTP** for details.
 
+If your organization has RTP fallback enabled, a failed RTP payout can be sent over Same Day ACH instead. Same Day ACH timing and ACH returns then apply. See [RTP fallback to Same Day ACH](/documentation/platform/transfer-timing#rtp-fallback-to-same-day-ach).
+
 ### FedNow payouts
 
 To pay out over FedNow, the destination Address must be `active` and list `fednow_credit` in `transfer_types`. Add `fednow_credit` when you create the Address, or add it to an existing Direct bank entry Address with `PATCH /accounts/{account_id}/addresses/{address_id}` and `{"additional_transfer_types": ["fednow_credit"]}`. The Address ID does not change. Then create a Transfer with `destination.transfer_type: "fednow_credit"`. Do not assume `fednow_credit` is enabled asynchronously like `rtp_credit`.

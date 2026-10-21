@@ -142,6 +142,7 @@ Add a `brand` object to the create request to control which account name appears
 
 Behavior:
 
+- Set `brand` with the [Create Automation](/api-reference/brale/create-automations) API. Automations created in the Brale Dashboard do not have a brand option, so their funding instructions show Brale as the beneficiary.
 - If `brand` is omitted, the beneficiary on funding instructions remains Brale.
 - If `brand.account_id` references a business account, `beneficiary_name` and `beneficiary_address` show the business name and address.
 - If `brand.account_id` references an individual account, `beneficiary_name` and `beneficiary_address` show the individual's legal name and address.
