@@ -278,6 +278,10 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Brale Status",
+        "href": "https://status.brale.xyz"
       }
     ]
   },

@@ -7,10 +7,10 @@ description: "Create an ach_debit funded transaction to a custodial, or self cus
 
 This document is a guide to help your team evaluate and implement the ach_debit transfer type. It covers what the ach_debit functionalities are, how to get set up, and the key steps to go from initial testing to production. Use it as a reference while you integrate.
 
-When making `POST` requests Brale requires an Idempotency-Key header to be included and used on retries. Read more about [idempotency keys in Brale](/key-concepts/idempotency#what-is-an-idempotency-key). Using ach-debits required your business to be fully onboarded, and branded ach_debits are a premium feature.
+When making `POST` requests Brale requires an Idempotency-Key header to be included and used on retries. Read more about [idempotency keys in Brale](/key-concepts/idempotency#what-is-an-idempotency-key). Using ach-debits requires your business to be fully onboarded, and branded ach_debits are a premium feature.
 
 - **Testnet Environment**
-  - If users wants to first test the below endpoints on testnet, they will need to create API credentials that are scoped to testnet - please follow the below link for more information:
+  - If users want to first test the below endpoints on testnet, they will need to create API credentials that are scoped to testnet - please follow the below link for more information:
     - [Sandbox and Testnet walkthrough](/overview/sandbox-and-testnet)
 - **Production Environment**
   - Partners can leverage mainnet APIs by using their mainnet API keys generated in the Brale Portal.
@@ -28,7 +28,7 @@ When making `POST` requests Brale requires an Idempotency-Key header to be inclu
 
 ## **Create Plaid link token**
 
-- The following request is an example of how to create a Plaid Token that you will need to use next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
+- The following request is an example of how to create a Plaid Token that you will need to use in the next section when setting up addresses for funding your transactions. Specifically, you will want to store the `link_token` as this is the plaid token you will need to use in subsequent requests.
 - **Native mobile app considerations (Plaid Link):**
 
   Because Brale manages the Plaid client configuration, mobile Plaid OAuth is **not fully self-serve**. You must submit your platform-specific values to Brale so they can be whitelisted before mobile Plaid OAuth will work.
@@ -121,7 +121,7 @@ Pass the optional `client_name` field in the link token request body to set the 
 
   **Off-chain bank account request example:**
   - Partner will need to create a form that requests this information from end users to provide the below data
-  - Once the below data has been recorded, Brale will generate a “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”. [Create off-chain external address](/api-reference/brale/create-address):
+  - Once the below data has been recorded, Brale will generate an “Address ID” that corresponds to the financial institution OR the external wallet, and for any future debit operations we will reference the “Address ID”. [Create off-chain external address](/api-reference/brale/create-address):
 
   ```bash
   curl --request POST \
