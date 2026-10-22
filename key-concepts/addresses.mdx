@@ -30,6 +30,8 @@ Every address has a `status` that represents its lifecycle state:
 | `active`   | Address is ready to be used as a source or destination in transfers.                             |
 | `archived` | Address is disabled. It cannot be used in new transfers; existing pending transfers may complete. |
 
+To be notified instead of polling, subscribe to the [`address.created` and `address.ready` webhook events](/webhooks/webhook-events#address-events). Brale sends `address.created` when a wallet or bank account is added and `address.ready` when it becomes `active`.
+
 ### Archive and unarchive (external addresses only)
 
 You can change the lifecycle state of an **external** address by sending a `status` update to the [PATCH address endpoint](/api-reference/brale/update-address):
