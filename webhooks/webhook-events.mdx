@@ -119,6 +119,8 @@ Notes:
 
 - Treat `data.id` as the transfer ID.
 - Treat `data.status` as the completed transfer state. The event name is `transfer.completed`; the API status is `complete`.
+- Brale emits `transfer.completed` for both inbound transfers (such as Automation deposits) and outbound transfers (such as payouts you create with the Transfers API).
+- The payload does not include a direction field. To tell inbound from outbound, [retrieve the Transfer](/api-reference/brale/get-transfer) by `data.id` and inspect `source.transfer_type` and `destination.transfer_type`. For example, an inbound FedNow deposit has `source.transfer_type: "fednow_credit"`, and an outbound FedNow payout has `destination.transfer_type: "fednow_credit"`.
 - For outbound domestic wires, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the wire, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
@@ -391,7 +393,8 @@ Notes:
 - `data.id` is a payment ID. It is not a Transfer ID. Brale creates a separate Transfer for Automation deposits.
 - `payment.completed` means Brale received the fiat payment. It does not mean the stablecoin mint was delivered. Use [`transfer.completed`](#transfer-completed) or the Transfer's `status` for that.
 - `data.type` identifies the payment rail. The example shows a wire. For FedNow deposits, do not hard-code an expected `data.type` value. Correlate with the Transfer instead.
-- To find the Transfer for an Automation deposit, list Transfers with `automation_id` and `transfer_type` (for example, `transfer_type=fednow_credit`), then match `data.account_id`, the amount, and `source.payment_details.received_at`. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+- To find the Transfer for an Automation deposit, list Transfers with `automation_id`. Keep the Transfers whose `source.transfer_type` matches the rail (for example, `fednow_credit`), then match `data.account_id`, the amount, and `source.payment_details.received_at`. The `transfer_type` query parameter filters by blockchain only, so do not pass fiat rails such as `fednow_credit` to it. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+- Brale does not guarantee whether `payment.completed` or `transfer.created` arrives first. Do not rely on event order.
 - Brale also emits `payment.completed` for inbound payments created by [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) on testnet. There is no simulation-specific webhook type, so the same handler covers simulated and real deposits.
 
 ## `transfer.canceled`
