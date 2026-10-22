@@ -175,6 +175,19 @@ curl --request GET \
   If ACH debits fail for one linked bank account while the user's other accounts work, the Plaid connection for that account may have expired. Call the balance endpoint for that `address_id`. If it returns `plaid_item_login_required`, have the user relink the bank account through Plaid, then use the `address_id` returned by registration for new debits.
 </Tip>
 
+### ACH debit errors
+
+When you submit an `ach_debit` transfer, Brale can reject it with HTTP `422` if the source bank account cannot be debited. Brale does not create the transfer or submit the debit.
+
+| `type` | Cause | Fix |
+| --- | --- | --- |
+| `bank_account_not_linked` | The bank account is not linked through Plaid. | Link the bank account through Plaid before using it for an ACH debit. |
+| `bank_account_relink_required` | The bank account's Plaid link has expired. | Have the user relink the bank account through Plaid, then retry. |
+| `bank_balance_unavailable` | Brale could not verify the bank account's balance. | Retry. If the error continues, have the user relink the bank account. |
+| `insufficient_balance` | The transfer amount exceeds the bank account's available balance. | Have the user fund the bank account, then retry. |
+
+Brale does not cache `422` responses for idempotency, so you can retry with the same `Idempotency-Key` and body. See [Idempotency](/key-concepts/idempotency).
+
 See [Get A Balance](/guides/how-to/get-a-balance#plaid-linked-bank-balance) for details and [Get an address balance](/api-reference/brale/get-address-balance#errors) for all errors.
 
 ## Requesting Mint/On-ramping

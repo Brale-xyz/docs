@@ -2504,6 +2504,24 @@ paths:
             source `value_type`) and reuse of an `Idempotency-Key` with a different
             body or URI. After funding the source Address, retry
             `insufficient_balance` with the same `Idempotency-Key` and body.
+
+
+            For an `ach_debit` transfer, Brale can also reject the request when
+            the source bank Address cannot be debited:
+
+
+            - `bank_account_not_linked`: the bank account is not linked through
+            Plaid. Link the bank account before using it for an ACH debit.
+
+            - `bank_account_relink_required`: the bank account's Plaid link has
+            expired. Have the user relink the bank account, then retry.
+
+            - `bank_balance_unavailable`: Brale could not verify the bank
+            account's balance. Retry, or relink the bank account if the error
+            continues.
+
+            - `insufficient_balance`: the transfer amount exceeds the bank
+            account's available balance.
           content:
             application/json:
               schema:
