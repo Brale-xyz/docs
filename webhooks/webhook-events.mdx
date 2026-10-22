@@ -1,6 +1,6 @@
 ---
 title: "Webhook Events"
-description: "Reference for the Brale webhook event envelope and the transfer and payment event types your handler can subscribe to."
+description: "Reference for the Brale webhook event envelope and the transfer, payment, address, and account event types your handler can subscribe to."
 ---
 
 ## Event envelope
@@ -35,7 +35,7 @@ If your integration uses [managed accounts](/guides/managed-accounts) or [indivi
 
 This is derived from the subscription's owner. There is no scope parameter to set when creating the subscription.
 
-To attribute an event to the correct managed account, read `data.account_id` from the payload. It is present on `payment.completed`, `transfer.created`, `transfer.failed`, `transfer.refunding`, and `transfer.refunded`, in addition to the `account.verification.*` events that already carry it.
+To attribute an event to the correct managed account, read `data.account_id` from the payload. It is present on `payment.completed`, `address.created`, `address.ready`, `transfer.created`, `transfer.failed`, `transfer.refunding`, and `transfer.refunded`, in addition to the `account.verification.*` events that already carry it.
 
 Your handler should branch on `type`.
 
@@ -53,6 +53,10 @@ switch (event.type) {
     break;
   case "payment.completed":
     await handlePaymentCompleted(event.data);
+    break;
+  case "address.created":
+  case "address.ready":
+    await handleAddressEvent(event);
     break;
   default:
     // Unknown future event type.
@@ -423,6 +427,107 @@ Notes:
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 
+## Address events
+
+Brale reports new addresses with two events in the `address` family. Both cover wallets (internal custodial wallets and external wallets) and external bank accounts, including bank accounts linked through Plaid. Subscribe to both with `address.*`.
+
+| Event | When it fires |
+| --- | --- |
+| `address.created` | A wallet or bank account is added to the account. A custodial wallet that is still `pending` triggers this event. |
+| `address.ready` | The wallet or bank account reaches `active` status and can be used as a transfer source or destination. |
+
+An address that is created already `active` produces both events. A custodial wallet created as `pending` produces `address.created` first, then `address.ready` when it becomes `active`. See [Address lifecycle](/key-concepts/addresses#address-lifecycle).
+
+### `address.created`
+
+Emitted when a wallet or bank account is added to an account.
+
+Example (wallet, illustrative):
+
+```json
+{
+  "id": "2VZvtmVc2j3gQ80CTlcuQXbGrwC",
+  "type": "address.created",
+  "created": "2026-10-22T18:00:00.000000Z",
+  "data": {
+    "id": "2VZvtmVc2j3gQ80CTlcuQXbGrwC",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "kind": "wallet",
+    "status": "pending",
+    "type": "internal",
+    "ownership": "self-owned",
+    "name": "Treasury Wallet",
+    "transfer_types": ["spark"],
+    "address": null,
+    "account_number": null,
+    "routing_number": null,
+    "account_type": null
+  }
+}
+```
+
+Notes:
+
+- The event `id` and `data.id` are both the address ID.
+- `created` is the time the address was added.
+- `data.status` is the address status when Brale builds the event: `pending`, `active`, `archived`, or `disabled`. A delayed delivery can report a status other than the one the address had when it was added.
+- Do not use the address in transfers based on this event alone. Wait for [`address.ready`](#address-ready) or check that `data.status` is `active`.
+
+### `address.ready`
+
+Emitted when a wallet or bank account reaches `active` status and can be used in transfers.
+
+Example (bank account, illustrative):
+
+```json
+{
+  "id": "2VZw1Kq9YdPz3hL0mN5sR8tUvXa:ready",
+  "type": "address.ready",
+  "created": "2026-10-22T18:05:00.000000Z",
+  "data": {
+    "id": "2VZw1Kq9YdPz3hL0mN5sR8tUvXa",
+    "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+    "kind": "fiat_account",
+    "status": "active",
+    "type": "external",
+    "ownership": "customer-owned",
+    "name": "Chase Bank",
+    "transfer_types": ["ach_credit", "wire"],
+    "address": null,
+    "account_number": "****1234",
+    "routing_number": "021000021",
+    "account_type": "checking"
+  }
+}
+```
+
+Notes:
+
+- The event `id` is the address ID with a `:ready` suffix, so it never matches the `address.created` event `id` for the same address. `data.id` is the address ID without the suffix.
+- `created` is the time the address was last updated.
+- `data.status` is always `active` on this event.
+
+### Address event payload
+
+Both address events carry the same `data` object. Every field is always present.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `data.id` | string | Address ID. Use it with the [Addresses API](/api-reference/brale/get-address) and as a transfer `address_id`. |
+| `data.account_id` | string | Account the address belongs to. |
+| `data.kind` | string | `wallet` for an onchain wallet or `fiat_account` for a bank account. |
+| `data.status` | string | `pending`, `active`, `archived`, or `disabled`. |
+| `data.type` | string | `internal` for a custodial wallet or `external` for an external wallet or bank account. |
+| `data.ownership` | string | `self-owned` or `customer-owned`. |
+| `data.name` | string or null | Address name. |
+| `data.transfer_types` | array of strings or null | Transfer types the address supports, using the same values as the Addresses API. `null` for a bank account with no transfer types configured yet. |
+| `data.address` | string or null | Onchain address for a wallet. `null` for bank accounts, and `null` for a custodial wallet that is still `pending`. |
+| `data.account_number` | string or null | Masked bank account number (for example, `****1234`). `null` for wallets. |
+| `data.routing_number` | string or null | Bank routing number. `null` for wallets. |
+| `data.account_type` | string or null | `checking` or `savings`. `null` for wallets. |
+
+Ignore unknown fields in `data`. Retrieve the address with the Addresses API when you need its current state.
+
 ## `account.verification.documents_required`
 
 Emitted when Brale's KYB review determines one or more documents must be uploaded.
@@ -534,4 +639,4 @@ Best practices:
 - Acknowledge unknown event types safely.
 - Ignore unknown fields in `data`.
 - Do not assume event ordering.
-- To automatically receive future events in a family (e.g., new `transfer.*` or `account.*` events), subscribe with a namespace wildcard like `transfer.*` or `account.*` when you [create](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions) or [update](/api-reference/brale/update-webhook-subscription) a subscription. Wildcards work for every event family.
+- To automatically receive future events in a family (e.g., new `transfer.*`, `address.*`, or `account.*` events), subscribe with a namespace wildcard like `transfer.*` or `account.*` when you [create](/api-reference/brale/create-webhook-subscription#wildcard-event-subscriptions) or [update](/api-reference/brale/update-webhook-subscription) a subscription. Wildcards work for every event family.

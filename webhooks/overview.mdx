@@ -117,6 +117,8 @@ Current supported events:
 | `transfer.refunding` | A refund process starts | Mark a refund as in progress. This event does not confirm that the refund is complete. |
 | `transfer.refunded` | A refund completes | Mark the refund as complete and update ledgers and customer-facing status |
 | `payment.completed` | A payment reaches `complete` status | React to completed fiat payments, including inbound wire, ACH, and FedNow deposits. Payment IDs are not Transfer IDs, and this event does not confirm the stablecoin mint. |
+| `address.created` | A wallet or bank account is added to an account, including a custodial wallet that is still `pending` | Sync new addresses into your records. Do not send transfers to the address until it is ready. |
+| `address.ready` | A wallet or bank account reaches `active` status and can be used in transfers | Enable the address as a transfer source or destination |
 | `account.verification.documents_required` | KYB review requires one or more documents | Notify customers to upload documents; see [Stage a Verification Document](/api-reference/brale/stage-verification-document) and [Link Verification Documents](/api-reference/brale/link-verification-documents) |
 | `account.verification.completed` | Account verification passes | Enable downstream flows when account `status` becomes `complete` |
 
@@ -132,6 +134,7 @@ Wildcards work for every major event family — not just transfers:
 
 - `transfer.*` — all transfer events
 - `payment.*` — all payment events
+- `address.*` — all address events (`address.created` and `address.ready`)
 - `account.*` — all account events, including nested types like `account.verification.completed`
 
 You can combine wildcards and concrete event types in the same subscription (e.g., `["transfer.*", "payment.completed"]`). New events added to a family in the future are automatically delivered to any matching wildcard subscription.
