@@ -82,13 +82,15 @@ See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayme
 
 ## `destination.payment_details`
 
-Transfer responses may include an optional `destination.payment_details` object when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire transfers (stablecoin-to-fiat offramps and wire payouts).
+Transfer responses may include an optional `destination.payment_details` object when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire and ACH transfers (stablecoin-to-fiat offramps and payouts).
 
-The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted; Brale populates this field later when the underlying bank metadata arrives.
+The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted. For outbound ACH payouts, the trace number is assigned when the payout posts. Brale populates these fields later when the underlying bank metadata arrives.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+| `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
+| `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
 
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
@@ -122,6 +124,22 @@ The object is optional and may be absent immediately after a transfer is created
     "currency": "USD"
   },
   "note": null
+}
+```
+
+### Example: outbound ACH transfer
+
+```json title="Response (destination excerpt)"
+{
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "ach_credit",
+    "payment_details": {
+      "trace_number": "021000029876543",
+      "sent_at": "2026-04-07T00:04:58.000000Z"
+    }
+  }
 }
 ```
 

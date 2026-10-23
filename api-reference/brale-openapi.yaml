@@ -442,7 +442,8 @@ components:
       description: >-
         Underlying payment metadata for a transfer leg. Response-only. Appears on
         `source.payment_details` for inbound fiat-funded transfers (wire, ACH, and
-        FedNow) and on `destination.payment_details` for outbound wire transfers.
+        FedNow) and on `destination.payment_details` for outbound wire and ACH
+        transfers.
         Optional and may be absent depending on the rail and on whether the
         underlying bank metadata is available yet. Fields are rail-specific. For
         example, `imad` applies only to wires and `trace_number` only to ACH. Do not
@@ -489,9 +490,19 @@ components:
           type: string
           nullable: true
           description: >-
-            ACH trace identifier for the underlying payment, when available. Primarily
-            relevant for inbound ACH-funded transfers.
+            ACH trace identifier for the underlying payment, when available. Appears on
+            `source.payment_details` for inbound ACH-funded transfers and on
+            `destination.payment_details` for outbound ACH transfers (`ach_credit` and
+            `same_day_ach_credit`) once the trace number is assigned.
           example: '021000029876543'
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            When the outbound payment was sent, when available. Appears on
+            `destination.payment_details` for outbound wire and ACH transfers.
+          example: '2026-04-07T00:04:58.000000Z'
     TransferFailure:
       title: TransferFailure
       type: object

@@ -123,7 +123,7 @@ Notes:
 
 - Treat `data.id` as the transfer ID.
 - Treat `data.status` as the completed transfer state. The event name is `transfer.completed`; the API status is `complete`.
-- For outbound domestic wires, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the wire, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
+- For outbound domestic wires and outbound ACH payouts, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the payout, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 

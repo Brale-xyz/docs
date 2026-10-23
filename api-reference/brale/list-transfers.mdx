@@ -206,10 +206,12 @@ See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayme
 
 ### `destination.payment_details`
 
-`destination.payment_details` appears when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire transfers. The object is optional and may be absent immediately after a transfer is created; for outbound wires, Brale populates it later once the IMAD is available from the sending bank.
+`destination.payment_details` appears when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire and ACH transfers. The object is optional and may be absent immediately after a transfer is created. Brale populates it later once the wire IMAD or the ACH trace number is available.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+| `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
+| `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
 
 See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for full details.
