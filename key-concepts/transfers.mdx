@@ -62,13 +62,15 @@ The object is optional and may not be present on every transfer. Wire transfers 
 
 ### `destination.payment_details`
 
-`destination.payment_details` appears when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire transfers (stablecoin-to-fiat offramps and wire payouts).
+`destination.payment_details` appears when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire and ACH transfers (stablecoin-to-fiat offramps and payouts).
 
-The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted — Brale populates `destination.payment_details` later when the underlying bank metadata arrives.
+The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted. For outbound ACH payouts, the trace number is assigned when the payout posts. Brale populates `destination.payment_details` later when the underlying bank metadata arrives.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+| `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
+| `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
 
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
@@ -460,6 +462,24 @@ ACH transfers may include only a subset of `payment_details` fields. Fields may 
 }
 ```
 
+### Outbound ACH transfer response (with `destination.payment_details`)
+
+For outbound ACH payouts (`ach_credit` or `same_day_ach_credit`), the response may include `destination.payment_details` with the ACH trace number and send time once the payout posts. The object may be absent before then.
+
+```json title="Response (destination excerpt)"
+{
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "ach_credit",
+    "payment_details": {
+      "trace_number": "021000029876543",
+      "sent_at": "2026-04-07T00:04:58.000000Z"
+    }
+  }
+}
+```
+
 <Note>
   `transaction_id` is a response-only field on `source` and `destination`. It contains the on-chain transaction hash or off-chain payment reference once the leg has been submitted to the network. It is not present in create requests. You can use `transaction_id` as a [query-parameter filter](#filtering-by-transaction_id) on the list transfers endpoint.
 </Note>
@@ -550,11 +570,12 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 - Store transfer `id`, `Idempotency-Key`, timestamps, status, and any provider references.
 - For inbound fiat-funded transfers, check `source.payment_details` to identify the sender and match payments. Wire transfers typically include `sender_name`, `sender_bank_name`, and `imad`; ACH transfers may include only a subset of these fields.
 - For outbound wire transfers, check `destination.payment_details.imad` to record the wire's IMAD for reconciliation and tracing. It may be absent immediately after the transfer is created and populated later once Brale has the underlying bank metadata.
+- For outbound ACH payouts, check `destination.payment_details.trace_number` to record the ACH trace number for reconciliation and tracing. It may be absent until the payout posts.
 - For FedNow, correlate inbound deposits with `automation_id` and check `source.transfer_type` on each Transfer. Do not expect wire `imad` or ACH `trace_number` on FedNow legs. Payment IDs from `payment.completed` are not Transfer IDs.
 - Poll with backoff; avoid tight loops. Reuse the same `Idempotency-Key` when retrying the same logical transfer.
 - On 401, refresh the token and retry idempotently.
 - Production integrations can subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) to receive signed events when a transfer reaches `complete` or `failed`. Use polling or retrieval endpoints for development, fallback handling, and reconciliation.
-- For outbound domestic wires, do not treat `complete` as final for reconciliation. The same transfer can later emit `transfer.failed` if the wire is returned. Retrieve the latest transfer when you need to confirm its current state.
+- For outbound domestic wires and outbound ACH payouts, do not treat `complete` as final for reconciliation. The same transfer can later emit `transfer.failed` if the payout is returned. Retrieve the latest transfer when you need to confirm its current state.
 - To track refunds, subscribe to [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded), or use `transfer.*`. Track payout failure and refund progress separately.
 
 ## Transfer Statuses
@@ -563,9 +584,9 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pending`    | The transfer has been submitted but is not yet in progress. This may be due to Brale waiting for funds (e.g., fiat-to-stablecoin wire transfer) or an ongoing review. |
 | `processing` | The transfer is in progress.                                                                                                                                          |
-| `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
+| `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires and outbound ACH payouts, a later bank return can still move the transfer to `failed`. |
 | `canceled`   | The transfer has been canceled. Brale can cancel a transfer only before it is submitted to the payment rail. A `pending` status does not guarantee that cancellation is still possible. |
-| `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Manual intervention may be required. |
+| `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires and outbound ACH payouts returned after the transfer was `complete`. Manual intervention may be required. |
 | `refunding`  | A refund for the transfer has started. The refund is not complete yet. |
 | `refunded`   | The refund for the transfer has completed. |
 
@@ -579,6 +600,8 @@ Outbound domestic wires can be returned by the receiving bank. When Brale recogn
 - **Return received after completion:** `complete` → `failed`
 
 Brale does not use a separate `returned` status. A returned wire has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`. Keep accepting [`transfer.failed`](/webhooks/webhook-events#transfer-failed) events for transfers you already recorded as `complete`. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for details.
+
+Outbound ACH payouts (`ach_credit` and `same_day_ach_credit`) follow the same pattern. The receiving bank can return an ACH payout after the transfer reached `complete`. Brale then updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "ach_return"` and the return code in `failure.ach_return`.
 
 A `failed` status means the payout failed or was returned. It does not mean a refund has started or completed, and not every failed or returned payout is refunded. When Brale refunds a transfer, `refunding` means the refund has started and `refunded` means it has completed. Brale emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) for these stages.
 
