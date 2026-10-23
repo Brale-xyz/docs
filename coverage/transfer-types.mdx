@@ -42,6 +42,19 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `xion` | Verona |
 | `xrp_ledger` | XRP Ledger |
 
+## Transfer type aliases
+
+Brale accepts these aliases anywhere a `transfer_type` is accepted as input, including Address creation and updates, Address list filters, balance lookups, and Transfer creation and list filters. Responses always return the canonical API id.
+
+| Alias | Canonical transfer\_type (API id) | Name |
+| --- | --- | --- |
+| `tx` | `coreum` | Tx |
+| `tx_testnet` | `coreum_testnet` | Tx Testnet |
+| `verona` | `xion` | Verona |
+| `verona_testnet` | `xion_testnet` | Verona Testnet |
+
+For example, a request with `transfer_type: verona` creates a Transfer that the API returns with `transfer_type: xion`. Unknown values return an `invalid_transfer_type` error.
+
 ## Offchain
 
 | transfer\_type (API id) | Name |
