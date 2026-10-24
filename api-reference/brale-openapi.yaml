@@ -1025,7 +1025,13 @@ components:
             $ref: '#/components/schemas/Automation'
     TransferType:
       type: string
-      description: Rail or chain identifier
+      description: |
+        Rail or chain identifier. See [Transfer types](/coverage/transfer-types)
+        for the full list of supported values.
+
+        On input, `tx`, `tx_testnet`, `verona`, and `verona_testnet` are accepted
+        as aliases for `coreum`, `coreum_testnet`, `xion`, and `xion_testnet`.
+        Responses always return the canonical identifier (for example, `coreum`).
       enum:
         - wire
         - ach_credit
