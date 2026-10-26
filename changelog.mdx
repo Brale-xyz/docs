@@ -3,6 +3,43 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-10-19" description="Week of October 19" tags={["New", "Update"]}>
+  ## Refund webhooks
+
+  Subscribe to `transfer.refunding` and `transfer.refunded` to track refunds. `refunding` means a refund has started and `refunded` means it has completed. `transfer.failed` still only reports a failed or returned payout, and not every failed payout is refunded. See [Refund events](/webhooks/webhook-events#refund-events).
+
+  ## Address webhooks
+
+  Brale now sends `address.created` when a wallet or bank account is added and `address.ready` when it becomes `active`. Subscribe with `address.*` to receive both. See [Address events](/webhooks/webhook-events#address-events).
+
+  ## ACH payout trace numbers
+
+  Outbound ACH transfers now include `destination.payment_details.trace_number` and `sent_at` once the payout posts. See [Get a transfer](/api-reference/brale/get-transfer).
+
+  ## RTP fallback to Same Day ACH
+
+  Organization admins can choose whether failed RTP payouts automatically fall back to Same Day ACH. Fallback payouts follow Same Day ACH timing and return rules. See [RTP fallback to Same Day ACH](/documentation/platform/transfer-timing#rtp-fallback-to-same-day-ach).
+
+  ## Account holder type for bank addresses
+
+  Bank addresses now accept an optional `account_holder_type` (`individual` or `business`), which sets the ACH SEC code for payouts. You can set it once on existing addresses with the [Update address](/api-reference/brale/update-address#set-the-account-holder-type) endpoint.
+
+  ## Custom Plaid Link application name
+
+  Pass the optional `client_name` (up to 30 characters) when creating a Plaid Link token to show your app's name instead of `Brale`. See [Customize the application name](/guides/ach-on-ramp#customize-the-application-name).
+
+  ## Mutual TLS
+
+  Brale offers mutual TLS on a dedicated API endpoint for customers who want an extra layer of transport security. Request it through Brale support. See [Mutual TLS (mTLS)](/key-concepts/authentication#mutual-tls-mtls).
+
+  ## Updates
+
+  - **Tx and Verona:** `coreum` and `xion` are now labeled Tx and Verona. The API also accepts `tx`, `verona`, `tx_testnet`, and `verona_testnet` as aliases. Responses return the canonical IDs. See [Transfer type aliases](/coverage/transfer-types#transfer-type-aliases).
+  - **USDG:** Global Dollar (`USDG`) replaces USDP in the supported value types, on Ethereum, Solana, and Robinhood Chain. See [Value types](/coverage/value-types).
+  - **ACH debit errors:** `ach_debit` transfers now return clear `422` errors when the source bank account is not linked, needs a Plaid relink, has an unverifiable balance, or has insufficient funds. See [ACH debit errors](/guides/ach-on-ramp#ach-debit-errors).
+  - **Platform status:** Follow incidents and scheduled maintenance at [status.brale.xyz](https://status.brale.xyz), now linked from the docs navigation. See [Platform status](/documentation/troubleshooting#platform-status).
+</Update>
+
 <Update label="2026-10-12" description="Week of October 12" tags={["New", "Update"]}>
   ## FedNow deposits and payouts
 
