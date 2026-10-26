@@ -15,6 +15,37 @@ For Canton network transfers to parties not custodied by Brale, a User with perm
 
 Offers must be accepted within 72 hours or they will expire and be automatically withdrawn.
 
+## Instrument IDs and registrar parties
+
+Token Standard calls identify a token by its instrument ID and its registrar (instrument admin) party. Use the registrar party in the `registrars/{party}` path of Token Standard API requests, such as the one in [Step 2](#step-2-get-the-contextual-data-needed-to-accept-the-transfer).
+
+<Warning>
+Instrument IDs and registrar parties are different on Canton mainnet (`canton`) and Canton testnet (`canton_testnet`). Don't reuse mainnet values on testnet. Requests that use the wrong registrar party fail with a "Registrar ... not found" error.
+</Warning>
+
+### SBC
+
+<Tabs>
+  <Tab title="Mainnet (canton)">
+    | Field | Value |
+    | --- | --- |
+    | Instrument ID | `f29bdd7a-1469-498a-ba2a-796bf5387b31` |
+    | Registrar party | `party-28dc4516-b5ca-44ff-86c7-2107e90a6807::1220b8301e18aa8a401d6e34e6c20f8b0243183c514373bca8f1b6b9270246341a9e` |
+  </Tab>
+  <Tab title="Testnet (canton_testnet)">
+    | Field | Value |
+    | --- | --- |
+    | Instrument ID | `af5183ba-f6f5-4661-905f-bce6fdb1088e` |
+    | Registrar party | `brale-api-gateway::122056ed5f1222640cfab6d23b22e7e91446a72a5b226e0e8133f22687795228780a` |
+  </Tab>
+</Tabs>
+
+SBC doesn't require holder credentials on either network. Any Canton party can hold and receive SBC.
+
+### Other Brale-issued tokens
+
+Each Brale-issued token on Canton, such as `CSC` or `4MGCC`, has its own instrument ID. Values also differ between mainnet and testnet. To get the instrument ID and registrar party for another token, contact Brale support and include the token's `value_type` and the network (`canton` or `canton_testnet`).
+
 ## Accepting a Transfer via the Ledger and Token Standard APIs
 
 Acceptance can be automated by using the Ledger and Token Standard APIs to retrieve the necessary contextual information and exercise the Accept choice. The below example shows how to accept an offer using the HTTP JSON Ledger API of the recipient's participant.
