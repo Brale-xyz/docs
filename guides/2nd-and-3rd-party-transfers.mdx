@@ -24,6 +24,8 @@ Use the `brand` object to control the business name displayed to the receiver. P
 
 If you omit `brand`, the transfer uses your default branding.
 
+`brand` and `ach_description` are independent. `brand` controls who the ACH payment is from. `ach_description` controls the short description shown after the sender name on the recipient's bank statement. Set it as `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, or `source.ach_description` for `ach_debit`. See [What recipients see on ACH](/key-concepts/transfers#what-recipients-see-on-ach) for character limits and defaults.
+
 > **Definitions**
 >
 > - **2nd-party**: You are the brand (display name = your business).

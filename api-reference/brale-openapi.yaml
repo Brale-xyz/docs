@@ -1774,6 +1774,20 @@ components:
           description: >-
             Optional memo or payment reference text sent with outbound wire
             transfers. Only applies when transfer_type is wire.
+        ach_description:
+          type: string
+          description: >-
+            Optional short description shown after the sender name on the
+            recipient's ACH bank statement. Set it on the ACH leg:
+            `destination.ach_description` for payouts (`ach_credit`,
+            `same_day_ach_credit`) and `source.ach_description` for `ach_debit`.
+            Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the
+            first 10 characters are used. Use letters, numbers, and spaces.
+            Unsupported characters are removed and longer values are cut to 10
+            characters. If omitted, the description defaults to `PAYOUT` for
+            payouts and `PAYMENT` for ACH debits. Independent of `brand`, which
+            sets the sender name. Not currently returned on GET transfer
+            responses. Exact display varies by receiving bank.
       required:
         - transfer_type
         - value_type
