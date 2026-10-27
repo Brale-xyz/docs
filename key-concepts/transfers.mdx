@@ -35,7 +35,7 @@ Each source and destination includes:
 
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand` | Body  | object | **ACH only.** `{ "account_id": "<ACCOUNT_ID>" }` to control which Account name appears on **ACH** bank statement line items (ACH debit + ACH credit). Not supported for `wire`, `rtp_credit`, or `fednow_credit`. |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). Not supported for `rtp_credit` or `fednow_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 
 ## Response-only fields
@@ -88,7 +88,8 @@ The object is optional and may be absent immediately after a transfer is created
 | Onramp to USDC (Automation + swap) | SBC / solana   | USDC / solana (external address)    | Swap SBC minted by a USD Automation to USDC and send it to a recipient wallet. See [Onramp to USDC](/key-concepts/automations#onramp-to-usdc). |
 | On-chain Payout                    | USDC / polygon | USDC / polygon (external address)   | Pay a recipient wallet                     |
 | USDC off-ramp (wire)               | USDC / polygon | USD / wire                          | Offramp USDC to wire                       |
-| SBC branded ACH payout (ACH only)  | SBC / base     | USD / ach_credit + brand (ACH only) | ACH payout with brand on statement         |
+| SBC branded ACH payout             | SBC / base     | USD / ach_credit + brand            | ACH payout with brand on statement         |
+| SBC branded wire payout            | SBC / base     | USD / wire + brand                  | Wire payout with brand as the sender       |
 
 Every request is scoped to an account, so the path always starts with:
 
@@ -175,7 +176,7 @@ Onramp to your stablecoin by debiting a Plaid connected address.
 ```
 
 Optional `brand` object
-You can specify which Account’s name appears on the receiver’s bank statement line items for ACH only. It is not supported for wire or RTP.
+You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). `brand` is not supported for RTP or FedNow.
 
 ## Stablecoin to USD (Wire Offramp or Payout)
 
@@ -204,6 +205,33 @@ Offramp your stablecoin to USD via wire transfer.
 ```
 
 For outbound wire transfers, you can optionally pass `destination.wire_memo` to include a memo or payment reference for the receiving bank or recipient.
+
+### Branded wire payout
+
+To send the wire under a specific sender identity, add the top-level `brand` object. `brand.account_id` is the ID of a verified Account whose identity appears as the wire sender (originator). It is not free-form display text.
+
+```json title="Request"
+{
+  "amount": {
+    "value": "1",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "polygon"
+  },
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048"
+  },
+  "brand": { "account_id": "<BRAND_ACCOUNT_ID>" }
+}
+```
+
+ACH branding sets the name on the receiver's bank statement line item. Wire branding sets the sender (originator) on the wire. `destination.wire_memo` sets the wire's payment reference separately, so `brand` does not change the memo. Branding does not change which Account funds the transfer or which recipient receives it. If you omit `brand`, the wire is sent unbranded, as before. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers#branded-outbound-wires) for details.
 
 ## Stablecoin to USD (ACH)
 

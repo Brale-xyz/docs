@@ -644,7 +644,9 @@ components:
         brand:
           $ref: '#/components/schemas/BrandData'
           description: >-
-            Controls which Account name appears on ACH bank statement line items.
+            Selects whose verified Account identity the counterparty sees. On ACH
+            transfers it controls the name on bank statement line items. On outbound
+            wires it selects the wire sender (originator).
             Legacy alias `branding` is still accepted but deprecated.
       required:
         - amount
@@ -1732,11 +1734,25 @@ components:
       type: object
       nullable: true
       additionalProperties: false
+      description: >-
+        Optional branding for a transfer. Supported for ACH transfers (`ach_debit`,
+        `ach_credit`, `same_day_ach_credit`) and outbound wire payouts
+        (`destination.transfer_type: wire`). Not supported for `rtp_credit` or
+        `fednow_credit`. Branding does not change which Account funds the transfer
+        (the Account in the request path), the source or destination, or
+        `destination.wire_memo`. Omit `brand` to send the transfer unbranded. See
+        [Branded Transfers](/guides/2nd-and-3rd-party-transfers).
       required:
         - account_id
       properties:
         account_id:
           type: string
+          description: >-
+            ID of the verified Account whose identity is presented to the
+            counterparty. For ACH, this is the name on bank statement line items.
+            For outbound wires, this Account's verified identity is used as the
+            wire sender (originator). This is an Account ID, not free-form
+            display text.
     PaymentData:
       type: object
       additionalProperties: false

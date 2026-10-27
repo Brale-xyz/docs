@@ -1,13 +1,13 @@
 ---
 title: "Branded Transfers"
-description: "Display your business name or your customer's name on ACH transfers instead of Brale."
+description: "Show your business or your customer's verified identity instead of Brale on ACH transfers and outbound domestic wire payouts."
 ---
 
-We've expanded the Transfers endpoint to support both 2nd and 3rd party ACH transfers.
+We've expanded the Transfers endpoint to support both 2nd and 3rd party ACH transfers and outbound domestic wire payouts.
 
-When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** on the ACH transaction (instead of “Brale”).
+When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** instead of "Brale". On ACH, `brand` controls the name on the receiver's bank statement line item. On outbound wires, `brand` selects the sender (originator) of the wire.
 
-Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit.
+Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit, and outbound wire payouts (`destination.transfer_type: "wire"`). Branding is not supported for `rtp_credit` or `fednow_credit`.
 
 To learn more and see a demo, schedule a meeting to [talk to sales](https://brale.xyz/contact).
 
@@ -138,3 +138,56 @@ The receiver will see Company 2 as the originator name on the ach_debit transact
   "updated_at": "2026-01-01T00:00:00Z"
 }
 ```
+
+## Branded outbound wires
+
+You can brand an outbound domestic wire payout with the same top-level `brand` object. `brand.account_id` selects the verified Account identity used as the wire sender (originator). It is not free-form display-name text.
+
+A branded wire request involves three different parties:
+
+| Field | What it selects |
+| :---- | :-------------- |
+| `account_id` in the URL | The Account that funds the transfer. `source.address_id` must be a funded internal Address on this Account. |
+| `brand.account_id` | The Account whose verified identity appears as the wire sender. This can be your business (2nd-party) or your customer's business (3rd-party). |
+| `destination.address_id` | The recipient's wire-capable bank Address. |
+
+Branding only changes the sender identity on the wire. It does not change which Account funds the transfer, who owns the source or destination, custody, or the existing payout eligibility and verification requirements. If you omit `brand`, the wire is sent unbranded, as before. You do not need to create an Automation or set up a separate funding account to send a branded wire.
+
+`brand` and `destination.wire_memo` are independent. `brand` controls who the wire is from. `destination.wire_memo` controls the payment reference text sent with the wire. Pass an explicit `wire_memo` when the recipient needs a specific reference.
+
+### Example of a branded wire payout (Company 2 = your customer)
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
+
+In this example, your business account in the URL funds the payout from its internal Address, and the wire is sent with **Company 2** as the sender.
+
+```json Request
+{
+  "amount": {
+    "value": "2500.00",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "destination": {
+    "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
+    "value_type": "USD",
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048"
+  },
+  "brand": {
+    "account_id": "34fcsGrCgN0Z9zC1v55eP0I6AKW"
+  }
+}
+```
+
+- `source.address_id` is a funded internal Address on the Account in the URL. `source.value_type` and `source.transfer_type` match the token and network it holds.
+- `destination.address_id` is an external bank Address with `wire` in its `transfer_types`.
+- `destination.transfer_type` is `wire` and `destination.value_type` is `USD`.
+
+Creating the Transfer does not mean the wire has settled. Processing a branded wire can take longer while Brale prepares the brand Account's sender identity. Keep tracking the original Transfer while it is `pending` instead of creating a replacement, and reuse the same `Idempotency-Key` if you retry the same request.
+
+See [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp) to create the recipient's wire-capable bank Address and to track the payout with `destination.payment_details.imad`, returns, and refunds.
