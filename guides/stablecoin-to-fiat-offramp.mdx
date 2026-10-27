@@ -141,6 +141,33 @@ Once your customer has an address and stablecoins are held in a Brale controlled
 
 Brale will burn the stablecoins from the Source Address immediately, and then transfer USD to the destination bank account.
 
+### Optional: brand the wire sender
+
+To send the wire under your business's or your customer's verified identity instead of Brale, add a top-level `brand` object with `brand.account_id`. `brand` selects the wire sender (originator). It does not change which Account funds the transfer, the source or destination, or the memo. `destination.wire_memo` still sets the payment reference. If you omit `brand`, the wire is sent unbranded. See [Branded outbound wires](/guides/2nd-and-3rd-party-transfers#branded-outbound-wires) for a full example.
+
+```json title="Request (branded wire)"
+{
+  "amount": {
+    "value": "100",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "YSBC",
+    "transfer_type": "solana"
+  },
+  "destination": {
+    "address_id": "2AbCdEfGHiJkLmN0pQrStUvWxYz",
+    "value_type": "USD",
+    "transfer_type": "wire",
+    "wire_memo": "Invoice 1048"
+  },
+  "brand": {
+    "account_id": "<BRAND_ACCOUNT_ID>"
+  }
+}
+```
+
 ### Tracking the outbound wire with `destination.payment_details.imad`
 
 When you retrieve the transfer, the response may include a `destination.payment_details` object containing the wire IMAD for tracing and reconciliation.
@@ -272,7 +299,7 @@ A per-user off-ramp automation is not available yet and is expected in Q1 2027. 
 4. **Submit the off-ramp transfer from the managing account.**\
    Call `POST /accounts/{account_id}/transfers` with the managing account's `account_id`. Set the managing account's internal address as the source and the user's bank address as the destination.
 
-   For ACH payouts, pass a `brand` object to control the sender name the user sees on their bank statement. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit` and `same_day_ach_credit` only.
+   Pass a `brand` object to control the sender the user sees. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. For ACH payouts, this sets the name on their bank statement. For wire payouts (`destination.transfer_type: "wire"`), it sets the wire sender. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit`, `same_day_ach_credit`, and `wire` payouts. It is not supported for `rtp_credit` or `fednow_credit`.
 
    ```json Request
    {
