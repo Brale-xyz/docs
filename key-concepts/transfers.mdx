@@ -37,6 +37,7 @@ Each source and destination includes:
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). Not supported for `rtp_credit` or `fednow_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
+| `ach_description` | In `destination` (payouts) or `source` (`ach_debit`) | string | **ACH only.** Short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, and `source.ach_description` for `ach_debit`. Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the first 10 characters are used. See [What recipients see on ACH](#what-recipients-see-on-ach). |
 
 ## Response-only fields
 
@@ -257,6 +258,45 @@ Offramp your stablecoin to USD via ACH Credit.
   }
 }
 ```
+
+### What recipients see on ACH
+
+On the recipient's bank statement, an ACH transfer shows the sender name followed by a short description. The sender name is Brale, or the Account set in `brand.account_id`. `ach_description` sets the description.
+
+Set `ach_description` on the ACH leg of the transfer:
+
+- `destination.ach_description` for payouts (`ach_credit`, `same_day_ach_credit`).
+- `source.ach_description` for `ach_debit`.
+
+`ach_description` does not apply to `wire`, `rtp_credit`, or `fednow_credit`.
+
+Only the first 10 characters are used. Use letters, numbers, and spaces. Unsupported characters are removed and longer values are cut to 10 characters.
+
+If you omit `ach_description`, the description defaults to `PAYOUT` for payouts and `PAYMENT` for ACH debits. For example, a payout branded as Acme shows `Acme PAYOUT` by default, or `Acme INV1048` with `"ach_description": "INV1048"`.
+
+`brand` and `ach_description` are independent. `brand` sets who the payment is from. `ach_description` sets the short reference. Exact display varies by receiving bank.
+
+```json title="Request"
+{
+  "amount": {
+    "value": "1",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "canton"
+  },
+  "destination": {
+    "address_id": "34yGFQf7tP1HJCPAWNGaN4rh4nX",
+    "value_type": "USD",
+    "transfer_type": "same_day_ach_credit",
+    "ach_description": "INV1048"
+  }
+}
+```
+
+`ach_description` is not currently returned on GET transfer responses.
 
 ## Stablecoin to USD (FedNow payout)
 
