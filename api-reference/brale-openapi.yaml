@@ -2569,6 +2569,30 @@ paths:
 
             - `insufficient_balance`: the transfer amount exceeds the bank
             account's available balance.
+
+
+            For a branded transfer, Brale can also reject the request when the
+            Account in `brand.account_id` can't be used as a brand:
+
+
+            - `brand_account_not_verified`: the brand Account is not ready to be
+            used as a brand. Contact support to resolve this, then retry.
+
+            - `brand_account_update_required`: the brand Account can't be used for
+            branded transfers yet. Contact support to resolve this, then retry
+            with the same `Idempotency-Key` and body. Brale does not store this
+            response for the key, so the same request succeeds once support has
+            fixed the brand Account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+        '503':
+          description: >
+            `brand_identity_unavailable`: Brale can't process branded transfers
+            right now. Retry the same request with the same `Idempotency-Key`
+            after a few minutes, and contact support if the error continues. Brale
+            does not store this response for the key.
           content:
             application/json:
               schema:
