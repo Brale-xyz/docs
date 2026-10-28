@@ -22,7 +22,6 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `celo` | Celo |
 | `chia` | Chia |
 | `classic` | Ethereum Classic |
-| `coreum` | Tx |
 | `ethereum` | Ethereum |
 | `hedera` | Hedera |
 | `kusama` | Polkadot / Kusama |
@@ -38,23 +37,24 @@ Brale supports these transfer types (onchain and offchain payment rails) for fun
 | `stellar` | Stellar |
 | `tempo` | Tempo |
 | `tron` | Tron |
+| `tx` | Tx |
 | `vechain` | VeChain |
+| `verona` | Verona |
 | `worldchain` | Worldchain |
-| `xion` | Verona |
 | `xrp_ledger` | XRP Ledger |
 
-## Transfer type aliases
+## Legacy transfer types
 
-Brale accepts these aliases anywhere a `transfer_type` is accepted as input, including Address creation and updates, Address list filters, balance lookups, and Transfer creation and list filters. Responses always return the canonical API id.
+Brale still accepts these legacy `transfer_type` values anywhere a `transfer_type` is accepted as input. They are deprecated. Use the current value in new integrations. API responses may return the legacy value, so treat both values as the same network when you read responses.
 
-| Alias | Canonical transfer\_type (API id) | Name |
+| Legacy transfer\_type (deprecated) | Current transfer\_type | Name |
 | --- | --- | --- |
-| `tx` | `coreum` | Tx |
-| `tx_testnet` | `coreum_testnet` | Tx Testnet |
-| `verona` | `xion` | Verona |
-| `verona_testnet` | `xion_testnet` | Verona Testnet |
+| `coreum` | `tx` | Tx |
+| `coreum_testnet` | `tx_testnet` | Tx Testnet |
+| `xion` | `verona` | Verona |
+| `xion_testnet` | `verona_testnet` | Verona Testnet |
 
-For example, a request with `transfer_type: verona` creates a Transfer that the API returns with `transfer_type: xion`. Unknown values return an `invalid_transfer_type` error.
+Unknown values return an `invalid_transfer_type` error.
 
 ## Offchain
 
@@ -82,7 +82,6 @@ Use these values when working in testnet. They mirror the corresponding mainnet 
 | `base_sepolia` | Base Sepolia Testnet |
 | `canton_testnet` | Canton Testnet |
 | `chia_testnet` | Chia Testnet |
-| `coreum_testnet` | Tx Testnet |
 | `monad_testnet` | Monad Testnet |
 | `pulsechain_testnet` | PulseChain Testnet |
 | `radius_testnet` | Radius Testnet |
@@ -92,8 +91,9 @@ Use these values when working in testnet. They mirror the corresponding mainnet 
 | `starknet_testnet` | Starknet Testnet |
 | `tempo_testnet` | Tempo Testnet |
 | `tron_testnet` | Tron Testnet |
+| `tx_testnet` | Tx Testnet |
+| `verona_testnet` | Verona Testnet |
 | `worldchain_testnet` | Worldchain Sepolia Testnet |
-| `xion_testnet` | Verona Testnet |
 
 ## Supported `transfer_type` values by `value_type`
 
