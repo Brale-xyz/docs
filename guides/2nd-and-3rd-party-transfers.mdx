@@ -193,3 +193,16 @@ In this example, your business account in the URL funds the payout from its inte
 Creating the Transfer does not mean the wire has settled. Processing a branded wire can take longer while Brale prepares the brand Account's sender identity. Keep tracking the original Transfer while it is `pending` instead of creating a replacement, and reuse the same `Idempotency-Key` if you retry the same request.
 
 See [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp) to create the recipient's wire-capable bank Address and to track the payout with `destination.payment_details.imad`, returns, and refunds.
+
+## Brand account errors
+
+When you create a branded transfer, Brale can reject the request if the Account in `brand.account_id` can't be used as a brand:
+
+| Status | `id`                            | What to do                                                                                                   |
+| ------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `404`  | `brand_account_not_found`       | Check that `brand.account_id` is correct.                                                                    |
+| `422`  | `brand_account_not_verified`    | Contact support to resolve the brand Account before retrying.                                                |
+| `422`  | `brand_account_update_required` | Contact support to resolve the brand Account. Then retry with the same `Idempotency-Key` and body.           |
+| `503`  | `brand_identity_unavailable`    | Retry the same request with the same `Idempotency-Key` after a few minutes. Contact support if it continues. |
+
+Brale does not store the `422 brand_account_update_required` or `503 brand_identity_unavailable` response for the `Idempotency-Key`. The same request succeeds once support fixes the brand Account or the service recovers.

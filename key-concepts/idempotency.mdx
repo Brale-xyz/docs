@@ -66,6 +66,8 @@ curl --request POST \
 | `5xx` server error                                                   | Retry with same key (with backoff) |
 | `429` rate limited                                                   | Retry with same key (with backoff) |
 | `422 insufficient_balance` — customer has since funded their account | Retry with same key                |
+| `422 brand_account_update_required`: support has fixed the brand account | Retry with same key |
+| `503 brand_identity_unavailable`                                     | Retry with same key (with backoff) |
 
 **Generate a new key** when the request itself is changing:
 
