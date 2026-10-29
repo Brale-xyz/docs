@@ -1072,6 +1072,7 @@ components:
         - tempo_testnet
         - stellar
         - spark
+        - spark_testnet
         - xrp_ledger
     ExternalAddressOnchainCreate:
       type: object
