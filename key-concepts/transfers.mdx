@@ -179,6 +179,8 @@ Onramp to your stablecoin by debiting a Plaid connected address.
 Optional `brand` object
 You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). `brand` is not supported for RTP or FedNow.
 
+Transfer responses return `brand` as `{ "account_id": "<ACCOUNT_ID>" }` when the transfer was branded, or `null` when it was not. See [Confirm the brand on a transfer](/guides/2nd-and-3rd-party-transfers#confirm-the-brand-on-a-transfer).
+
 ## Stablecoin to USD (Wire Offramp or Payout)
 
 Offramp your stablecoin to USD via wire transfer.
