@@ -377,6 +377,22 @@ components:
           nullable: true
           description: Optional free-form note attached to the transfer.
           example: null
+        brand:
+          type: object
+          nullable: true
+          additionalProperties: false
+          description: >-
+            The Account the transfer was branded as, or `null` when the transfer was
+            not branded. Returned on the create, get, and list transfer endpoints.
+            Use it to confirm that the `brand` you requested was applied. A transfer
+            created with `brand` can still return `null` if Brale sent it unbranded.
+          required:
+            - account_id
+          properties:
+            account_id:
+              type: string
+              description: ID of the Account whose identity was used as the brand.
+          example: null
         automation_id:
           allOf:
             - $ref: '#/components/schemas/Ksuid'
@@ -619,6 +635,7 @@ components:
               value: '100.00'
               currency: USD
             note: null
+            brand: null
             created_at: '2026-01-01T00:00:00Z'
             updated_at: '2026-01-01T00:00:00Z'
     TransferCreateRequest:
