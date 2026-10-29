@@ -3410,6 +3410,10 @@ paths:
               deposit`. Returned for pending, disabled, archived, or otherwise
               inactive Automations.
 
+            - `destination_address_pending` — `Destination address is still being
+              provisioned; retry once the address is active`. Retry after the
+              destination address becomes `active`.
+
             - The `Idempotency-Key` was already used with a different request body
               or URI.
           content:

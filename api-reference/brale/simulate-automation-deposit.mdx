@@ -150,6 +150,7 @@ Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to f
 | `404` | | The account or Automation was not found, or the Automation does not belong to the account in the path. |
 | `422` | `mainnet_destination` | The Automation destination is on a mainnet chain. `detail` is `Deposit simulation is only available for testnet automations`. |
 | `422` | `automation_not_active` | The Automation is pending, disabled, archived, or otherwise inactive. `detail` is `Automation must be active to simulate a deposit`. |
+| `422` | `destination_address_pending` | The Automation destination address is still being provisioned. `detail` is `Destination address is still being provisioned; retry once the address is active`. Retry after the address becomes `active`. |
 | `422` | | The `Idempotency-Key` was already used with a different request body or URI. |
 
 ## Idempotency
