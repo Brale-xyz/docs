@@ -220,7 +220,8 @@
               "api-reference/brale/create-address",
               "api-reference/brale/create-internal-address",
               "api-reference/brale/update-address",
-              "api-reference/brale/get-address-balance"
+              "api-reference/brale/get-address-balance",
+              "api-reference/brale/create-address-update-link-token"
             ]
           },
           {
