@@ -1051,6 +1051,12 @@ components:
         On input, `tx`, `tx_testnet`, `verona`, and `verona_testnet` are accepted
         as aliases for `coreum`, `coreum_testnet`, `xion`, and `xion_testnet`.
         Responses always return the canonical identifier (for example, `coreum`).
+
+        `same_day_ach_debit` is retired. Requests that include it (creating or
+        updating an address, registering a bank account through Plaid, or creating
+        a transfer) return `400` with an `invalid_transfer_type` or
+        `invalid_transfer_types` error. It can still appear in responses for
+        existing records.
       enum:
         - wire
         - ach_credit
@@ -1107,10 +1113,11 @@ components:
           items:
             $ref: '#/components/schemas/TransferType'
           description: One or more rails (wire, ach_credit, same_day_ach_credit, ach_debit,
-            same_day_ach_debit, rtp_credit, fednow_credit)
+            rtp_credit, fednow_credit). `same_day_ach_debit` is retired and returns
+            a `400` `invalid_transfer_types` error.
         plaid_token:
           type: string
-          description: Required when using ach_debit or same_day_ach_debit
+          description: Required when using ach_debit
         account_number:
           type: string
         routing_number:
@@ -2768,7 +2775,6 @@ paths:
                   name: Operating Account (ACH Debit)
                   transfer_types:
                     - ach_debit
-                    - same_day_ach_debit
                   plaid_token: PUBLIC_TOKEN_EXCHANGED_WITH_BRALE
       responses:
         '201':
