@@ -183,6 +183,10 @@ components:
           example: checking
         needs_update:
           type: boolean
+          description: Plaid-linked bank addresses only. `true` when the Plaid
+            link has expired and the user must relink the bank account. Call
+            `POST /accounts/{account_id}/addresses/{address_id}/update-link-token`
+            to get a Plaid Link token for the relink.
           example: false
         last_updated:
           type: string
@@ -2579,7 +2583,9 @@ paths:
             Plaid. Link the bank account before using it for an ACH debit.
 
             - `bank_account_relink_required`: the bank account's Plaid link has
-            expired. Have the user relink the bank account, then retry.
+            expired. Have the user relink the bank account with a token from
+            `POST /accounts/{account_id}/addresses/{address_id}/update-link-token`,
+            then retry.
 
             - `bank_balance_unavailable`: Brale could not verify the bank
             account's balance. Retry, or relink the bank account if the error
@@ -3070,6 +3076,101 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 type: service_unavailable
+  /accounts/{account_id}/addresses/{address_id}/update-link-token:
+    post:
+      tags:
+        - Addresses
+      operationId: create_address_update_link_token
+      summary: Create an update link token for a bank address
+      description: 'Returns a Plaid Link token in update mode for a Plaid-linked
+        bank address whose link has expired. Call this endpoint when the address
+        returns `needs_update: true`, or when an `ach_debit` transfer fails with
+        `bank_account_relink_required`. Open Plaid Link with the returned `link_token`
+        so the user can re-authenticate. The address keeps the same `address_id`.
+
+        Requires the `addresses:read` scope.
+
+        '
+      security:
+        - oauth:
+            - addresses:read
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          example: idemp-123e4567-e89b-12d3-a456-426614174000
+          description: 'A unique string used to prevent duplicate operations. Each POST
+            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+
+            '
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the Plaid-linked bank address
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkTokenRequest'
+      responses:
+        '200':
+          description: Plaid Link token in update mode
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - link_token
+                properties:
+                  link_token:
+                    type: string
+                    description: Plaid Link token. Open Plaid Link with this token
+                      to re-authenticate the bank account.
+                    example: link-sandbox-123456789
+              example:
+                link_token: link-sandbox-123456789
+        '400':
+          description: >
+            Bad request. Possible `code` values on `type: validation_error`:
+
+            - `no_update_needed` — the bank address does not need a Plaid
+              update.
+
+            - `invalid_redirect_uri` — the `redirect_uri` is not in the allowed
+              list for the account.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        example: no_update_needed
+              examples:
+                no_update_needed:
+                  summary: Bank address does not need an update
+                  value:
+                    type: validation_error
+                    code: no_update_needed
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden. The token does not have the `addresses:read` scope.
+        '404':
+          description: Not found. The address is not a bank address on this account.
   /accounts/{account_id}/financial-institutions:
     get:
       tags:

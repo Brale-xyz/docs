@@ -515,6 +515,8 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}/update-link-token`
 
+This endpoint requires the `addresses:read` scope and an `Idempotency-Key` header. The request body is optional and accepts the same fields as [Create Plaid link token](/api-reference/brale/create-plaid-link-token).
+
 ```json Response
 {
   "link_token": "link_token_XYZ"
@@ -522,6 +524,10 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
 ```
 
 Open Plaid Link again with this `link_token`. Plaid will streamline the flow and only ask the user to re-authenticate. Run Step 3 again with the new `public_token` (same endpoint). The existing Address is updated in place and retains the same `address_id`.
+
+If the Address does not need an update, Brale returns `400` with `type: validation_error` and `code: no_update_needed`. After the user relinks the bank account, you can retry `ach_debit` transfers from the same `address_id`.
+
+See [Create an update link token for a bank address](/api-reference/brale/create-address-update-link-token).
 
 ## Fetching Addresses
 
