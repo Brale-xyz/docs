@@ -67,6 +67,10 @@ Unknown values return an `invalid_transfer_type` error.
 | `rtp_credit` | RTP Credit |
 | `fednow_credit` | FedNow Credit. Inbound through [Automations](/guides/fednow-inbound) and outbound through [Transfers](/guides/fednow-outbound). Available on enabled accounts. |
 
+<Warning>
+  `same_day_ach_debit` is retired. Requests that include it return `400`. Address creation, address updates, and Plaid bank registration return an `invalid_transfer_types` error. Transfer creation returns an `invalid_transfer_type` error. Use `ach_debit` instead. Existing records can still show `same_day_ach_debit` in responses.
+</Warning>
+
 <Note>
   The [Automation deposit simulator](/api-reference/brale/simulate-automation-deposit) takes its own input values (`ach`, `wire`, `fednow`). These are not `transfer_type` identifiers. A simulated `fednow` deposit produces a Transfer with `source.transfer_type: fednow_credit`.
 </Note>
