@@ -241,7 +241,7 @@ curl --request GET \
   --header "Authorization: Bearer ${AUTH_TOKEN}"
 ```
 
-The response includes a `status` field with one of the values described above, along with `updated_at` denoting the last time the status changed:
+The response includes a `status` field with one of the values described above, along with `updated_at`. For transfers with more than one leg, such as a stablecoin redemption to a bank account, `updated_at` is the time of the most recent update across all legs:
 
 ```json
 {

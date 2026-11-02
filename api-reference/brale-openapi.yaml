@@ -414,6 +414,11 @@ components:
         updated_at:
           type: string
           format: date-time
+          description: >-
+            Time of the most recent update to the transfer. For transfers with more
+            than one leg (for example, a stablecoin burn followed by a fiat payout, or
+            a fiat payment followed by a mint), this is the latest update across all
+            legs, so it reflects the change that produced the current `status`.
           example: '2026-01-01T00:00:00Z'
     TransferEndpoint:
       title: TransferEndpoint
