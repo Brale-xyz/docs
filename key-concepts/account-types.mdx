@@ -41,6 +41,31 @@ Where each combination is geographically available depends on the account's loca
 
 On any of these rows, `verification_mode` is `standard` by default. Use `reliance` only when your integration operates under an agreement with Brale that specifies a reliance model and Brale has enabled it for your managing account.
 
+## Reliance eligibility
+
+Under the reliance model, Brale relies on your managing entity's own CIP/KYC program to verify the accounts you create. To qualify, your managing entity must be regulated by a U.S. federal functional regulator:
+
+- The Federal Reserve
+- Federal Deposit Insurance Corporation (FDIC)
+- Office of the Comptroller of the Currency (OCC)
+- National Credit Union Administration (NCUA)
+- Securities and Exchange Commission (SEC)
+- Commodity Futures Trading Commission (CFTC)
+
+Regulation outside the United States does not qualify a managing entity for reliance. For example, an entity registered only with FINTRAC in Canada cannot use `verification_mode: "reliance"`.
+
+To assess eligibility, Brale asks for:
+
+- Your legal entity name and the U.S. federal functional regulator that oversees it.
+- An overview of your CIP/KYC program, including whether you have documented policies and procedures.
+- A summary of your use case, customer types, jurisdictions, and funds flow.
+
+Brale Risk & Compliance must approve any reliance arrangement before Brale enables it for your managing account.
+
+<Note>
+Reliance eligibility applies to your managing entity, not to the accounts you create. A `regulatory_profile` on `POST /accounts` describes the customer business's own regulator, which can be a non-U.S. authority such as FINTRAC. It determines whether that business can open a [custodial account outside the United States](/coverage/account-availability#international-custodial-availability-for-regulated-businesses). It does not make your managing account eligible for reliance.
+</Note>
+
 ## Backward compatibility
 
 The dimension fields are optional and default to the values that describe today's account. A request that omits `entity_type`, `account_type`, and `verification_mode` continues to create a KYB-verified business account with Brale-custodied wallets, exactly as before.
