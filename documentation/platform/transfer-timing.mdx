@@ -101,7 +101,7 @@ Organization admins can choose whether failed RTP transfers automatically fall b
 - The payout can be returned under standard ACH return rules. For example, `R04` (Invalid Account Number Structure) means the receiving bank rejected the account number.
 - An ACH return can arrive after the payout was expected to settle. Brale moves the transfer to `failed` and sends a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. Check the [`failure`](/api-reference/brale/get-transfer#failure) object for the return code.
 
-If an RTP payout takes longer than RTP timing, the payout may have fallen back to Same Day ACH. Keep tracking the transfer `status` until it reaches a terminal state. If the payout is returned for an account number error, confirm the recipient's bank details before you create a new transfer.
+If an RTP payout takes longer than RTP timing, the payout may have fallen back to Same Day ACH. The payment reference also changes. See [Trace a payment](/guides/how-to/trace-a-payment#rtp-and-fednow-payouts). Keep tracking the transfer `status` until it reaches a terminal state. If the payout is returned for an account number error, confirm the recipient's bank details before you create a new transfer.
 
 ### FedNow Credit
 

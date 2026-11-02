@@ -205,6 +205,8 @@ When you retrieve the transfer, the response may include a `destination.payment_
   `destination.payment_details` is response-only and is not accepted in create requests. The IMAD is assigned by the sending bank and may not be available immediately after the transfer is created — the field may be absent until Brale has the underlying bank metadata, at which point it appears on the transfer. Do not confuse this with `destination.wire_memo`, which remains a request field for outbound wires. See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the full field reference.
 </Note>
 
+To get the OMAD, trace an RTP or FedNow payout, or get proof of payment, see [Trace a payment](/guides/how-to/trace-a-payment).
+
 ### Returned outbound wires
 
 The receiving bank can return an outbound wire, even after the transfer reached `complete`. When Brale recognizes the return, it updates the original transfer to `failed` and emits [`transfer.failed`](/webhooks/webhook-events#returned-outbound-wires). Brale does not create a new transfer or use a separate `returned` status.

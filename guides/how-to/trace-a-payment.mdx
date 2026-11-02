@@ -1,0 +1,87 @@
+---
+title: "Trace a Payment"
+description: "Find the IMAD, ACH trace number, or other reference for a fiat transfer, and get proof of payment when funds are missing."
+keywords: ["IMAD", "OMAD", "trace number", "end-to-end ID", "UETR", "SWIFT", "proof of payment", "missing funds"]
+---
+
+Use this guide when a sender or recipient asks where their funds are, or when a bank asks for a reference to trace a payment. Each fiat rail uses a different reference. Brale exposes some references on the Transfer. Brale support can provide the others.
+
+## Prerequisites
+
+- Your `account_id`: [How to get your account_id](/guides/how-to/get-your-account-id)
+- The `id` of the Transfer you want to trace. Use the Transfer that moved fiat, not a related onchain mint, burn, or swap. For example, a USDC-funded mint has no wire IMAD.
+
+## Find the reference for each rail
+
+[Retrieve the Transfer](/api-reference/brale/get-transfer) and read the field for the rail and direction.
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers/${TRANSFER_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+| Rail | Direction | Reference | Where to find it | When it appears |
+| --- | --- | --- | --- | --- |
+| Wire | Inbound | IMAD | `source.payment_details.imad` | When Brale receives the wire |
+| Wire | Outbound | IMAD | `destination.payment_details.imad` | After the sending bank submits the wire. It can appear after the Transfer is created or reaches `complete`. |
+| Wire | Outbound | OMAD | Not exposed in the API. Request it from support. | After the receiving bank acknowledges the wire |
+| ACH | Inbound | ACH trace number | `source.payment_details.trace_number` | When the ACH payment posts |
+| ACH (`ach_credit`, `same_day_ach_credit`) | Outbound | ACH trace number | `destination.payment_details.trace_number` | When the payout posts |
+| RTP (`rtp_credit`) | Outbound | Depends on the rail used. See [RTP and FedNow payouts](#rtp-and-fednow-payouts). | Request it from support | After the payout settles |
+| FedNow (`fednow_credit`) | Inbound and outbound | End-to-end ID | Not exposed in the API. Request it from support. | After the payment settles |
+
+`payment_details` is optional. If the object or field is absent, Brale does not have the bank metadata yet. Retrieve the Transfer again later. See [`source.payment_details`](/key-concepts/transfers#sourcepayment_details) and [`destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the field reference.
+
+## IMAD and OMAD for outbound wires
+
+A Fedwire payment has two references:
+
+- **IMAD** (Input Message Accountability Data) is assigned when Brale's bank sends the wire. Brale returns it in `destination.payment_details.imad`.
+- **OMAD** (Output Message Accountability Data) is assigned when the Federal Reserve delivers the wire to the receiving bank. It confirms that the receiving bank got the wire.
+
+The Brale API does not return the OMAD. To get it, email [support@brale.xyz](mailto:support@brale.xyz) with the Transfer `id`.
+
+Give the recipient the IMAD first. Their bank can use it to locate the incoming wire. If the receiving bank returns the wire, Brale moves the Transfer to `failed` with `failure.type: "wire_return"`. See [Returned outbound wires](/guides/stablecoin-to-fiat-offramp#returned-outbound-wires).
+
+## RTP and FedNow payouts
+
+Wire fields such as `imad` and ACH fields such as `trace_number` do not apply to FedNow. Instant payments are traced with an end-to-end ID, which the Brale API does not return. To get it, email [support@brale.xyz](mailto:support@brale.xyz) with the Transfer `id`.
+
+An `rtp_credit` payout does not always settle over the RTP network:
+
+- Brale can send an `rtp_credit` payout over FedNow. The reference is a FedNow end-to-end ID.
+- If your organization enabled [RTP fallback](/documentation/platform/transfer-timing#rtp-fallback-to-same-day-ach), a failed RTP payout can settle over Same Day ACH. The reference is an ACH trace number, and Same Day ACH timing applies.
+
+When you ask support for a reference, support tells you which rail the payout used.
+
+## Inbound international (SWIFT) wires
+
+A sender outside the US can send USD by SWIFT to an [Automation's](/guides/fiat-to-stablecoin-onramp#fiat-to-stablecoin-automation-automatic-onramp) wire funding instructions. The payment routes through one or more intermediary banks before it reaches Brale's bank, where it arrives as a wire. Brale creates a Transfer only after the wire arrives.
+
+International wires take longer than domestic wires. There is no fixed arrival time, and some corridors take several business days. A sender's receipt that shows the payment as initiated does not mean it has reached Brale's bank.
+
+If an international wire does not appear, ask the sender for the **UETR** (Unique End-to-End Transaction Reference) from their bank. Email it to [support@brale.xyz](mailto:support@brale.xyz) with the amount, the send date, and the Automation `id`. Brale can use the UETR to trace the payment with its bank.
+
+## Originator name on payouts
+
+The name the recipient's bank shows for a payout depends on the rail:
+
+- **ACH:** Optional statement branding applies to ACH payouts only. See [Branding](/documentation/api-design/primitives#branding).
+- **Wire, RTP, and FedNow:** Statement branding does not apply. Wire payouts are sent with Brale Inc. as the originator.
+
+## Get proof of payment
+
+Use the Transfer as your record of the payout. Share these values with the sender or recipient:
+
+- The Transfer `id`, `status`, `amount`, and `updated_at`
+- The rail reference from the [table above](#find-the-reference-for-each-rail)
+
+If the recipient's bank needs more than the rail reference, email [support@brale.xyz](mailto:support@brale.xyz) with the Transfer `id`. Include the reference you already have and what the bank asked for.
+
+## Before you contact support
+
+1. Confirm the Transfer `status`. A `pending` or `processing` Transfer is still in progress. See [Transfer timing](/documentation/platform/transfer-timing) for each rail's expected settlement time.
+2. Check `payment_details` for the IMAD or trace number.
+3. If the Transfer is `failed`, read the [`failure`](/api-reference/brale/get-transfer#failure) object for return details.
+4. Give the recipient's bank the reference. Most banks can locate a payment with the IMAD, trace number, or end-to-end ID.

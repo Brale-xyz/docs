@@ -159,6 +159,8 @@ If a sender enters a reference in their bank's "Message to receiving bank" field
 
 `payment_reference` is an existing response-only field. It is not a request parameter, and it may be `null` or absent. Availability depends on the metadata the sending bank supplies and Brale receives, so not every inbound wire includes a reference.
 
+If an inbound payment does not appear, including an international (SWIFT) wire, see [Trace a payment](/guides/how-to/trace-a-payment).
+
 Illustrative Transfer response excerpt:
 
 ```json Response excerpt
