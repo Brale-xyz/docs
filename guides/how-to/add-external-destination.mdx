@@ -73,13 +73,13 @@ Each blockchain has its own address format. EVM-compatible chains share addresse
 
 ## Offchain bank account (Direct bank entry)
 
-Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`. `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. Omit those fields for ACH/RTP-only addresses unless you have accurate values—do not enter placeholder or generic bank addresses.
+Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit` (on accounts with FedNow enabled). RTP payouts (`rtp_credit`) ended on October 30, 2026. `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. Omit those fields for ACH-only addresses unless you have accurate values—do not enter placeholder or generic bank addresses.
 
 <Note>
-Need `ach_debit`? Use the [Plaid-linked bank account flow](/key-concepts/addresses#create-via-plaid-linked-bank-account). Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `rtp_credit`, but **not** `ach_debit`.
+Need `ach_debit`? Use the [Plaid-linked bank account flow](/key-concepts/addresses#create-via-plaid-linked-bank-account). Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit`, but **not** `ach_debit`.
 </Note>
 
-**ACH/RTP Direct bank entry**
+**ACH Direct bank entry**
 
 ```json
 {
@@ -88,7 +88,7 @@ Need `ach_debit`? Use the [Plaid-linked bank account flow](/key-concepts/address
   "account_number": "123456789",
   "routing_number": "071000013",
   "account_type": "checking",
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"]
+  "transfer_types": ["ach_credit", "same_day_ach_credit"]
 }
 ```
 

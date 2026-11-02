@@ -27,7 +27,7 @@ Each source and destination includes:
 | `amount`          | Body                        | object | `{ "value": "10", "currency": "USD" }`                   |
 | `source`          | Body                        | object | Origin of funds (fiat rail or on-chain address)          |
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
-| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, rtp_credit, fednow_credit, polygon, solana) |
+| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
 | `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
 | `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
 
@@ -678,7 +678,6 @@ A `failed` status means the payout failed or was returned. It does not mean a re
 ## Transfer Limits
 
 - Standard and Same-Day ACH transfers are generally limited to $50,000 per transaction, including deposits and payouts.
-- RTP transfers are generally limited to $50,000 per transaction.
 - Wire transfers do not have a standard hard maximum. Wires above $3,000,000 may require additional review and processing time.
 - Stablecoin transfers do not have a standard per-transaction maximum but may be subject to account-specific controls, compliance review, available liquidity, and blockchain network constraints.
 
