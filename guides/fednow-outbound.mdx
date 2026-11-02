@@ -79,7 +79,7 @@ Send `account_number` and `routing_number` as strings so leading zeros are prese
 
 ### Option B: Add FedNow to an existing recipient
 
-To add FedNow to an existing bank Address, such as an RTP recipient, send `additional_transfer_types`:
+To add FedNow to an existing bank Address, such as an ACH recipient, send `additional_transfer_types`:
 
 ```bash
 curl --request PATCH \
@@ -89,7 +89,7 @@ curl --request PATCH \
   --data '{ "additional_transfer_types": ["fednow_credit"] }'
 ```
 
-- Brale merges `fednow_credit` into the Address's existing `transfer_types`. An Address with `["ach_credit", "rtp_credit"]` becomes `["ach_credit", "rtp_credit", "fednow_credit"]`.
+- Brale merges `fednow_credit` into the Address's existing `transfer_types`. An Address with `["ach_credit"]` becomes `["ach_credit", "fednow_credit"]`.
 - The Address `id` does not change. Keep using the same `address_id` for all rails.
 - Sending a transfer type that is already enabled has no additional effect.
 - `PATCH` requests do not take an `Idempotency-Key` header.

@@ -25,12 +25,10 @@ curl --request GET \
   "name": "Example Bank",
   "status": "active",
   "address": null,
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"]
+  "transfer_types": ["ach_credit", "same_day_ach_credit"]
 }
 ```
 
 <Note>
-This endpoint is useful after creating an address whose capabilities may update asynchronously — for example, checking whether `rtp_credit` has been added to an external bank address after RTP eligibility is confirmed. See [Create external address for RTP](/key-concepts/addresses#create-external-address-for-rtp).
-
 Before a FedNow payout, confirm that `status` is `active` and `transfer_types` includes `fednow_credit`. See [Send FedNow payouts](/guides/fednow-outbound).
 </Note>

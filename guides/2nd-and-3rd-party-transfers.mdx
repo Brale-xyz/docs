@@ -7,7 +7,7 @@ We've expanded the Transfers endpoint to support both 2nd and 3rd party ACH tran
 
 When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** instead of "Brale". On ACH, `brand` controls the name on the receiver's bank statement line item. On outbound wires, `brand` selects the sender (originator) of the wire.
 
-Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit, and outbound wire payouts (`destination.transfer_type: "wire"`). Branding is not supported for `rtp_credit` or `fednow_credit`.
+Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit, and outbound wire payouts (`destination.transfer_type: "wire"`). Branding is not supported for `fednow_credit`.
 
 To learn more and see a demo, schedule a meeting to [talk to sales](https://brale.xyz/contact).
 
