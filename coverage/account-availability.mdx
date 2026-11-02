@@ -138,7 +138,7 @@ Send `entity_type: "business"` (or omit it), `account_type: "custodial"`, the bu
 
 The rest of the payload is the same as for any business account.
 
-`verification_mode` can be `standard`, or `reliance` if Brale has enabled reliance for your managing account. Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence.
+`verification_mode` can be `standard`, or `reliance` if Brale has enabled reliance for your managing account. The customer's `regulatory_profile` does not affect reliance eligibility. Reliance requires your managing entity to be regulated by a U.S. federal functional regulator. See [Reliance eligibility](/key-concepts/account-types#reliance-eligibility). Brale requests supporting regulatory documents during verification. Sending `regulatory_profile` declares the business regulated, but it is not approval: verification still checks the license and the supporting evidence.
 
 A non-US business that sends no `regulatory_profile`, or a regulated business outside the approved countries, is refused with `422 unsupported_jurisdiction` on a custodial request. U.S. business availability is still decided by the [state table](#custodial-availability-by-state), whether or not the business is regulated. See [Creating a regulated non-US custodial business account](/key-concepts/accounts#creating-a-regulated-non-us-custodial-business-account) for the full payload.
 
