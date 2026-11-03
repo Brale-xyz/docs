@@ -7,5 +7,15 @@ description: "An overview of accounts, addresses, transfers, automations, and ot
 - [Addresses](/key-concepts/addresses) - A single resource that represents both onchain wallet addresses and offchain fiat accounts. Use `address_id` everywhere a source or destination is needed.
 - [Financial Institutions (Legacy)](/key-concepts/financial-institutions) - Financial accounts that can receive or send funds. Kept for backwards compatibility - new integrations should use Addresses.
 - [Transfers](/key-concepts/transfers) - Convert into, out of, and between stablecoins and fiat
-- [Automations](/key-concepts/automations) - A unique bank account number that will send deposited fiat funds to a pre-set onchain address
+- [Automations (virtual accounts)](/key-concepts/automations) - A unique bank account number that will send deposited fiat funds to a pre-set onchain address
 - [Idempotency](/key-concepts/idempotency) - Ensure each POST request is processed only once
+
+## Coming from another provider?
+
+| If you're looking for | Use this in Brale |
+| :-------------------- | :---------------- |
+| Virtual account, named virtual account, deposit account | [Automation](/key-concepts/automations) |
+| Customer, sub-account, end user | [Account](/key-concepts/accounts) |
+| Wallet, bank account, external account, counterparty | [Address](/key-concepts/addresses) |
+| Payment, payout, on/off-ramp transaction | [Transfer](/key-concepts/transfers) |
+| Sandbox | [Testnet](/overview/sandbox-and-testnet) |
