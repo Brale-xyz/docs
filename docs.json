@@ -106,8 +106,9 @@
             "group": "Overview",
             "pages": [
               "overview/introduction",
+              "overview/sandbox-and-testnet",
               "overview/quick-start",
-              "overview/sandbox-and-testnet"
+              "overview/developer-tools"
             ]
           },
           {
@@ -224,7 +225,7 @@
             ]
           },
           {
-            "group": "Automations",
+            "group": "Automations (virtual accounts)",
             "pages": [
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
