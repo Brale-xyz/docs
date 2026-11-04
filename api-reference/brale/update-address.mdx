@@ -1,6 +1,6 @@
 ---
 title: 'Update an Address'
-description: 'Update the name, status, or transfer types for an existing address.'
+description: 'Update the name, status, transfer types, or recipient details for an existing address.'
 openapi: 'PATCH /accounts/{account_id}/addresses/{address_id}'
 ---
 
@@ -24,6 +24,7 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 | `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
 | `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
 | `account_holder_type` | string | Bank addresses only. `"individual"` or `"business"`. Can be set only while it is not set yet. Sending the value that is already stored succeeds with no change; a different value returns `400` `account_holder_type_already_set`. |
+| `date_of_birth` | string | Bank addresses only. Individual recipient's date of birth in `YYYY-MM-DD` format. Can be set only while no date of birth is stored. Sending the stored value succeeds with no change. A different value returns `400` `date_of_birth_already_set`. |
 
 ### Add transfer types to an existing address
 
@@ -63,12 +64,29 @@ For bank addresses created without `account_holder_type`, set it once:
 
 It determines the ACH SEC code for payouts to this address (`individual` → PPD, `business` → CCD). Once set, it cannot be changed through the API.
 
+### Set the recipient's date of birth
+
+For individual bank recipients created without a date of birth, set it once:
+
+```json Request
+{ "date_of_birth": "1990-01-31" }
+```
+
+- The date must be in `YYYY-MM-DD` format and in the past. Otherwise Brale returns `400` `validation_errors`. The error response does not include the submitted value.
+- Business recipients do not accept `date_of_birth`. Sending it for a business recipient returns `400` `date_of_birth_not_supported`. Setting `account_holder_type` to `business` on an address with a stored date of birth returns the same error.
+- If Brale cannot update the recipient, it does not save the date of birth. Brale returns `422` `recipient_update_failed`, or `503` when the update is temporarily unavailable.
+- Responses return `date_of_birth` masked to the year (for example, `"1990-**-**"`).
+
 ### Error responses
 
 - `400` — invalid or incompatible transfer types, attempting to archive a pending address, attempting to unarchive a custodial address, invalid status value, or invalid `account_holder_type` value.
 - `400` `account_holder_type_already_set` — the address already has a different `account_holder_type`.
+- `400` `date_of_birth_already_set` — the address already has a different `date_of_birth`.
+- `400` `date_of_birth_not_supported` — `date_of_birth` was sent for a business recipient, or `account_holder_type: business` was sent for an address with a stored date of birth.
 - `404` — address not found or not owned by the account.
 - `422` `fednow_routing_number_not_supported` — the address's routing number does not participate in FedNow. Do not retry.
 - `422` `fednow_provider_registration_failed` — FedNow registration failed. This can be temporary. Retry the same request after a backoff.
+- `422` `recipient_update_failed` — Brale could not update the recipient with the new date of birth. The change is not saved.
+- `503` — the recipient update is temporarily unavailable. The change is not saved. Retry after a backoff.
 
 Required scope: `addresses:write`

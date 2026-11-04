@@ -61,6 +61,7 @@ When you create a Direct bank entry address with `POST /accounts/{account_id}/ad
 - `date_of_birth` is accepted when `account_holder_type` is `individual` or not set.
 - Sending `date_of_birth` with `account_holder_type: "business"` returns `400` `date_of_birth_not_supported`. Brale does not create the address.
 - A malformed or future date returns `400` `validation_errors`. Error responses do not include the submitted value.
+- If an existing bank address has no date of birth on file, set it once with the [PATCH address endpoint](/api-reference/brale/update-address). Sending the stored value again succeeds with no change. A different value returns `400` `date_of_birth_already_set`.
 - Bank address responses return `date_of_birth` masked to the year (for example, `"1990-**-**"`), or `null` when none is on file. Brale never returns the full date.
 - The deprecated `POST /accounts/{account_id}/financial-institutions/external` endpoint does not accept `date_of_birth` and returns `400` `date_of_birth_not_accepted`.
 

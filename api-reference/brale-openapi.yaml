@@ -2992,6 +2992,157 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Address'
+    patch:
+      tags:
+        - Addresses
+      operationId: update_account_address
+      summary: Update an address
+      description: >
+        Makes targeted updates to an existing address. All fields are optional.
+        Include only the fields you want to change.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  nullable: true
+                  example: Company External EVM Address
+                status:
+                  type: string
+                  nullable: true
+                  enum:
+                    - active
+                    - archived
+                additional_transfer_types:
+                  type: array
+                  description: Transfer types to add to the address. Merged into
+                    the existing `transfer_types`.
+                  items:
+                    type: string
+                    example: solana
+                bank_address:
+                  description: For bank addresses only. Supply before adding `wire`
+                    to `additional_transfer_types`.
+                  nullable: true
+                  allOf:
+                    - $ref: '#/components/schemas/USStreetAddress'
+                beneficiary_address:
+                  description: For bank addresses only. Supply before adding `wire`
+                    to `additional_transfer_types`.
+                  nullable: true
+                  allOf:
+                    - $ref: '#/components/schemas/USStreetAddress'
+                account_holder_type:
+                  type: string
+                  enum:
+                    - individual
+                    - business
+                  description: >
+                    For bank addresses only. Whether the bank account belongs to an
+                    individual or a business. Can be set only while it is not set
+                    yet. Sending the stored value succeeds with no change. A
+                    different value returns `400` `account_holder_type_already_set`.
+                date_of_birth:
+                  type: string
+                  format: date
+                  description: >
+                    For bank addresses only. Date of birth of an individual
+                    recipient, in `YYYY-MM-DD` format. Can be set only while no date
+                    of birth is stored. Sending the stored value returns `200` with
+                    no change. A different value returns `400`
+                    `date_of_birth_already_set`. Sending it for a business
+                    recipient, or with `account_holder_type: business`, returns `400`
+                    `date_of_birth_not_supported`. A malformed or future date
+                    returns `400` `validation_errors`. Responses return the date
+                    masked to the year (`1990-**-**`).
+                  example: '1990-01-31'
+            examples:
+              set_date_of_birth:
+                summary: Set a recipient's date of birth
+                value:
+                  date_of_birth: '1990-01-31'
+      responses:
+        '200':
+          description: The updated address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          description: >
+            Bad request. Date of birth cases:
+
+
+            - `date_of_birth_already_set`: the address already has a different
+              date of birth.
+
+            - `date_of_birth_not_supported`: `date_of_birth` was sent for a
+              business recipient, or `account_holder_type: business` was sent for
+              an address with a stored date of birth.
+
+            - `validation_errors`: `date_of_birth` is malformed or in the future.
+              The error response does not include the submitted value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                date_of_birth_already_set:
+                  summary: A different date of birth is already stored
+                  value:
+                    type: date_of_birth_already_set
+                    detail: Date of birth is already set and cannot be changed
+                    code: ValidationError
+                    status: 400
+        '404':
+          description: Address not found or not owned by the account.
+        '422':
+          description: >
+            The request is valid but cannot be processed:
+
+
+            - `recipient_update_failed`: Brale could not update the recipient
+              with the new date of birth. Brale does not save the change.
+
+            - `fednow_routing_number_not_supported`: the address's routing number
+              does not participate in FedNow. Do not retry.
+
+            - `fednow_provider_registration_failed`: FedNow registration failed.
+              This can be temporary. Retry after a backoff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                recipient_update_failed:
+                  summary: Recipient update rejected
+                  value:
+                    type: recipient_update_failed
+                    detail: The recipient could not be updated
+                    code: ValidationError
+                    status: 422
+        '503':
+          description: >
+            `service_unavailable`: Brale could not update the recipient at this
+            time. Brale does not save the change. Retry after a backoff.
   /accounts/{account_id}/addresses/{address_id}/balance:
     get:
       tags:
