@@ -299,7 +299,7 @@ A per-user off-ramp automation is not available yet and is expected in Q1 2027. 
 4. **Submit the off-ramp transfer from the managing account.**\
    Call `POST /accounts/{account_id}/transfers` with the managing account's `account_id`. Set the managing account's internal address as the source and the user's bank address as the destination.
 
-   Pass a `brand` object to control the sender the user sees. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. For ACH payouts, this sets the name on their bank statement. For wire payouts (`destination.transfer_type: "wire"`), it sets the wire sender. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit`, `same_day_ach_credit`, and `wire` payouts. It is not supported for `fednow_credit`.
+   Pass a `brand` object to control the sender the user sees. Most users expect to see your business as the sender, so pass your managing account's `account_id` as `brand.account_id`. For ACH payouts, this sets the name on their bank statement. For wire payouts (`destination.transfer_type: "wire"`), it sets the wire sender. For FedNow payouts (`destination.transfer_type: "fednow_credit"`), it sets the sender the receiving bank sees. Branding works the same way as any [branded transfer](/guides/2nd-and-3rd-party-transfers) and is supported for `ach_credit`, `same_day_ach_credit`, `wire`, and `fednow_credit` payouts.
 
    ```json Request
    {

@@ -35,7 +35,7 @@ Each source and destination includes:
 
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). Not supported for `rtp_credit` or `fednow_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). For FedNow payouts (`destination.transfer_type: "fednow_credit"`), it selects the sender the receiving bank sees. Not supported for `rtp_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 | `ach_description` | In `destination` (payouts) or `source` (`ach_debit`) | string | **ACH only.** Short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, and `source.ach_description` for `ach_debit`. Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the first 10 characters are used. See [What recipients see on ACH](#what-recipients-see-on-ach). |
 
@@ -177,7 +177,7 @@ Onramp to your stablecoin by debiting a Plaid connected address.
 ```
 
 Optional `brand` object
-You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). `brand` is not supported for RTP or FedNow.
+You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). For FedNow payouts, `brand` selects the sender the receiving bank sees. See [Branded FedNow payouts](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts). `brand` is not supported for RTP.
 
 Transfer responses return `brand` as `{ "account_id": "<ACCOUNT_ID>" }` when the transfer was branded, or `null` when it was not. See [Confirm the brand on a transfer](/guides/2nd-and-3rd-party-transfers#confirm-the-brand-on-a-transfer).
 
