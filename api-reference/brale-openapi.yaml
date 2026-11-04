@@ -2581,6 +2581,23 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Transfer'
+        '400':
+          description: >
+            The transfer amount is invalid. Known cases include:
+
+
+            - `invalid_amount` with `detail` `Invalid transfer amount`:
+            `amount.value` is not a number (for example, `"abc"`).
+
+            - `invalid_amount` with `detail` `Amount must be greater than zero`:
+            `amount.value` is zero or negative.
+
+            - `invalid_amount_currency`: `amount.currency` is not supported for
+            the account (for example, `BTC`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
         '422':
           description: >
             The request is valid but cannot be processed. Known cases include
