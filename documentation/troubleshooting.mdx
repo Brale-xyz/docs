@@ -23,7 +23,9 @@ Use this checklist when integrating and operating at volume.
 - Required on POST create endpoints (e.g., transfers). Missing key → 400.
 - Never reuse an Idempotency-Key with a different payload or URI (422).
 - Do not send Idempotency-Key on GETs.
-- Best practice: generate one UUID per logical action and persist it so retries reuse the same key.
+- Best practice: generate one UUID per logical action and persist it so retries reuse the same key. Reuse a key only to retry the same URI and body.
+- Brale retains keys for 24 hours from the first request. After that, a request with the same key may be processed as a new operation.
+- Save the transfer `id` from successful responses. If a request times out, check the transfer status before you retry. See [Idempotency](/key-concepts/idempotency#retrying-after-a-timeout).
 
 ## IDs (account_id vs address_id)
 
