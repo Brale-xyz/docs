@@ -153,6 +153,13 @@ components:
           description: Whether the bank account is held by an individual or a
             business. `null` if it was not set.
           example: business
+        date_of_birth:
+          type: string
+          nullable: true
+          description: Recipient's date of birth, masked to the year
+            (`YYYY-**-**`). Brale never returns the full date. `null` if no date
+            of birth is on file.
+          example: '1990-**-**'
         bank_address:
           allOf:
             - $ref: '#/components/schemas/ExternalAddressResponseStreetAddress'
@@ -1991,6 +1998,17 @@ components:
             entity type of the account that owns the address. Once set, it
             cannot be changed.
           example: business
+        date_of_birth:
+          type: string
+          format: date
+          description: >
+            Optional. Date of birth of an individual recipient, in `YYYY-MM-DD`
+            format. Accepted when `account_holder_type` is `individual` or not
+            set. Sending it with `account_holder_type: business` returns `400`
+            `date_of_birth_not_supported`. A malformed or future date returns
+            `400` `validation_errors`. Responses return the date masked to the
+            year (`1990-**-**`).
+          example: '1990-01-31'
         bank_address:
           description: >
             Bank physical address. Required when `transfer_types` includes
@@ -2730,6 +2748,18 @@ paths:
                   routing_number: '063108680'
                   account_type: checking
                   name: Example Bank
+              offchain_individual_with_date_of_birth:
+                summary: Off-chain (ACH Credit, individual recipient with date of birth)
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                  account_number: '1234567890'
+                  routing_number: '063108680'
+                  account_type: checking
+                  account_holder_type: individual
+                  date_of_birth: '1990-01-31'
+                  name: Example Bank
               offchain_fednow_credit:
                 summary: Off-chain (FedNow Credit, no postal addresses required)
                 value:
@@ -2787,6 +2817,7 @@ paths:
                     status: active
                     ownership: customer-owned
                     account_holder_type: business
+                    date_of_birth: null
                     bank_address: null
                     beneficiary_address:
                       street_line_1: 100 Example St
@@ -2803,6 +2834,29 @@ paths:
                     needs_update: false
                     last_updated: '2026-06-02T20:01:03.321461Z'
                     routingNumber: '063108680'
+        '400':
+          description: >
+            Bad request. Date of birth cases:
+
+
+            - `date_of_birth_not_supported`: `date_of_birth` was sent with
+              `account_holder_type: business`. Brale does not create the address.
+
+            - `validation_errors`: `date_of_birth` is malformed or in the future.
+              The error response does not include the submitted value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                date_of_birth_not_supported:
+                  summary: Date of birth sent for a business recipient
+                  value:
+                    type: date_of_birth_not_supported
+                    detail: date_of_birth can only be set when account_holder_type
+                      is individual or not set.
+                    code: ValidationError
+                    status: 400
         '422':
           description: >
             The request is valid but cannot be processed. FedNow-related cases:
@@ -3109,7 +3163,12 @@ paths:
 
 
         Deprecated. Use Addresses. Create an off-chain Address (ACH/Wire/RTP) and
-        pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.'
+        pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.
+
+
+        This endpoint does not accept `date_of_birth`. Sending one returns `400`
+        `date_of_birth_not_accepted`. To store a recipient''s date of birth, create
+        the bank address with `POST /accounts/{account_id}/addresses/external`.'
       parameters:
         - name: account_id
           in: path

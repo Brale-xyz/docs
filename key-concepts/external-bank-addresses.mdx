@@ -54,6 +54,16 @@ If `transfer_types` includes `wire`, wire requirements apply, even if the same a
 
 Both paths accept an optional `account_holder_type` (`"individual"` or `"business"`). Brale uses it to choose the ACH SEC code for payouts to the address: `individual` → PPD, `business` → CCD. If you omit it, Brale uses the entity type of the account that owns the address. For Plaid-linked accounts, the holder category reported by Plaid takes precedence when available. You can set it later with the [PATCH address endpoint](/api-reference/brale/update-address) if it was not set at creation; once set, it cannot be changed.
 
+## Recipient date of birth
+
+When you create a Direct bank entry address with `POST /accounts/{account_id}/addresses/external`, you can include an optional `date_of_birth` for an individual recipient in `YYYY-MM-DD` format. Brale includes it in the sanctions screening for the new recipient.
+
+- `date_of_birth` is accepted when `account_holder_type` is `individual` or not set.
+- Sending `date_of_birth` with `account_holder_type: "business"` returns `400` `date_of_birth_not_supported`. Brale does not create the address.
+- A malformed or future date returns `400` `validation_errors`. Error responses do not include the submitted value.
+- Bank address responses return `date_of_birth` masked to the year (for example, `"1990-**-**"`), or `null` when none is on file. Brale never returns the full date.
+- The deprecated `POST /accounts/{account_id}/financial-institutions/external` endpoint does not accept `date_of_birth` and returns `400` `date_of_birth_not_accepted`.
+
 ## Plaid-linked bank account flow
 
 This flow uses the Plaid Link SDK to securely connect a bank account in two steps:
