@@ -1761,9 +1761,10 @@ components:
       additionalProperties: false
       description: >-
         Optional branding for a transfer. Supported for ACH transfers (`ach_debit`,
-        `ach_credit`, `same_day_ach_credit`) and outbound wire payouts
-        (`destination.transfer_type: wire`). Not supported for `rtp_credit` or
-        `fednow_credit`. Branding does not change which Account funds the transfer
+        `ach_credit`, `same_day_ach_credit`), outbound wire payouts
+        (`destination.transfer_type: wire`), and FedNow payouts
+        (`destination.transfer_type: fednow_credit`). Not supported for
+        `rtp_credit`. Branding does not change which Account funds the transfer
         (the Account in the request path), the source or destination, or
         `destination.wire_memo`. Omit `brand` to send the transfer unbranded. See
         [Branded Transfers](/guides/2nd-and-3rd-party-transfers).
