@@ -114,6 +114,10 @@ Example:
     "amount": {
       "value": "100.00",
       "currency": "USD"
+    },
+    "created_by": {
+      "type": "automation",
+      "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
     }
   }
 }
@@ -123,6 +127,7 @@ Notes:
 
 - Treat `data.id` as the transfer ID.
 - Treat `data.status` as the completed transfer state. The event name is `transfer.completed`; the API status is `complete`.
+- `data.created_by` identifies who created the transfer: an object with `type` (`user`, `application`, `automation`, `transfer`, or `brale`) and `id`, or `null` when the creator is not one of these types. Use it to tell which Automation or application created the transfer without calling the Transfers API. `id` is `null` when `type` is `brale`. When `type` is `transfer` (an on-chain deposit), `id` is `<chain>-<hash>`, not a Brale ID. See [`created_by`](/key-concepts/transfers#created_by).
 - For outbound domestic wires and outbound ACH payouts, `transfer.completed` is not a guarantee that the payout cannot be returned later. If the bank returns the payout, the same transfer moves to `failed` and Brale emits [`transfer.failed`](#transfer-failed). Keep accepting `transfer.failed` for transfers you recorded as complete.
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
@@ -415,6 +420,10 @@ Example:
     "amount": {
       "value": "100.00",
       "currency": "USD"
+    },
+    "created_by": {
+      "type": "automation",
+      "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
     }
   }
 }
@@ -424,6 +433,7 @@ Notes:
 
 - Treat `data.id` as the transfer ID.
 - Treat `data.status` as the canceled transfer state.
+- `data.created_by` identifies who created the transfer: an object with `type` (`user`, `application`, `automation`, `transfer`, or `brale`) and `id`, or `null` when the creator is not one of these types. Use it to tell which Automation or application created the transfer without calling the Transfers API. `id` is `null` when `type` is `brale`. When `type` is `transfer` (an on-chain deposit), `id` is `<chain>-<hash>`, not a Brale ID. See [`created_by`](/key-concepts/transfers#created_by).
 - Additional fields may be present as the transfer schema evolves.
 - Your integration should ignore unknown fields.
 

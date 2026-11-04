@@ -400,6 +400,18 @@ components:
               type: string
               description: ID of the Account whose identity was used as the brand.
           example: null
+        created_by:
+          allOf:
+            - $ref: '#/components/schemas/TransferCreatedBy'
+          nullable: true
+          description: >-
+            Who created the transfer, or `null` when the creator is not one of the
+            exposed types. Returned on the create, get, and list transfer endpoints,
+            on the simulate Automation deposit response, and in the `data` object of
+            `transfer.completed` and `transfer.canceled` webhooks.
+          example:
+            type: automation
+            id: 3AjRnDClEzwuCKlRioG3OXMS4pH
         automation_id:
           allOf:
             - $ref: '#/components/schemas/Ksuid'
@@ -422,6 +434,37 @@ components:
           type: string
           format: date-time
           example: '2026-01-01T00:00:00Z'
+    TransferCreatedBy:
+      title: TransferCreatedBy
+      type: object
+      additionalProperties: false
+      description: Who created a transfer.
+      required:
+        - type
+        - id
+      properties:
+        type:
+          type: string
+          description: >-
+            The kind of creator. `user`, `application`, and `automation` identify the
+            Brale user, application, or Automation that created the transfer.
+            `transfer` means the transfer is an on-chain deposit. `brale` means Brale
+            created the transfer.
+          enum:
+            - brale
+            - user
+            - application
+            - automation
+            - transfer
+          example: automation
+        id:
+          type: string
+          nullable: true
+          description: >-
+            ID of the creator. `null` when `type` is `brale`. When `type` is
+            `transfer`, this is the chain and the deposit's on-chain transaction hash
+            in the form `<chain>-<hash>`, not a Brale ID.
+          example: 3AjRnDClEzwuCKlRioG3OXMS4pH
     TransferEndpoint:
       title: TransferEndpoint
       description: >-
