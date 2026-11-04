@@ -175,6 +175,10 @@ Idempotency-Key: <key-for-this-logical-payout>
 
 `201 Created` means Brale created the Transfer. It does not mean the recipient has been paid.
 
+### Branded payouts
+
+To show your business or your customer's business as the sender instead of Brale, add a top-level `brand` object with `account_id`. See [Branded FedNow payouts](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts).
+
 ## Step 5: Track the payout
 
 Track the Transfer until it reaches `complete`, `canceled`, or `failed`:
