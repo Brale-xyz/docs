@@ -3021,6 +3021,27 @@ paths:
                     address: null
                     transfer_types:
                       - hedera
+        '422':
+          description: >
+            The request is valid but cannot be processed. Known cases:
+
+
+            - `mainnet_not_enabled` (`ValidationError`): `transfer_types` includes
+              a mainnet chain and the account in the path is not enabled for
+              mainnet. Testnet chains skip this check.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                mainnet_not_enabled:
+                  summary: Account is not enabled for mainnet
+                  value:
+                    type: mainnet_not_enabled
+                    detail: This account is not enabled for mainnet, so a mainnet
+                      address cannot be created for it.
+                    code: ValidationError
+                    status: 422
   /accounts/{account_id}/addresses/{address_id}:
     get:
       tags:
@@ -3501,6 +3522,29 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Automation'
+        '422':
+          description: >
+            The request is valid but cannot be processed. Known cases:
+
+
+            - `mainnet_not_enabled` (`ValidationError`): `destination.transfer_type`
+              is a mainnet chain and the account in the path is not enabled for
+              mainnet. This applies to branded and unbranded Automations. Brale
+              does not create the Automation. Contact support to enable mainnet
+              before retrying. Testnet destination chains skip this check.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                mainnet_not_enabled:
+                  summary: Account is not enabled for mainnet
+                  value:
+                    type: mainnet_not_enabled
+                    detail: This account is not enabled for mainnet. Contact support
+                      to resolve this before retrying.
+                    code: ValidationError
+                    status: 422
     get:
       tags:
         - Automations

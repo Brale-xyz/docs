@@ -11,6 +11,10 @@ Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automati
 
 The rail used for each deposit appears on the resulting Transfer in `source.transfer_type`, for example `fednow_credit`. This is a Transfer response value, not an Automation setting. See [Receive FedNow deposits](/guides/fednow-inbound).
 
+## Mainnet access
+
+To use a mainnet chain in `destination.transfer_type`, the account in the request path must be enabled for mainnet. This applies to branded and unbranded Automations. If the account is not enabled for mainnet, Brale returns `422` with type `mainnet_not_enabled` and code `ValidationError`, and does not create the Automation. Contact support to enable mainnet before retrying. Testnet destination chains skip this check.
+
 ## Branded Automations
 
 You can optionally include a `brand` object in the request body to select the verified identity (business or individual) that appears as the beneficiary on the automation's funding instructions.
