@@ -88,6 +88,10 @@ Automations are created in a `pending` state. Once virtual accounts are created 
 
 When an automation becomes active, the `source.funding_instructions` object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
 
+<Note>
+  To create an Automation with a mainnet `destination.transfer_type`, the account in the request path must be enabled for mainnet. This applies to branded and unbranded Automations. If the account is not enabled for mainnet, Brale returns `422` with type `mainnet_not_enabled` and does not create the Automation. Contact support to enable mainnet before retrying. Testnet destination chains skip this check.
+</Note>
+
 ## Onramp to USDC
 
 To turn a USD deposit into USDC, combine an Automation with a separate swap Transfer:
