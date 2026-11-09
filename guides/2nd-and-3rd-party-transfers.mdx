@@ -249,8 +249,12 @@ When you create a branded transfer, Brale can reject the request if the Account 
 | Status | `id`                            | What to do                                                                                                   |
 | ------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `404`  | `brand_account_not_found`       | Check that `brand.account_id` is correct.                                                                    |
-| `422`  | `brand_account_not_verified`    | Contact support to resolve the brand Account before retrying.                                                |
+| `422`  | `brand_account_not_verified`    | The brand Account is not enabled for mainnet. Enable it for mainnet before retrying.                         |
 | `422`  | `brand_account_update_required` | Contact support to resolve the brand Account. Then retry with the same `Idempotency-Key` and body.           |
 | `503`  | `brand_identity_unavailable`    | Retry the same request with the same `Idempotency-Key` after a few minutes. Contact support if it continues. |
 
 Brale does not store the `422 brand_account_update_required` or `503 brand_identity_unavailable` response for the `Idempotency-Key`. The same request succeeds once support fixes the brand Account or the service recovers.
+
+<Note>
+  **Testnet branding.** With testnet credentials, you can create branded transfers using an Account you have access to, even if that Account is not enabled for mainnet. Brale does not return `brand_account_not_verified` for testnet transfers. Mainnet requirements are unchanged.
+</Note>
