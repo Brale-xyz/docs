@@ -13,7 +13,7 @@ When you create an external bank address, the path you choose determines which `
 | -------------- | ------------------------- | ----------------- |
 | `ach_debit`    | Supported                 | Not supported     |
 | `ach_credit`   | Supported                 | Supported         |
-| `rtp_credit`   | Supported                 | Supported         |
+| `rtp_credit`   | No longer available       | No longer available |
 | `fednow_credit` | Supported                | Supported         |
 | `wire`         | Not supported             | Supported         |
 | Balance lookup | Supported (`USD` only)    | Not supported     |
@@ -30,8 +30,10 @@ When you create an external bank address, the path you choose determines which `
 
 ## Which path should you use?
 
-- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
-- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled).
+- **Plaid-linked bank account** — Use this when you need `ach_debit` or want to provide a Plaid bank-linking experience for your users. This flow uses Plaid Link to securely connect a bank account and supports `ach_debit`, `ach_credit`, and `fednow_credit` (on accounts with FedNow enabled).
+- **Direct bank entry** — Use this when you already have bank account details (account number, routing number) or need `wire` transfers. This flow supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit` (on accounts with FedNow enabled).
+
+RTP payouts (`rtp_credit`) ended on October 30, 2026.
 
 To pay out over FedNow, include `fednow_credit` when you register the recipient with either path, or add it to an existing address. The recipient's routing number must participate in FedNow. See [Send FedNow payouts](/guides/fednow-outbound).
 
@@ -43,15 +45,25 @@ For Direct bank entry, required fields depend on the transfer types you request.
 | --------------------- | -------------------------------------------------------------------------------------- |
 | `ach_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `same_day_ach_credit` | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
-| `rtp_credit`          | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `fednow_credit`       | `owner`, `account_number`, `routing_number`, `account_type`, `transfer_types`          |
 | `wire`                | All of the above, plus `bank_address` and `beneficiary_address`                        |
 
-If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH, RTP, or FedNow rails. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
+If `transfer_types` includes `wire`, wire requirements apply, even if the same address also includes ACH or FedNow rails. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values—do not enter placeholder or generic bank addresses.
 
 ## Account holder type
 
 Both paths accept an optional `account_holder_type` (`"individual"` or `"business"`). Brale uses it to choose the ACH SEC code for payouts to the address: `individual` → PPD, `business` → CCD. If you omit it, Brale uses the entity type of the account that owns the address. For Plaid-linked accounts, the holder category reported by Plaid takes precedence when available. You can set it later with the [PATCH address endpoint](/api-reference/brale/update-address) if it was not set at creation; once set, it cannot be changed.
+
+## Recipient date of birth
+
+When you create a Direct bank entry address with `POST /accounts/{account_id}/addresses/external`, you can include an optional `date_of_birth` for an individual recipient in `YYYY-MM-DD` format. Brale includes it in the sanctions screening for the new recipient.
+
+- `date_of_birth` is accepted when `account_holder_type` is `individual` or not set.
+- Sending `date_of_birth` with `account_holder_type: "business"` returns `400` `date_of_birth_not_supported`. Brale does not create the address.
+- A malformed or future date returns `400` `validation_errors`. Error responses do not include the submitted value.
+- If an existing bank address has no date of birth on file, set it once with the [PATCH address endpoint](/api-reference/brale/update-address). Sending the stored value again succeeds with no change. A different value returns `400` `date_of_birth_already_set`.
+- Bank address responses return `date_of_birth` masked to the year (for example, `"1990-**-**"`), or `null` when none is on file. Brale never returns the full date.
+- The deprecated `POST /accounts/{account_id}/financial-institutions/external` endpoint does not accept `date_of_birth` and returns `400` `date_of_birth_not_accepted`.
 
 ## Plaid-linked bank account flow
 
@@ -68,7 +80,7 @@ After registration, you can check the linked account's USD balance with `GET /ac
 
 Submit bank account details directly using the Addresses API:
 
-- [Create a new external address](/api-reference/brale/create-address) — Addresses without `wire` require `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types`. Wire-capable addresses also require `bank_address` and `beneficiary_address`. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`.
+- [Create a new external address](/api-reference/brale/create-address) — Addresses without `wire` require `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types`. Wire-capable addresses also require `bank_address` and `beneficiary_address`. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. RTP payouts (`rtp_credit`) ended on October 30, 2026.
 
 For examples, see [Key Concepts → Addresses → Create via Direct bank entry](/key-concepts/addresses#create-via-direct-bank-entry).
 
@@ -79,6 +91,7 @@ When you create a Direct bank entry address, Brale validates the format of the b
 - **Bad account details surface after submission.** If the account number does not exist or cannot receive the payment, the receiving bank returns the ACH entry. For example, `R03` means no account was found or the account could not be located.
 - **Returns arrive as `transfer.failed`.** Brale updates the transfer to `failed` and sends a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. Read the return code and reason from `failure.ach_return`. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
 - **Returns can arrive late.** An ACH return can arrive after the transfer was already processed. Keep handling `transfer.failed` events for transfers you have already recorded. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle).
+- **A return can disable the address.** After a return, Brale can disable the external bank address. New transfers to it fail with `422`. Registering the same bank account again returns `422` `external_address_disabled`. Contact support to re-enable the address. See [Troubleshooting](/documentation/troubleshooting#422-on-transfers-to-a-bank-address-that-received-a-return).
 
 If you need the account confirmed before you send funds, use the [Plaid-linked bank account flow](#plaid-linked-bank-account-flow) instead. That flow connects the account through Plaid Link rather than accepting manually entered details.
 

@@ -3,4 +3,25 @@ title: 'Create a new transfer'
 description: 'Creates a new transfer using the specified source and destination details.'
 openapi: 'POST /accounts/{account_id}/transfers'
 ---
+
+import RtpUnavailable from '/snippets/rtp-unavailable.mdx';
+
+<RtpUnavailable />
+
+### `rtp_credit` errors
+
+A request with `destination.transfer_type: "rtp_credit"` returns `400`:
+
+```json Response (400)
+{
+  "code": "ValidationError",
+  "status": 400,
+  "type": "invalid_transfer_type",
+  "values": [],
+  "detail": "Invalid transfer type"
+}
+```
+
+Brale does not create a Transfer for this request. Add `fednow_credit` to the destination bank Address, then resend the payout with `destination.transfer_type: "fednow_credit"` and a new `Idempotency-Key`. See [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
+
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

@@ -6,7 +6,7 @@ openapi: 'POST /accounts/{account_id}/plaid/link_token'
 
 This endpoint is **step 1** of the **Plaid-linked bank account** flow for creating external off-chain bank addresses.
 
-The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp`. This is the **only** path that enables `ach_debit`.
+The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp_credit` (no longer available). This is the **only** path that enables `ach_debit`.
 
 **Native mobile apps:** If you are integrating Plaid Link in a native iOS or Android app, you must submit your iOS redirect URI or Android package name to Brale for whitelisting before mobile Plaid OAuth will work. See the [ACH on-ramp guide](/guides/ach-on-ramp#create-plaid-link-token) for platform-specific setup details.
 

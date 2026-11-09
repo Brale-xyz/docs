@@ -3,11 +3,13 @@ title: "Addresses"
 description: "Addresses represent onchain wallets and offchain bank accounts, identified by `address_id` for use in transfers."
 ---
 
+import RtpUnavailable from '/snippets/rtp-unavailable.mdx';
+
 Addresses are represented by an `address_id`, which uniquely identifies a wallet or account for a specific `transfer_type`.
 
 > IDs are KSUIDs (27-char, time-sortable); copy/paste carefully.
 
-An `address_id` can represent either an onchain wallet or offchain account (ACH, Wire, or RTP account), depending on the `transfer_type`. Use `address_id` wherever a source/destination is required in Transfers.
+An `address_id` can represent either an onchain wallet or offchain account (ACH, Wire, or FedNow account), depending on the `transfer_type`. Use `address_id` wherever a source/destination is required in Transfers.
 
 Brale distinguishes between internal and external addresses using the type field:
 
@@ -49,7 +51,7 @@ See the [PATCH address endpoint reference](/api-reference/brale/update-address) 
 
 ## Supported Transfer Types
 
-- [Off-chain](/coverage/transfer-types#offchain) rails: `wire`, `ach_credit`, `same_day_ach_credit`, `ach_debit`, `rtp_credit`, `fednow_credit`
+- [Off-chain](/coverage/transfer-types#offchain) rails: `wire`, `ach_credit`, `same_day_ach_credit`, `ach_debit`, `rtp_credit` (no longer available), `fednow_credit`
 - [On-chain](/coverage/transfer-types#onchain) (examples): `canton`, `base`, `polygon`, `solana`, `stellar`, `xrp_ledger`<br/>(for full list, see [Coverage: Transfer Types](/coverage/transfer-types))
 
 ## Custodial (Internal) Addresses
@@ -95,7 +97,7 @@ Brale supports two paths for creating an external off-chain bank address. The pa
 | --- | --- | --- |
 | `ach_debit` | Supported | Not supported |
 | `ach_credit` | Supported | Supported |
-| `rtp_credit` | Supported | Supported |
+| `rtp_credit` | No longer available | No longer available |
 | `fednow_credit` | Supported | Supported |
 | `wire` | Not supported | Supported |
 
@@ -129,23 +131,23 @@ The blockchains the address supports. See [Supported Chains](/coverage/transfer-
 
 ### Create via Direct bank entry
 
-Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit` (on accounts with FedNow enabled). It does **not** support `ach_debit`.
+Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit` (on accounts with FedNow enabled). `rtp_credit` is no longer available. It does **not** support `ach_debit`.
 
 **POST** `/accounts/{account_id}/addresses/external`
 
 <Note>
-For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`. Omit these fields for addresses without `wire` unless you have accurate values. Do not use placeholder or generic bank addresses.
+For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. Omit these fields for addresses without `wire` unless you have accurate values. Do not use placeholder or generic bank addresses.
 </Note>
 
-| Field                 | ACH Credit | Same Day ACH Credit | RTP Credit (`rtp_credit`) | FedNow Credit (`fednow_credit`) | Wire     |
-| --------------------- | ---------- | ------------------- | ------------------------- | ------------------------------- | -------- |
-| `owner`               | Required   | Required            | Required                  | Required                        | Required |
-| `account_number`      | Required   | Required            | Required                  | Required                        | Required |
-| `routing_number`      | Required   | Required            | Required                  | Required                        | Required |
-| `account_type`        | Required   | Required            | Required                  | Required                        | Required |
-| `transfer_types`      | Required   | Required            | Required                  | Required                        | Required |
-| `bank_address`        | Optional   | Optional            | Optional                  | Optional                        | Required |
-| `beneficiary_address` | Optional   | Optional            | Optional                  | Optional                        | Required |
+| Field                 | ACH Credit | Same Day ACH Credit | FedNow Credit (`fednow_credit`) | Wire     |
+| --------------------- | ---------- | ------------------- | ------------------------------- | -------- |
+| `owner`               | Required   | Required            | Required                        | Required |
+| `account_number`      | Required   | Required            | Required                        | Required |
+| `routing_number`      | Required   | Required            | Required                        | Required |
+| `account_type`        | Required   | Required            | Required                        | Required |
+| `transfer_types`      | Required   | Required            | Required                        | Required |
+| `bank_address`        | Optional   | Optional            | Optional                        | Required |
+| `beneficiary_address` | Optional   | Optional            | Optional                        | Required |
 
 Send `account_number` and `routing_number` as strings so leading zeros are preserved.
 
@@ -159,25 +161,6 @@ Brale validates the format of Direct bank entry details, such as the routing num
 {
   "owner": "Jane Doe",
   "transfer_types": ["ach_credit", "same_day_ach_credit"],
-  "account_number": "1234567890",
-  "routing_number": "063108680",
-  "account_type": "checking",
-  "name": "Example Bank"
-}
-```
-
-```json Response
-{
-  "id": "2VcUIIsgARwVbEGlIYbhg6fGG57"
-}
-```
-
-#### RTP Credit (`rtp_credit`) example
-
-```json Request
-{
-  "owner": "Jane Doe",
-  "transfer_types": ["ach_credit", "same_day_ach_credit", "rtp_credit"],
   "account_number": "1234567890",
   "routing_number": "063108680",
   "account_type": "checking",
@@ -210,7 +193,7 @@ Brale validates the format of Direct bank entry details, such as the routing num
 }
 ```
 
-If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`. Unlike `rtp_credit`, do not assume `fednow_credit` is added asynchronously. Confirm the Address's `transfer_types` before sending a payout. See [Send FedNow payouts](/guides/fednow-outbound).
+If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`. Do not assume `fednow_credit` is added asynchronously. Confirm the Address's `transfer_types` before sending a payout. See [Send FedNow payouts](/guides/fednow-outbound).
 
 #### Wire example
 
@@ -249,21 +232,9 @@ If the routing number does not participate in FedNow, Brale returns `422` with `
 Need `ach_debit`? Use the [Plaid-linked bank account flow](#create-via-plaid-linked-bank-account) instead.
 </Note>
 
-### Create external address for RTP
+### RTP Credit (`rtp_credit`)
 
-Real-time payments (`rtp_credit`) work slightly differently from other transfer types.
-
-RTP eligibility is determined asynchronously by our banking partner after the bank account is registered. When you create an off-chain external address and include `rtp_credit` in `transfer_types`, the **initial** Address may only list ACH rails, for example:
-
-```json Response
-{
-  "transfer_types": ["ach_credit", "same_day_ach_credit"]
-}
-```
-
-After the bank confirms that the account is RTP-enabled, Brale will update the Address in place and add `rtp_credit` to transfer_types. This typically happens shortly after creation.
-
-To check whether RTP eligibility has been confirmed, [retrieve the Address](/api-reference/brale/get-address) with `GET /accounts/{account_id}/addresses/{address_id}` and inspect `transfer_types` for `rtp_credit`.
+<RtpUnavailable />
 
 ### Update Address transfer types
 
@@ -344,9 +315,9 @@ Response
 }
 ```
 
-Offchain Address Example - add FedNow to an existing RTP recipient
+Offchain Address Example - add FedNow to an existing ACH recipient
 
-Suppose a bank Address supports `ach_credit` and `rtp_credit` and you want to send FedNow payouts to it. Add `fednow_credit`:
+Suppose a bank Address supports `ach_credit` and you want to send FedNow payouts to it. Add `fednow_credit`:
 
 **PATCH** `/accounts/{account_id}/addresses/{address_id}`
 
@@ -356,7 +327,7 @@ Suppose a bank Address supports `ach_credit` and `rtp_credit` and you want to se
 }
 ```
 
-Brale merges `fednow_credit` into the existing `transfer_types`, so the Address lists `["ach_credit", "rtp_credit", "fednow_credit"]`. The Address `id` stays the same. If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`.
+Brale merges `fednow_credit` into the existing `transfer_types`, so the Address lists `["ach_credit", "fednow_credit"]`. The Address `id` stays the same. If the routing number does not participate in FedNow, Brale returns `422` with `type: "fednow_routing_number_not_supported"`.
 
 #### Updating Address Name
 
@@ -380,7 +351,7 @@ You can also use this endpoint to update the human-readable name (alias) of an A
 
 ## Create via Plaid-linked bank account
 
-This flow lets your customers securely link their bank accounts via Plaid. Addresses created through Plaid support `ach_debit`, `ach_credit`, and `rtp`. This is the **only** path that supports `ach_debit`.
+This flow lets your customers securely link their bank accounts via Plaid. Addresses created through Plaid support `ach_debit`, `ach_credit`, and `rtp_credit` (no longer available). This is the **only** path that supports `ach_debit`.
 
 For a full comparison of both paths, see [External bank addresses](/key-concepts/external-bank-addresses).
 

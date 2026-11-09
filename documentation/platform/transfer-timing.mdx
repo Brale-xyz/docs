@@ -3,6 +3,8 @@ title: "Transfer Timing"
 description: "Cut-off times, settlement windows, and finality for every transfer_type on the Brale platform."
 ---
 
+import RtpUnavailable from '/snippets/rtp-unavailable.mdx';
+
 When you submit a [transfer](/key-concepts/transfers) through the Brale API, the time it takes to complete depends on the [`transfer_type`](/coverage/transfer-types) — the payment rail or blockchain network used to move value. This page documents the expected timing for each supported `transfer_type`.
 
 <Warning>
@@ -21,7 +23,7 @@ When you submit a [transfer](/key-concepts/transfers) through the Brale API, the
 | `same_day_ach_credit` | Same-Day ACH                      | Same day          | US business days |
 | `ach_credit`          | ACH Credit                        | 1–3 business days | US business days |
 | `ach_debit`           | ACH Debit                         | 1–3 business days | US business days |
-| `rtp_credit`          | RTP                               | Minutes           | 24/7/365         |
+| `rtp_credit`          | RTP                               | No longer available | No longer available |
 | `fednow_credit`       | FedNow                            | Typically minutes | 24/7/365         |
 | Onchain (Tier 0)      | Monad, Radius                     | Under 10 seconds  | 24/7/365         |
 | Onchain (Tier 1)      | Avalanche, Solana, Stellar, etc.  | Under 30 seconds  | 24/7/365         |
@@ -30,7 +32,7 @@ When you submit a [transfer](/key-concepts/transfers) through the Brale API, the
 
 ## Offchain Transfer Timing
 
-All fiat cut-off times are in **Eastern Time (ET)** and apply on US business days only. They apply to wire and ACH. RTP and FedNow operate 24/7/365 and have no business-day cut-off. Transfers submitted after 3PM ET are processed the next business day, with consideration that most wires require ~2 hours to fully reconcile.
+All fiat cut-off times are in **Eastern Time (ET)** and apply on US business days only. They apply to wire and ACH. FedNow operates 24/7/365 and have no business-day cut-off. Transfers submitted after 3PM ET are processed the next business day, with consideration that most wires require ~2 hours to fully reconcile.
 
 See [Transfer Types](/coverage/transfer-types) for the full list of offchain `transfer_type` identifiers and [Value Types](/coverage/value-types) for supported fiat and stablecoin [`value_type`](/coverage/value-types) identifiers.
 
@@ -82,26 +84,7 @@ ACH debit (pull) transfers settle within 1 to 3 business days based on risk cont
 
 ### RTP Credit
 
-| Property        | Value        |
-| --------------- | ------------ |
-| `transfer_type` | `rtp_credit` |
-| Settlement time | Minutes      |
-| Availability    | 24/7/365     |
-| Direction       | Outbound     |
-
-Real-Time Payments (RTP) settle in minutes with immediate confirmation. RTP is available around the clock, including weekends and holidays. The recipient's bank must support the RTP network. RTP transfers are irrevocable once sent.
-
-RTP is subject to the same reviews, internal conditions, and edge cases as ACH. The anticipated average time of an RTP transaction is 1 minute or more, with some financial institutions exceeding expectations to under 30 seconds.
-
-#### RTP fallback to Same Day ACH
-
-Organization admins can choose whether failed RTP transfers automatically fall back to Same Day ACH. For example, a payout can fall back when the RTP network is temporarily unavailable. When fallback is enabled and Brale sends a payout over Same Day ACH instead of RTP:
-
-- Same Day ACH timing applies instead of RTP timing. See [Same-Day ACH Credit](#same-day-ach-credit).
-- The payout can be returned under standard ACH return rules. For example, `R04` (Invalid Account Number Structure) means the receiving bank rejected the account number.
-- An ACH return can arrive after the payout was expected to settle. Brale moves the transfer to `failed` and sends a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. Check the [`failure`](/api-reference/brale/get-transfer#failure) object for the return code.
-
-If an RTP payout takes longer than RTP timing, the payout may have fallen back to Same Day ACH. Keep tracking the transfer `status` until it reaches a terminal state. If the payout is returned for an account number error, confirm the recipient's bank details before you create a new transfer.
+<RtpUnavailable />
 
 ### FedNow Credit
 
@@ -271,7 +254,7 @@ The response includes a `status` field with one of the values described above, a
 - **Poll interval** — Start at 25% of the anticipated transfer time. If the transfer is still in `pending` or `processing`, apply exponential backoff up to a reasonable maximum (for example, 60 seconds).
 - **Terminal check** — Stop routine polling once the status is `complete`, `canceled`, or `failed`. Stopping polling does not mean ignoring later webhook events. An outbound domestic wire can move from `complete` to `failed` if the bank returns it. Retrieve the latest transfer when you need to reconcile.
 - **Onchain transfers** — Most onchain transfers complete within 30 seconds. If a transfer is still `processing` after several minutes, it is likely being retried automatically.
-- **Fiat transfers** — Fiat settlement depends on the payment rail and time of day. A wire submitted at 2:00 PM ET may take up to 2 hours; an ACH credit may take 1–3 business days. RTP and FedNow typically take minutes at any time of day.
+- **Fiat transfers** — Fiat settlement depends on the payment rail and time of day. A wire submitted at 2:00 PM ET may take up to 2 hours; an ACH credit may take 1–3 business days. FedNow typically takes minutes at any time of day.
 - **Idempotency** — Always send a unique [`Idempotency-Key`](/key-concepts/idempotency) when [creating transfers](/api-reference/brale/create-transfer) and reuse the same key on retries. On `401`, refresh your token and retry with the same key.
 
 ## Next Steps

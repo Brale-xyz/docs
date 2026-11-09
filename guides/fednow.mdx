@@ -9,7 +9,7 @@ FedNow is the Federal Reserve's instant payment service. Brale supports FedNow i
 | Direction | What happens | API object | You call |
 | --- | --- | --- | --- |
 | Inbound (onramp) | A payer sends a FedNow credit from their bank to an Automation's virtual account. Brale creates a Transfer and mints stablecoins. | [Automation](/key-concepts/automations) | `POST /accounts/{account_id}/automations` once. No per-deposit API call. |
-| Outbound (offramp) | Brale pays out USD over FedNow from stablecoins held in a Brale internal Address. | [Transfer](/key-concepts/transfers) | `POST /accounts/{account_id}/transfers` for each payout. |
+| Outbound (offramp) | Brale pays out USD over FedNow from stablecoins held in a Brale internal Address. Payouts can be [branded](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts) with your business or your customer's business as the sender. | [Transfer](/key-concepts/transfers) | `POST /accounts/{account_id}/transfers` for each payout. |
 
 <Note>
   FedNow is available on Brale accounts where it has been enabled. If a request that uses FedNow is rejected on your account, contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement. Limits and fees follow your Brale agreement.
@@ -41,6 +41,8 @@ FedNow uses different identifiers depending on context. Use the value that match
 ## Lifecycle and timing
 
 - FedNow operates 24 hours a day, 7 days a week, including weekends and holidays. Business-day cut-off times on [Transfer timing](/documentation/platform/transfer-timing) apply to wire and ACH, not to FedNow.
+- FedNow transfers are limited to $10,000 per transaction in both directions: payouts and Automation deposits. See [Transfer limits](/key-concepts/transfers#transfer-limits).
+- FedNow replaces RTP. If your integration still sends `rtp_credit`, see [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
 - FedNow availability does not guarantee instant end-to-end completion. Brale reviews, bank processing, and onchain settlement of the stablecoin leg can add time.
 - HTTP `201 Created` (Transfers, Automations, Addresses) and `202 Accepted` (deposit simulation) mean Brale accepted or created the resource. They do not mean funds have settled.
 - A Transfer's terminal statuses include `complete`, `canceled`, and `failed`. `pending` and `processing` are in progress. The `status` enum also includes `compliance review`, `refunding`, and `refunded`. None of these mean the Transfer is complete.
@@ -51,6 +53,7 @@ FedNow uses different identifiers depending on context. Use the value that match
 
 - **Idempotency.** Send an `Idempotency-Key` on every `POST`. Retry the same logical operation with the same key and the same body. See [Idempotency](/key-concepts/idempotency).
 - **Pending payouts.** Do not submit a replacement payout because a Transfer is `pending` or `processing`. Keep tracking the original Transfer until it reaches a terminal status.
+- **Branded payouts.** A [branded payout](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts) can stay `pending` longer while Brale prepares the brand Account. Do not create a replacement while it is `pending`. Keep tracking the original Transfer and reuse the same `Idempotency-Key` on retries.
 - **Cancellation.** Brale can cancel a payout only before it submits the payment to FedNow. A `processing` payout cannot be canceled, and a `pending` status does not guarantee that cancellation is still possible.
 - **Returns.** Cancellation is different from a return after settlement. Do not assume a settled payout is refunded automatically.
 - **Rail fallback.** Do not assume Brale moves a FedNow payout to another rail. Read `destination.transfer_type` on the Transfer. When `payment_details.original_transfer_type`, `fallback_reason`, `fallback_reason_code`, or `fallback_at` are present, the payment was sent on a different rail than requested.

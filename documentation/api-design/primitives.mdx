@@ -10,7 +10,7 @@ description: "Core building blocks of the Brale API and how they compose."
 - **Automations**: Virtual accounts that map deposits to addresses with specific `transfer_type`/`value_type`. IDs are KSUIDs (`automation_id`).
 - **Transfers**: Movements across fiat rails and blockchains; always reference `address_id` for source/destination. IDs are KSUIDs (`transfer_id`).
 
-> IDs are KSUIDs (26-char, time-sortable); case-sensitive. Copy/paste carefully.
+> IDs are KSUIDs (27-char, time-sortable); case-sensitive. Copy/paste carefully.
 
 ## Addresses: internal vs external
 
@@ -36,7 +36,7 @@ description: "Core building blocks of the Brale API and how they compose."
 
 ## Branding
 
-- Optional branding (`brand`/`branding`) applies to ACH transfers (statement name) and outbound wire payouts (wire sender). Not used for RTP. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers).
+- Optional branding (`brand`/`branding`) applies to ACH transfers (statement name), outbound wire payouts (wire sender), and FedNow payouts (sender). Not used for RTP. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers).
 
 ## Authentication
 

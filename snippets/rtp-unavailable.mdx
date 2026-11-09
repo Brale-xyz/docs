@@ -1,0 +1,3 @@
+<Warning>
+RTP payouts (`rtp_credit`) ended on October 30, 2026. FedNow (`fednow_credit`) replaces RTP for instant USD payouts. Requests that still send `rtp_credit` return `400 invalid_transfer_types` on address creation or `400 invalid_transfer_type` on transfer creation. To switch, follow [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit). For recipient banks that do not participate in FedNow, use `same_day_ach_credit` or `wire`.
+</Warning>

@@ -1,13 +1,13 @@
 ---
 title: "Branded Transfers"
-description: "Show your business or your customer's verified identity instead of Brale on ACH transfers and outbound domestic wire payouts."
+description: "Show your business or your customer's verified identity instead of Brale on ACH transfers, outbound domestic wire payouts, and FedNow payouts."
 ---
 
-We've expanded the Transfers endpoint to support both 2nd and 3rd party ACH transfers and outbound domestic wire payouts.
+We've expanded the Transfers endpoint to support both 2nd and 3rd party ACH transfers, outbound domestic wire payouts, and FedNow payouts.
 
-When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** instead of "Brale". On ACH, `brand` controls the name on the receiver's bank statement line item. On outbound wires, `brand` selects the sender (originator) of the wire.
+When Brale initiates a transfer on behalf of your business or your customer's business, 2nd/3rd-party branding ensures the **receiver sees the intended business name** instead of "Brale". On ACH, `brand` controls the name on the receiver's bank statement line item. On outbound wires, `brand` selects the sender (originator) of the wire. On FedNow payouts, `brand` selects the sender the receiving bank sees.
 
-Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit, and outbound wire payouts (`destination.transfer_type: "wire"`). Branding is not supported for `rtp_credit` or `fednow_credit`.
+Branded transfers are supported for ach_debit, ach_credit, same_day_ach_credit, outbound wire payouts (`destination.transfer_type: "wire"`), and FedNow payouts (`destination.transfer_type: "fednow_credit"`). Branding is not supported for `rtp_credit`.
 
 To learn more and see a demo, schedule a meeting to [talk to sales](https://brale.xyz/contact).
 
@@ -149,7 +149,7 @@ The receiver will see Company 2 as the originator name on the ach_debit transact
 
 ### Confirm the brand on a transfer
 
-Transfer responses include a `brand` field. When the transfer was branded, `brand` is `{ "account_id": "<ACCOUNT_ID>" }`. When it was not branded, `brand` is `null`. The create, get, and list transfer endpoints all return this field, so you can confirm from the response that your brand was applied to an ACH or wire transfer.
+Transfer responses include a `brand` field. When the transfer was branded, `brand` is `{ "account_id": "<ACCOUNT_ID>" }`. When it was not branded, `brand` is `null`. The create, get, and list transfer endpoints all return this field, so you can confirm from the response that your brand was applied to an ACH, wire, or FedNow transfer.
 
 A transfer created with `brand` in the request can still return `brand: null`. In that case, Brale sent the transfer unbranded.
 
@@ -205,6 +205,42 @@ In this example, your business account in the URL funds the payout from its inte
 Creating the Transfer does not mean the wire has settled. Processing a branded wire can take longer while Brale prepares the brand Account's sender identity. Keep tracking the original Transfer while it is `pending` instead of creating a replacement, and reuse the same `Idempotency-Key` if you retry the same request.
 
 See [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp) to create the recipient's wire-capable bank Address and to track the payout with `destination.payment_details.imad`, returns, and refunds.
+
+## Branded FedNow payouts
+
+You can brand a FedNow payout with the same top-level `brand` object. `brand.account_id` selects the verified Account identity the receiving bank sees as the sender. As with wires, the Account in the URL funds the payout from `source.address_id`, and `destination.address_id` is the recipient's bank Address with `fednow_credit` enabled.
+
+`brand` applies to 2nd- and 3rd-party transfers. It is independent of the FedNow enablement requirement: your Account must have FedNow enabled whether or not you send `brand`. See [FedNow overview](/guides/fednow).
+
+### Example of a branded FedNow payout (Company 2 = your customer)
+
+**POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
+
+```json Request
+{
+  "amount": {
+    "value": "250.00",
+    "currency": "USD"
+  },
+  "source": {
+    "address_id": "2VcUIonJeVQzFoBuC7LdFT0dRe4",
+    "value_type": "SBC",
+    "transfer_type": "solana"
+  },
+  "destination": {
+    "address_id": "2MhCCIHulVdXrHiEuQDJvnKbSkl",
+    "value_type": "USD",
+    "transfer_type": "fednow_credit"
+  },
+  "brand": {
+    "account_id": "34fcsGrCgN0Z9zC1v55eP0I6AKW"
+  }
+}
+```
+
+Creating the Transfer does not mean the payment has been sent. Processing a branded FedNow payout can take longer while Brale prepares the brand Account. Keep tracking the original Transfer while it is `pending` instead of creating a replacement, and reuse the same `Idempotency-Key` if you retry the same request.
+
+See [Send FedNow payouts](/guides/fednow-outbound) to register the recipient's bank Address and track the payout.
 
 ## Brand account errors
 

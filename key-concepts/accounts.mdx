@@ -43,7 +43,7 @@ Supported combinations:
 | `individual` | `custodial` | `standard` or `reliance` | KYC |
 | `individual` | `transactional` | `standard` or `reliance` | KYC |
 
-`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
+`verification_mode: "reliance"` is enabled per managing account by Brale and is not self-serve. A caller without reliance enabled receives `422 unsupported_account_combination`. Reliance requires your managing entity to be regulated by a U.S. federal functional regulator. See [Reliance eligibility](/key-concepts/account-types#reliance-eligibility). `verification_mode: "bypass"` is not supported for any combination and also returns `422 unsupported_account_combination`.
 
 An unsupported combination is rejected with `422 unsupported_account_combination`. The rejection is permanent, so it is safe for clients to cache the error against an idempotency key.
 

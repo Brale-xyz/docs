@@ -79,7 +79,7 @@ Send `account_number` and `routing_number` as strings so leading zeros are prese
 
 ### Option B: Add FedNow to an existing recipient
 
-To add FedNow to an existing bank Address, such as an RTP recipient, send `additional_transfer_types`:
+To add FedNow to an existing bank Address, such as an ACH recipient, send `additional_transfer_types`:
 
 ```bash
 curl --request PATCH \
@@ -89,7 +89,7 @@ curl --request PATCH \
   --data '{ "additional_transfer_types": ["fednow_credit"] }'
 ```
 
-- Brale merges `fednow_credit` into the Address's existing `transfer_types`. An Address with `["ach_credit", "rtp_credit"]` becomes `["ach_credit", "rtp_credit", "fednow_credit"]`.
+- Brale merges `fednow_credit` into the Address's existing `transfer_types`. An Address with `["ach_credit"]` becomes `["ach_credit", "fednow_credit"]`.
 - The Address `id` does not change. Keep using the same `address_id` for all rails.
 - Sending a transfer type that is already enabled has no additional effect.
 - `PATCH` requests do not take an `Idempotency-Key` header.
@@ -149,6 +149,7 @@ Idempotency-Key: <key-for-this-logical-payout>
 - `source.value_type` and `source.transfer_type` must match the token and network that Address holds. If the Address holds `SBC` on `solana`, send `"value_type": "SBC"` and `"transfer_type": "solana"`.
 - `destination.address_id` is the recipient bank Address with `fednow_credit` enabled.
 - Generate one `Idempotency-Key` per logical payout and store it with your payout record before you send the request.
+- `amount.value` must not exceed the FedNow per-transaction limit of $10,000. See [Transfer limits](/key-concepts/transfers#transfer-limits).
 
 ```json Response (201)
 {
@@ -175,6 +176,10 @@ Idempotency-Key: <key-for-this-logical-payout>
 
 `201 Created` means Brale created the Transfer. It does not mean the recipient has been paid.
 
+### Branded payouts
+
+To show your business or your customer's business as the sender instead of Brale, add a top-level `brand` object with `account_id`. See [Branded FedNow payouts](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts).
+
 ## Step 5: Track the payout
 
 Track the Transfer until it reaches `complete`, `canceled`, or `failed`:
@@ -197,12 +202,33 @@ Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope 
 
 A `canceled` Transfer was stopped before Brale sent the payment. A return after settlement is a separate event. Do not assume an automatic refund. The Transfer `status` enum also includes `compliance review`, `refunding`, and `refunded`. Treat them as not complete and keep tracking the Transfer. Check `failure` on `failed` Transfers when it is present.
 
+## Migrate from `rtp_credit` to `fednow_credit`
+
+RTP payouts (`rtp_credit`) ended on October 30, 2026, and FedNow replaces them. Brale rejects any request that still sends `rtp_credit`:
+
+| Endpoint | Status | `type` | `detail` |
+| --- | --- | --- | --- |
+| `POST /accounts/{account_id}/addresses/external` | `400` | `invalid_transfer_types` | `Invalid transfer types; Address transfer types must be compatible chains` |
+| `POST /accounts/{account_id}/transfers` | `400` | `invalid_transfer_type` | `Invalid transfer type` |
+
+The address error mentions chains, but the cause is `rtp_credit` in `transfer_types`. Use this checklist to move your integration to FedNow:
+
+1. **New Direct bank entry recipients.** Replace `rtp_credit` with `fednow_credit` in `transfer_types` on `POST /accounts/{account_id}/addresses/external`. For example, change `["ach_credit", "same_day_ach_credit", "rtp_credit"]` to `["ach_credit", "same_day_ach_credit", "fednow_credit"]`. See [Option A](#option-a-create-a-new-fednow-recipient).
+2. **Existing Direct bank entry recipients.** Send `PATCH /accounts/{account_id}/addresses/{address_id}` with `{ "additional_transfer_types": ["fednow_credit"] }`. The `address_id` stays the same. See [Option B](#option-b-add-fednow-to-an-existing-recipient).
+3. **Plaid-linked recipients.** Have the user complete Plaid Link again. Then call `POST /accounts/{account_id}/plaid/register-account` with `fednow_credit` in `transfer_types`, for example `["ach_credit", "fednow_credit"]`. See [Register via Plaid](/api-reference/brale/register-financial-institution-account-via-plaid-and-return-address-id). The `PATCH` path above applies to Direct bank entry addresses.
+4. **Confirm each recipient.** [Retrieve the address](#step-3-confirm-the-recipient-supports-fednow) and check that `transfer_types` includes `fednow_credit`. If registration returns `422 fednow_routing_number_not_supported`, the recipient's bank does not participate in FedNow. Pay that recipient with `same_day_ach_credit` or `wire` instead.
+5. **Update payout requests.** Set `destination.transfer_type` to `fednow_credit` instead of `rtp_credit` on `POST /accounts/{account_id}/transfers`.
+6. **Check payout amounts.** FedNow payouts are limited to $10,000 per transaction. Route larger payouts over `wire`, or over ACH up to the ACH limit. See [Transfer limits](/key-concepts/transfers#transfer-limits).
+7. **Resubmit rejected payouts.** A Transfer that failed with `400 invalid_transfer_type` was not created. After you update the request, send it with a new `Idempotency-Key`.
+
 ## Errors and retries
 
 | Status | Cause | Retry? |
 | --- | --- | --- |
+| `400` `invalid_transfer_type` | `destination.transfer_type` is `rtp_credit`, which is no longer available | No. Switch to `fednow_credit`. See [Migrate from `rtp_credit`](#migrate-from-rtp_credit-to-fednow_credit). |
 | `401` | Expired or invalid token | Refresh the token and retry with the same key. |
-| `422` `insufficient_balance` | The source Address does not hold enough of `source.value_type` | Fund the Address, then retry with the same key and body. |
+| `422` `insufficient_balance` | The source Address does not hold enough of `source.value_type` after Brale subtracts its `pending` and `processing` transfers | Fund the Address or wait for in-flight transfers to finish, then retry with the same key and body. |
+| `422` on a bank Address that received a return | Brale disabled the destination bank Address after a return | Contact support to re-enable the Address. See [Troubleshooting](/documentation/troubleshooting#422-on-transfers-to-a-bank-address-that-received-a-return). |
 | `422` idempotency key reused with a different body | The request body changed under the same key | Fix the request and use a new key. |
 | `429` or `5xx`, or a timeout | Temporary failure | Retry with the same key and body using exponential backoff. |
 

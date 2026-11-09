@@ -3,6 +3,49 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-11-02" description="Week of November 2" tags={["New", "Update"]}>
+  ## Branded FedNow payouts
+
+  You can now brand `fednow_credit` payouts with the same `brand` object used for ACH and wires. `brand.account_id` selects the verified Account the receiving bank sees as the sender. Branded FedNow payouts may stay `pending` a little longer while Brale prepares the brand Account. See [Branded FedNow payouts](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts).
+
+  ## Recipient date of birth on bank addresses
+
+  Include an optional `date_of_birth` (`YYYY-MM-DD`) when you create a bank address for an individual recipient. Brale uses it in sanctions screening. For existing addresses, set it once with [Update address](/api-reference/brale/update-address#set-the-recipients-date-of-birth). Responses mask the value to the year, such as `"1990-**-**"`. See [Recipient date of birth](/key-concepts/external-bank-addresses#recipient-date-of-birth).
+
+  ## Transfer `created_by`
+
+  Transfer responses and `transfer.completed` and `transfer.canceled` webhooks now include `created_by`. It tells you whether a user, application, Automation, on-chain deposit, or Brale created the transfer. See [`created_by`](/key-concepts/transfers#created_by).
+
+  ## Updates
+
+  - **RTP payouts retired:** `rtp_credit` payouts are no longer available as of October 30, 2026. Use `same_day_ach_credit` for the fastest bank payout, or `fednow_credit` on FedNow-enabled accounts. See [Transfer timing](/documentation/platform/transfer-timing).
+  - **Invalid amount errors:** Create transfer now returns `400` `invalid_amount` when `amount.value` is not a number or is zero or negative, and `invalid_amount_currency` when the currency is not supported. See [Create a transfer](/api-reference/brale/create-transfer).
+</Update>
+
+<Update label="2026-10-26" description="Week of October 26" tags={["New", "Update"]}>
+  ## Branded outbound wire payouts
+
+  You can now brand outbound domestic wire payouts with the same `brand` object used for ACH. `brand.account_id` selects the verified Account shown as the wire sender, either your business or your customer's. Branding doesn't change which Account funds the transfer. See [Branded outbound wires](/guides/2nd-and-3rd-party-transfers#branded-outbound-wires).
+
+  ## ACH statement descriptions
+
+  Set `ach_description` to control the short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for ACH payouts and `source.ach_description` for `ach_debit`. Only the first 10 characters are used. If you omit it, Brale uses `PAYOUT` or `PAYMENT`. See [What recipients see on ACH](/key-concepts/transfers#what-recipients-see-on-ach).
+
+  ## Brand on transfer responses
+
+  Create, get, and list transfer responses now include `brand`. It returns `{ "account_id": "..." }` when the transfer was branded, or `null` when it wasn't. See [Confirm the brand on a transfer](/guides/2nd-and-3rd-party-transfers#confirm-the-brand-on-a-transfer).
+
+  ## Chia
+
+  Brale now supports the `chia` and `chia_testnet` transfer types. See [Transfer types](/coverage/transfer-types).
+
+  ## Updates
+
+  - **Tx and Verona are now primary:** `tx`, `verona`, `tx_testnet`, and `verona_testnet` are now the current `transfer_type` values. `coreum` and `xion` still work but are deprecated. Responses may return either value, so treat both as the same network. See [Legacy transfer types](/coverage/transfer-types#legacy-transfer-types).
+  - **Spark testnet:** `spark_testnet` is now available. See [Testnet transfer types](/coverage/transfer-types#testnet-transfer-types).
+  - **Brand account errors:** Branded transfers now return specific errors when the brand Account can't be used, such as `brand_account_not_found` and `brand_account_not_verified`. See [Brand account errors](/guides/2nd-and-3rd-party-transfers#brand-account-errors).
+</Update>
+
 <Update label="2026-10-19" description="Week of October 19" tags={["New", "Update"]}>
   ## Refund webhooks
 

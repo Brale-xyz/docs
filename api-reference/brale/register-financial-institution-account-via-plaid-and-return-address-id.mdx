@@ -6,7 +6,7 @@ openapi: 'POST /accounts/{account_id}/plaid/register-account'
 
 This endpoint completes the **Plaid-linked bank account** flow. It exchanges the `public_token` from Plaid Link, registers the bank account, and returns an `address_id` you can use in transfers.
 
-The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp`. It does **not** support `wire`.
+The Plaid-linked path supports `ach_debit`, `ach_credit`, and `rtp_credit` (no longer available). It does **not** support `wire`.
 
 <Note>
 **Previous step:** Generate a `link_token` using [Create Plaid link token](/api-reference/brale/create-plaid-link-token) and complete the Plaid Link flow before calling this endpoint.

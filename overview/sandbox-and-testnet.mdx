@@ -1,9 +1,23 @@
 ---
-title: "Sandbox and Testnet"
+title: "Environments: testnet and mainnet"
 description: "Use Brale's testnet environment to build and test stablecoin integrations without moving real funds."
 ---
 
-Brale provides a testnet environment for non-production requests. There is no separate sandbox.
+## Testnet and mainnet
+
+Brale has two environments, testnet and mainnet. There is no separate sandbox.
+
+The environment is set by the API application you create in **Dashboard → Settings → API**. Testnet credentials work only with testnets. Mainnet credentials move real value.
+
+Both environments use the same hosts: `auth.brale.xyz` for tokens and `api.brale.xyz` for API calls.
+
+On testnet, use testnet `transfer_type` values such as `base_sepolia` or `solana_devnet`. No real fiat moves. To test inbound fiat, use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit).
+
+Store your `client_id` and `client_secret` in environment variables or a secrets manager. Never put them in code.
+
+## Testnet
+
+Brale provides a testnet environment for non-production requests.
 
 Only testnets (Sepolia, Solana Devnet, Base Sepolia, etc.) are supported. Blockchain mainnets (Ethereum, Solana, etc.) are not supported in testnet.
 
@@ -47,7 +61,7 @@ When you submit a mint on testnet, we skip the fiat leg and immediately mint on-
 
 ## 3. Burn Tokens on Testnets
 
-When you submit a redemption on testnet, we immediately burn on-chain and skip the fiat payout. This simulates an offramp transaction. No real wire, ACH, RTP, or FedNow payment is sent from testnet.
+When you submit a redemption on testnet, we immediately burn on-chain and skip the fiat payout. This simulates an offramp transaction. No real wire, ACH, or FedNow payment is sent from testnet.
 
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 

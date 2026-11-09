@@ -153,6 +153,13 @@ components:
           description: Whether the bank account is held by an individual or a
             business. `null` if it was not set.
           example: business
+        date_of_birth:
+          type: string
+          nullable: true
+          description: Recipient's date of birth, masked to the year
+            (`YYYY-**-**`). Brale never returns the full date. `null` if no date
+            of birth is on file.
+          example: '1990-**-**'
         bank_address:
           allOf:
             - $ref: '#/components/schemas/ExternalAddressResponseStreetAddress'
@@ -394,6 +401,18 @@ components:
               type: string
               description: ID of the Account whose identity was used as the brand.
           example: null
+        created_by:
+          allOf:
+            - $ref: '#/components/schemas/TransferCreatedBy'
+          nullable: true
+          description: >-
+            Who created the transfer, or `null` when the creator is not one of the
+            exposed types. Returned on the create, get, and list transfer endpoints,
+            on the simulate Automation deposit response, and in the `data` object of
+            `transfer.completed` and `transfer.canceled` webhooks.
+          example:
+            type: automation
+            id: 3AjRnDClEzwuCKlRioG3OXMS4pH
         automation_id:
           allOf:
             - $ref: '#/components/schemas/Ksuid'
@@ -416,6 +435,37 @@ components:
           type: string
           format: date-time
           example: '2026-01-01T00:00:00Z'
+    TransferCreatedBy:
+      title: TransferCreatedBy
+      type: object
+      additionalProperties: false
+      description: Who created a transfer.
+      required:
+        - type
+        - id
+      properties:
+        type:
+          type: string
+          description: >-
+            The kind of creator. `user`, `application`, and `automation` identify the
+            Brale user, application, or Automation that created the transfer.
+            `transfer` means the transfer is an on-chain deposit. `brale` means Brale
+            created the transfer.
+          enum:
+            - brale
+            - user
+            - application
+            - automation
+            - transfer
+          example: automation
+        id:
+          type: string
+          nullable: true
+          description: >-
+            ID of the creator. `null` when `type` is `brale`. When `type` is
+            `transfer`, this is the chain and the deposit's on-chain transaction hash
+            in the form `<chain>-<hash>`, not a Brale ID.
+          example: 3AjRnDClEzwuCKlRioG3OXMS4pH
     TransferEndpoint:
       title: TransferEndpoint
       description: >-
@@ -1758,9 +1808,10 @@ components:
       additionalProperties: false
       description: >-
         Optional branding for a transfer. Supported for ACH transfers (`ach_debit`,
-        `ach_credit`, `same_day_ach_credit`) and outbound wire payouts
-        (`destination.transfer_type: wire`). Not supported for `rtp_credit` or
-        `fednow_credit`. Branding does not change which Account funds the transfer
+        `ach_credit`, `same_day_ach_credit`), outbound wire payouts
+        (`destination.transfer_type: wire`), and FedNow payouts
+        (`destination.transfer_type: fednow_credit`). Not supported for
+        `rtp_credit`. Branding does not change which Account funds the transfer
         (the Account in the request path), the source or destination, or
         `destination.wire_memo`. Omit `brand` to send the transfer unbranded. See
         [Branded Transfers](/guides/2nd-and-3rd-party-transfers).
@@ -1995,6 +2046,17 @@ components:
             entity type of the account that owns the address. Once set, it
             cannot be changed.
           example: business
+        date_of_birth:
+          type: string
+          format: date
+          description: >
+            Optional. Date of birth of an individual recipient, in `YYYY-MM-DD`
+            format. Accepted when `account_holder_type` is `individual` or not
+            set. Sending it with `account_holder_type: business` returns `400`
+            `date_of_birth_not_supported`. A malformed or future date returns
+            `400` `validation_errors`. Responses return the date masked to the
+            year (`1990-**-**`).
+          example: '1990-01-31'
         bank_address:
           description: >
             Bank physical address. Required when `transfer_types` includes
@@ -2572,6 +2634,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transfer'
+        '400':
+          description: >
+            The transfer amount is invalid. Known cases include:
+
+
+            - `invalid_amount` with `detail` `Invalid transfer amount`:
+            `amount.value` is not a number (for example, `"abc"`).
+
+            - `invalid_amount` with `detail` `Amount must be greater than zero`:
+            `amount.value` is zero or negative.
+
+            - `invalid_amount_currency`: `amount.currency` is not supported for
+            the account (for example, `BTC`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
         '422':
           description: >
             The request is valid but cannot be processed. Known cases include
@@ -2742,6 +2821,18 @@ paths:
                   routing_number: '063108680'
                   account_type: checking
                   name: Example Bank
+              offchain_individual_with_date_of_birth:
+                summary: Off-chain (ACH Credit, individual recipient with date of birth)
+                value:
+                  owner: Jane Doe
+                  transfer_types:
+                    - ach_credit
+                  account_number: '1234567890'
+                  routing_number: '063108680'
+                  account_type: checking
+                  account_holder_type: individual
+                  date_of_birth: '1990-01-31'
+                  name: Example Bank
               offchain_fednow_credit:
                 summary: Off-chain (FedNow Credit, no postal addresses required)
                 value:
@@ -2799,6 +2890,7 @@ paths:
                     status: active
                     ownership: customer-owned
                     account_holder_type: business
+                    date_of_birth: null
                     bank_address: null
                     beneficiary_address:
                       street_line_1: 100 Example St
@@ -2815,6 +2907,29 @@ paths:
                     needs_update: false
                     last_updated: '2026-06-02T20:01:03.321461Z'
                     routingNumber: '063108680'
+        '400':
+          description: >
+            Bad request. Date of birth cases:
+
+
+            - `date_of_birth_not_supported`: `date_of_birth` was sent with
+              `account_holder_type: business`. Brale does not create the address.
+
+            - `validation_errors`: `date_of_birth` is malformed or in the future.
+              The error response does not include the submitted value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                date_of_birth_not_supported:
+                  summary: Date of birth sent for a business recipient
+                  value:
+                    type: date_of_birth_not_supported
+                    detail: date_of_birth can only be set when account_holder_type
+                      is individual or not set.
+                    code: ValidationError
+                    status: 400
         '422':
           description: >
             The request is valid but cannot be processed. FedNow-related cases:
@@ -2952,6 +3067,157 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Address'
+    patch:
+      tags:
+        - Addresses
+      operationId: update_account_address
+      summary: Update an address
+      description: >
+        Makes targeted updates to an existing address. All fields are optional.
+        Include only the fields you want to change.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the account
+        - name: address_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Ksuid'
+          description: The ID of the address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  nullable: true
+                  example: Company External EVM Address
+                status:
+                  type: string
+                  nullable: true
+                  enum:
+                    - active
+                    - archived
+                additional_transfer_types:
+                  type: array
+                  description: Transfer types to add to the address. Merged into
+                    the existing `transfer_types`.
+                  items:
+                    type: string
+                    example: solana
+                bank_address:
+                  description: For bank addresses only. Supply before adding `wire`
+                    to `additional_transfer_types`.
+                  nullable: true
+                  allOf:
+                    - $ref: '#/components/schemas/USStreetAddress'
+                beneficiary_address:
+                  description: For bank addresses only. Supply before adding `wire`
+                    to `additional_transfer_types`.
+                  nullable: true
+                  allOf:
+                    - $ref: '#/components/schemas/USStreetAddress'
+                account_holder_type:
+                  type: string
+                  enum:
+                    - individual
+                    - business
+                  description: >
+                    For bank addresses only. Whether the bank account belongs to an
+                    individual or a business. Can be set only while it is not set
+                    yet. Sending the stored value succeeds with no change. A
+                    different value returns `400` `account_holder_type_already_set`.
+                date_of_birth:
+                  type: string
+                  format: date
+                  description: >
+                    For bank addresses only. Date of birth of an individual
+                    recipient, in `YYYY-MM-DD` format. Can be set only while no date
+                    of birth is stored. Sending the stored value returns `200` with
+                    no change. A different value returns `400`
+                    `date_of_birth_already_set`. Sending it for a business
+                    recipient, or with `account_holder_type: business`, returns `400`
+                    `date_of_birth_not_supported`. A malformed or future date
+                    returns `400` `validation_errors`. Responses return the date
+                    masked to the year (`1990-**-**`).
+                  example: '1990-01-31'
+            examples:
+              set_date_of_birth:
+                summary: Set a recipient's date of birth
+                value:
+                  date_of_birth: '1990-01-31'
+      responses:
+        '200':
+          description: The updated address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          description: >
+            Bad request. Date of birth cases:
+
+
+            - `date_of_birth_already_set`: the address already has a different
+              date of birth.
+
+            - `date_of_birth_not_supported`: `date_of_birth` was sent for a
+              business recipient, or `account_holder_type: business` was sent for
+              an address with a stored date of birth.
+
+            - `validation_errors`: `date_of_birth` is malformed or in the future.
+              The error response does not include the submitted value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                date_of_birth_already_set:
+                  summary: A different date of birth is already stored
+                  value:
+                    type: date_of_birth_already_set
+                    detail: Date of birth is already set and cannot be changed
+                    code: ValidationError
+                    status: 400
+        '404':
+          description: Address not found or not owned by the account.
+        '422':
+          description: >
+            The request is valid but cannot be processed:
+
+
+            - `recipient_update_failed`: Brale could not update the recipient
+              with the new date of birth. Brale does not save the change.
+
+            - `fednow_routing_number_not_supported`: the address's routing number
+              does not participate in FedNow. Do not retry.
+
+            - `fednow_provider_registration_failed`: FedNow registration failed.
+              This can be temporary. Retry after a backoff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV2'
+              examples:
+                recipient_update_failed:
+                  summary: Recipient update rejected
+                  value:
+                    type: recipient_update_failed
+                    detail: The recipient could not be updated
+                    code: ValidationError
+                    status: 422
+        '503':
+          description: >
+            `service_unavailable`: Brale could not update the recipient at this
+            time. Brale does not save the change. Retry after a backoff.
   /accounts/{account_id}/addresses/{address_id}/balance:
     get:
       tags:
@@ -3123,7 +3389,12 @@ paths:
 
 
         Deprecated. Use Addresses. Create an off-chain Address (ACH/Wire/RTP) and
-        pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.'
+        pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.
+
+
+        This endpoint does not accept `date_of_birth`. Sending one returns `400`
+        `date_of_birth_not_accepted`. To store a recipient''s date of birth, create
+        the bank address with `POST /accounts/{account_id}/addresses/external`.'
       parameters:
         - name: account_id
           in: path

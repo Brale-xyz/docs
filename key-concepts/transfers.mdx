@@ -27,7 +27,7 @@ Each source and destination includes:
 | `amount`          | Body                        | object | `{ "value": "10", "currency": "USD" }`                   |
 | `source`          | Body                        | object | Origin of funds (fiat rail or on-chain address)          |
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
-| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, rtp_credit, fednow_credit, polygon, solana) |
+| `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
 | `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
 | `Idempotency-Key` | Header                      | string | UUID v4 that identifies one logical transfer. Reuse it only to retry the same request. See [Idempotency](/key-concepts/idempotency). |
 
@@ -35,7 +35,7 @@ Each source and destination includes:
 
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). Not supported for `rtp_credit` or `fednow_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
+| `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). For FedNow payouts (`destination.transfer_type: "fednow_credit"`), it selects the sender the receiving bank sees. Not supported for `rtp_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 | `ach_description` | In `destination` (payouts) or `source` (`ach_debit`) | string | **ACH only.** Short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, and `source.ach_description` for `ach_debit`. Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the first 10 characters are used. See [What recipients see on ACH](#what-recipients-see-on-ach). |
 
@@ -76,6 +76,27 @@ The object is optional and may be absent immediately after a transfer is created
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
 </Note>
+
+### `created_by`
+
+`created_by` identifies who created the transfer. It is an object with `type` and `id`, or `null` when the creator is not one of the exposed types. Brale returns it on the create, get, and list transfer endpoints, on [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit), and in [`transfer.completed` and `transfer.canceled` webhooks](/webhooks/webhook-events#transfer-completed).
+
+| `type` | `id` |
+| :--- | :--- |
+| `user` | ID of the user who created the transfer |
+| `application` | ID of the application that created the transfer |
+| `automation` | ID of the Automation that created the transfer |
+| `transfer` | The transfer is an on-chain deposit. `id` is the chain and the deposit's on-chain transaction hash, in the form `<chain>-<hash>`. It is not a Brale ID. |
+| `brale` | Brale created the transfer. `id` is `null`. |
+
+```json
+"created_by": {
+  "type": "automation",
+  "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
+}
+```
+
+Transfer responses keep `automation_id`. For Automation-created transfers, `created_by.id` matches `automation_id`.
 
 ## Transfer scenarios: understanding `value_type` and `transfer_type`
 
@@ -177,7 +198,7 @@ Onramp to your stablecoin by debiting a Plaid connected address.
 ```
 
 Optional `brand` object
-You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). `brand` is not supported for RTP or FedNow.
+You can specify which Account’s name appears on the receiver’s bank statement line items for ACH. For outbound wires, `brand` selects the wire sender instead. See [Stablecoin to USD (Wire Offramp or Payout)](#stablecoin-to-usd-wire-offramp-or-payout). For FedNow payouts, `brand` selects the sender the receiving bank sees. See [Branded FedNow payouts](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts). `brand` is not supported for RTP.
 
 Transfer responses return `brand` as `{ "account_id": "<ACCOUNT_ID>" }` when the transfer was branded, or `null` when it was not. See [Confirm the brand on a transfer](/guides/2nd-and-3rd-party-transfers#confirm-the-brand-on-a-transfer).
 
@@ -441,7 +462,11 @@ For inbound wire-funded transfers, the response includes `source.payment_details
     "value": "102.0",
     "currency": "USD"
   },
-  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
+  "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_by": {
+    "type": "automation",
+    "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
+  }
 }
 ```
 
@@ -472,6 +497,10 @@ For inbound wire-funded transfers, the response includes `source.payment_details
   },
   "note": null,
   "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "created_by": {
+    "type": "automation",
+    "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"
+  },
   "created_at": "2026-09-29T17:00:00.000000Z",
   "updated_at": "2026-09-29T17:00:05.000000Z"
 }
@@ -679,7 +708,7 @@ A `failed` status means the payout failed or was returned. It does not mean a re
 ## Transfer Limits
 
 - Standard and Same-Day ACH transfers are generally limited to $50,000 per transaction, including deposits and payouts.
-- RTP transfers are generally limited to $50,000 per transaction.
+- FedNow transfers are limited to $10,000 per transaction. The limit applies to both FedNow payouts (`destination.transfer_type: "fednow_credit"`) and FedNow-funded onramps into an [Automation](/guides/fednow-inbound).
 - Wire transfers do not have a standard hard maximum. Wires above $3,000,000 may require additional review and processing time.
 - Stablecoin transfers do not have a standard per-transaction maximum but may be subject to account-specific controls, compliance review, available liquidity, and blockchain network constraints.
 
