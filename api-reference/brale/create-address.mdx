@@ -87,6 +87,10 @@ Brale returns these errors with the standard error envelope:
 }
 ```
 
+#### Disabled bank accounts
+
+If the bank account matches an external address that Brale disabled after a return, Brale returns `422` `external_address_disabled` and does not create a new address. Contact support to re-enable the existing address. See [Troubleshooting](/documentation/troubleshooting#422-external_address_disabled).
+
 #### Wire (`wire`)
 
 Wire-capable addresses require both `bank_address` and `beneficiary_address`.

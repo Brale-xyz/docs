@@ -81,6 +81,8 @@ curl --request POST \
 
 `422 insufficient_balance` is a special case. The request is valid — the account simply didn't have enough funds at the time. Once the customer funds their account, they can retry with the **same idempotency key** and the transfer will be processed.
 
+Brale's balance check subtracts transfers from the source address that are still `pending` or `processing`. The onchain balance, or the [address balance endpoint](/api-reference/brale/get-address-balance), can show more than is available. If you get `insufficient_balance` while the address appears funded, wait for the in-flight transfers to finish, then retry with the same key. See [Troubleshooting](/documentation/troubleshooting#422-insufficient_balance-when-the-address-shows-enough-funds).
+
 This is different from permanent validation failures (e.g. `invalid_account_number`), which will always fail regardless of account state. For those, the request itself must change, which requires a new key.
 
 ### Simulated testnet deposits
