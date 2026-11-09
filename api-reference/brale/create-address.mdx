@@ -78,6 +78,7 @@ Brale returns these errors with the standard error envelope:
 | --- | --- | --- | --- |
 | `422` | `fednow_routing_number_not_supported` | The routing number does not participate in FedNow. | No. Use another rail. |
 | `422` | `fednow_provider_registration_failed` | FedNow registration failed. This can be temporary. | Yes. Retry with the same `Idempotency-Key` and body after a backoff. |
+| `400` | `invalid_transfer_types` | `transfer_types` includes a value the address cannot use, most often `rtp_credit`. The `detail` reads `Invalid transfer types; Address transfer types must be compatible chains`. | No. Replace `rtp_credit` with `fednow_credit`. See [Migrate from `rtp_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit). |
 
 ```json Response (422)
 {

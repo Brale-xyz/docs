@@ -41,6 +41,8 @@ FedNow uses different identifiers depending on context. Use the value that match
 ## Lifecycle and timing
 
 - FedNow operates 24 hours a day, 7 days a week, including weekends and holidays. Business-day cut-off times on [Transfer timing](/documentation/platform/transfer-timing) apply to wire and ACH, not to FedNow.
+- FedNow transfers are limited to $10,000 per transaction in both directions: payouts and Automation deposits. See [Transfer limits](/key-concepts/transfers#transfer-limits).
+- FedNow replaces RTP. If your integration still sends `rtp_credit`, see [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
 - FedNow availability does not guarantee instant end-to-end completion. Brale reviews, bank processing, and onchain settlement of the stablecoin leg can add time.
 - HTTP `201 Created` (Transfers, Automations, Addresses) and `202 Accepted` (deposit simulation) mean Brale accepted or created the resource. They do not mean funds have settled.
 - A Transfer's terminal statuses include `complete`, `canceled`, and `failed`. `pending` and `processing` are in progress. The `status` enum also includes `compliance review`, `refunding`, and `refunded`. None of these mean the Transfer is complete.
