@@ -239,6 +239,8 @@ After the refund starts, the transfer's status is `refunding` and then `refunded
 
 A failed or returned payout is not automatically followed by a refund. Do not wait for `transfer.refunding` or `transfer.refunded` after every `transfer.failed`.
 
+See [Track payouts, returns, and refunds](/guides/payout-lifecycle) for the full payout lifecycle and webhook sequences.
+
 Subscriptions that use the `transfer.*` wildcard already receive both refund events. Subscriptions that list event types by name receive them only after you add `transfer.refunding` and `transfer.refunded`. See [Subscribe to refund events](/webhooks/subscription-api-reference#subscribe-to-refund-events).
 
 ### `transfer.refunding`
@@ -400,7 +402,7 @@ Notes:
 - `data.id` is a payment ID. It is not a Transfer ID. Brale creates a separate Transfer for Automation deposits.
 - `payment.completed` means Brale received the fiat payment. It does not mean the stablecoin mint was delivered. Use [`transfer.completed`](#transfer-completed) or the Transfer's `status` for that.
 - `data.type` identifies the payment rail. The example shows a wire. For FedNow deposits, do not hard-code an expected `data.type` value. Correlate with the Transfer instead.
-- To find the Transfer for an Automation deposit, list Transfers with `automation_id` and `transfer_type` (for example, `transfer_type=fednow_credit`), then match `data.account_id`, the amount, and `source.payment_details.received_at`. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+- To find the Transfer for an Automation deposit, list Transfers with `automation_id`, then check `source.transfer_type` on each Transfer. The `transfer_type` query parameter accepts blockchains only, so do not filter with fiat rails such as `fednow_credit` or `wire`. Match `data.account_id`, the amount, and `source.payment_details.received_at`. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer) and [Track payouts, returns, and refunds](/guides/payout-lifecycle#match-a-payment-to-its-transfer).
 - Brale also emits `payment.completed` for inbound payments created by [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) on testnet. There is no simulation-specific webhook type, so the same handler covers simulated and real deposits.
 
 ## `transfer.canceled`

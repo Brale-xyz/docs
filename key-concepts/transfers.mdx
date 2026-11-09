@@ -71,7 +71,7 @@ The object is optional and may be absent immediately after a transfer is created
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
 | `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
-| `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
+| `sent_at` | string (date-time) \| null | Outbound only. When the outbound wire or ACH payout was sent, when available. Not set on `source.payment_details`. |
 
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
@@ -445,7 +445,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
       "sender_name": "Originator Name",
       "sender_bank_name": "JPMorgan Chase Bank",
       "sender_bank_routing_number": "000000123",
-      "payment_reference": "Simulated Wire",
+      "payment_reference": "INV-1048",
       "imad": "20260406XOIZJDPP953495"
     }
   },
@@ -473,6 +473,8 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 ### Transfers from simulated testnet deposits
 
 [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. A `fednow` simulation produces `source.transfer_type: "fednow_credit"`.
+
+Simulated deposits don't include sender bank details. `source.payment_details` is not populated on the `202` response, on `GET`, or in webhooks. Treat `payment_details` as optional and nullable.
 
 `funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
 
@@ -703,6 +705,8 @@ Brale does not use a separate `returned` status. A returned wire has `status: "f
 Outbound ACH payouts (`ach_credit` and `same_day_ach_credit`) follow the same pattern. The receiving bank can return an ACH payout after the transfer reached `complete`. Brale then updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "ach_return"` and the return code in `failure.ach_return`.
 
 A `failed` status means the payout failed or was returned. It does not mean a refund has started or completed, and not every failed or returned payout is refunded. When Brale refunds a transfer, `refunding` means the refund has started and `refunded` means it has completed. Brale emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) for these stages.
+
+See [Track payouts, returns, and refunds](/guides/payout-lifecycle) for returns by rail, refunds, and webhook sequences.
 
 ## Transfer Limits
 

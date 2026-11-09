@@ -15,6 +15,18 @@ Keys are required on all `POST` requests and should be reused when retrying the 
 Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
 ```
 
+## How long keys are kept
+
+- Brale caches the HTTP response for an `Idempotency-Key` for 24 hours. A retry with the same key and body within 24 hours returns the original response.
+- For transfers, Brale also enforces the key on the transfer itself, scoped to the account. A transfer that was successfully initiated is not created again for the same account and key, even after the 24-hour cache expires.
+- If the original request is still being processed, a retry with the same key returns `409` with the message `A request with the same Idempotency-Key is currently being processed`. Retry with backoff. Don't switch to a new key.
+
+### When the outcome is unknown
+
+After a timeout or a `5xx` response, you may not know whether Brale created the transfer. Retry with the same key and body. Then reconcile by [retrieving](/api-reference/brale/get-transfer) or [listing](/api-reference/brale/list-transfers) transfers.
+
+A `503 brand_identity_unavailable` response means the transfer was not created.
+
 ## When is it required?
 
 | Endpoint type                         | Idempotency-Key header |
@@ -55,6 +67,7 @@ curl --request POST \
 | First successful call                    | `201`: `Created`              | Normal JSON response                                                          |
 | Retry with _same_ body                   | `201`: `Created`              | Same JSON as first call                                                       |
 | Retry with same key but _different_ body | `422`: `Unprocessable Entity` | `{ "This Idempotency-Key can't be reused with a different payload or URI"" }` |
+| Retry while the original request is still being processed | `409`: `Conflict` | `A request with the same Idempotency-Key is currently being processed` |
 
 ## When to reuse the same key vs. generate a new one
 
@@ -68,6 +81,7 @@ curl --request POST \
 | `422 insufficient_balance` — customer has since funded their account | Retry with same key                |
 | `422 brand_account_update_required`: support has fixed the brand account | Retry with same key |
 | `503 brand_identity_unavailable`                                     | Retry with same key (with backoff) |
+| `409`: the original request is still being processed                | Retry with same key (with backoff) |
 
 **Generate a new key** when the request itself is changing:
 
@@ -95,6 +109,7 @@ For [Simulate an Automation deposit](/api-reference/brale/simulate-automation-de
 | -------------------------------- | --------------------------------------- | ------------------------------------------ |
 | `400`: `Missing Idempotency-Key` | Header omitted on POST                  | Add a unique key (UUID).                   |
 | `422`: `Unprocessable Entity`    | Re-used key with different request body | Generate a fresh key per _logical_ action. |
+| `409`: `Conflict`                | A request with the same key is still being processed | Retry with the same key and body, with backoff. Don't switch to a new key. |
 
 ## Best Practices
 
