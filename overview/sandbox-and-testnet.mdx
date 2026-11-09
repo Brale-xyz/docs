@@ -15,6 +15,22 @@ On testnet, use testnet `transfer_type` values such as `base_sepolia` or `solana
 
 Store your `client_id` and `client_secret` in environment variables or a secrets manager. Never put them in code.
 
+## Create managed accounts on testnet
+
+There is no separate testnet route for creating customers. Call [`POST /accounts`](/api-reference/brale/create-account) with an access token from an application scoped to Testnet. Enable the `accounts:write` resource on that application. Omit `doc_submission_ids` when you use testnet-only credentials.
+
+Managed accounts are environment-specific:
+
+- Your own managing `account_id` is the same on testnet and mainnet.
+- A managed account you create with testnet credentials exists only on testnet. Its `account_id` does not work on mainnet.
+- Brale cannot migrate testnet managed accounts to mainnet.
+
+### Go live with managed accounts
+
+When you move to mainnet, create each managed account again with `POST /accounts` and mainnet credentials. Submit the full onboarding information for each account. Brale enables verified accounts for mainnet automatically when you submit them with mainnet credentials.
+
+If you send a mainnet request for an account that isn't enabled for mainnet, such as a managed account created with testnet credentials, Brale returns `400` with `"type": "mainnet_not_enabled"`.
+
 ## Testnet
 
 Brale provides a testnet environment for non-production requests.
@@ -85,7 +101,7 @@ When you submit a redemption on testnet, we immediately burn on-chain and skip t
 
 ## 4. Simulate a deposit into a testnet Automation
 
-Testnet [Automations](/key-concepts/automations) return placeholder banking coordinates that cannot receive real deposits. To test the full Automation flow, simulate an inbound ACH, wire, or FedNow deposit. Brale runs the normal Automation, Transfer, and testnet mint flow and emits the normal `payment.completed` [webhook event](/webhooks/webhook-events).
+Testnet [Automations](/key-concepts/automations) return placeholder banking coordinates that cannot receive real deposits. The `account_number` in `source.funding_instructions` is a placeholder and may not be in a real bank account number format. Don't validate it as a real account number. To test the full Automation flow, simulate an inbound ACH, wire, or FedNow deposit. Brale runs the normal Automation, Transfer, and testnet mint flow and emits the normal `payment.completed` [webhook event](/webhooks/webhook-events).
 
 Your testnet API credentials need the `automations:write` and `network:testnet` scopes.
 
