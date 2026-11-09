@@ -14,6 +14,10 @@ Both `transfer_type` and `value_type` are required.
 | Custodial wallet (`type=internal`)   | Blockchain network, such as `base`       | Token ticker, such as `SBC`   |
 | Plaid-linked bank address            | `ach_debit`                              | `USD`                         |
 
+## Custodial wallet balances
+
+The balance for a custodial wallet does not subtract transfers that are still `pending` or `processing`. When Brale validates a new transfer, it subtracts those in-flight transfers. A transfer can return `422` `insufficient_balance` even when this endpoint shows enough funds. See [Troubleshooting](/documentation/troubleshooting#422-insufficient_balance-when-the-address-shows-enough-funds).
+
 ## Plaid-linked bank balances
 
 ```bash

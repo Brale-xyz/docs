@@ -69,6 +69,24 @@ Use this checklist when integrating and operating at volume.
 - Cause: the source account is a transactional account. Transactional accounts cannot originate on-chain transfers — their external addresses are destination-only, and they hold no internal (custodial) addresses. Checking the address balance first does not predict this; the constraint is about the address role, not funds.
 - Fix: route outbound value through a custodial account. See [Individual accounts](/guides/individual-accounts) and [Account types](/key-concepts/account-types) for what a transactional account can and cannot do.
 
+### 422 `insufficient_balance` when the address shows enough funds
+
+- Cause: Brale checks the source address's available balance, not its onchain total. Brale subtracts transfers from that address that are still `pending` or `processing`. A block explorer, or [Get an address balance](/api-reference/brale/get-address-balance), can show more than you can spend while those transfers are in flight.
+- This is common when you send several transfers from the same address in quick succession, for example a conversion followed by a burn.
+- Fix: wait for the in-flight transfers to reach a terminal status, then retry with the same `Idempotency-Key` and body. You can also lower the amount. Lowering the amount changes the request, so use a new key.
+- Track in-flight amounts on your side. Before you create a transfer, subtract your own `pending` and `processing` transfers from the same source address from the balance you read.
+
+### 422 on transfers to a bank address that received a return
+
+- Cause: when a bank returns a payment to an external bank address, for example an ACH return, Brale can disable that address. New transfers to a disabled address fail with `422`.
+- Check the [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook or the transfer's [`failure`](/api-reference/brale/get-transfer#failure) field for the return code and reason.
+- Fix: confirm with the recipient that the bank account can receive payments. Then contact Brale support to re-enable the address. After Brale re-enables it, retry the transfer.
+
+### 422 `external_address_disabled`
+
+- Cause: you tried to register a bank account that matches an external address Brale disabled after a return. Registering the same bank account again does not create a new, usable address.
+- Fix: contact Brale support to re-enable the existing address. After Brale re-enables it, use the existing `address_id`. To add rails such as `fednow_credit` or `wire`, use [Update an Address](/api-reference/brale/update-address) with `additional_transfer_types`.
+
 ### 422 `unsupported_account_combination`
 
 - Causes:

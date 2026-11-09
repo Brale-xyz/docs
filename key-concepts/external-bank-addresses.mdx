@@ -91,6 +91,7 @@ When you create a Direct bank entry address, Brale validates the format of the b
 - **Bad account details surface after submission.** If the account number does not exist or cannot receive the payment, the receiving bank returns the ACH entry. For example, `R03` means no account was found or the account could not be located.
 - **Returns arrive as `transfer.failed`.** Brale updates the transfer to `failed` and sends a [`transfer.failed`](/webhooks/webhook-events#transfer-failed) webhook. Read the return code and reason from `failure.ach_return`. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
 - **Returns can arrive late.** An ACH return can arrive after the transfer was already processed. Keep handling `transfer.failed` events for transfers you have already recorded. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle).
+- **A return can disable the address.** After a return, Brale can disable the external bank address. New transfers to it fail with `422`. Registering the same bank account again returns `422` `external_address_disabled`. Contact support to re-enable the address. See [Troubleshooting](/documentation/troubleshooting#422-on-transfers-to-a-bank-address-that-received-a-return).
 
 If you need the account confirmed before you send funds, use the [Plaid-linked bank account flow](#plaid-linked-bank-account-flow) instead. That flow connects the account through Plaid Link rather than accepting manually entered details.
 

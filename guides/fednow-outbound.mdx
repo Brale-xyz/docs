@@ -206,7 +206,8 @@ A `canceled` Transfer was stopped before Brale sent the payment. A return after 
 | Status | Cause | Retry? |
 | --- | --- | --- |
 | `401` | Expired or invalid token | Refresh the token and retry with the same key. |
-| `422` `insufficient_balance` | The source Address does not hold enough of `source.value_type` | Fund the Address, then retry with the same key and body. |
+| `422` `insufficient_balance` | The source Address does not hold enough of `source.value_type` after Brale subtracts its `pending` and `processing` transfers | Fund the Address or wait for in-flight transfers to finish, then retry with the same key and body. |
+| `422` on a bank Address that received a return | Brale disabled the destination bank Address after a return | Contact support to re-enable the Address. See [Troubleshooting](/documentation/troubleshooting#422-on-transfers-to-a-bank-address-that-received-a-return). |
 | `422` idempotency key reused with a different body | The request body changed under the same key | Fix the request and use a new key. |
 | `429` or `5xx`, or a timeout | Temporary failure | Retry with the same key and body using exponential backoff. |
 
