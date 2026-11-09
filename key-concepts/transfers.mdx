@@ -707,6 +707,7 @@ A `failed` status means the payout failed or was returned. It does not mean a re
 ## Transfer Limits
 
 - Standard and Same-Day ACH transfers are generally limited to $50,000 per transaction, including deposits and payouts.
+- FedNow transfers are limited to $10,000 per transaction. The limit applies to both FedNow payouts (`destination.transfer_type: "fednow_credit"`) and FedNow-funded onramps into an [Automation](/guides/fednow-inbound).
 - Wire transfers do not have a standard hard maximum. Wires above $3,000,000 may require additional review and processing time.
 - Stablecoin transfers do not have a standard per-transaction maximum but may be subject to account-specific controls, compliance review, available liquidity, and blockchain network constraints.
 

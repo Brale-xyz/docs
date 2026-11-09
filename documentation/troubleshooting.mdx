@@ -56,6 +56,19 @@ Use this checklist when integrating and operating at volume.
 - Usually caused by using a testnet-scoped API client for a mainnet request, or a mainnet client for testnet.
 - Fix: use an API client created for the target environment and mint a new access token.
 
+### 400 `invalid_transfer_types` on address creation
+
+- Response `detail`: `Invalid transfer types; Address transfer types must be compatible chains`.
+- Common cause: `transfer_types` on `POST /accounts/{account_id}/addresses/external` includes `rtp_credit`. RTP ended on October 30, 2026. The error mentions chains, but the rejected value is `rtp_credit`.
+- Fix: replace `rtp_credit` with `fednow_credit`. See [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
+- If the request does not include `rtp_credit` and `fednow_credit` is rejected, contact [support@brale.xyz](mailto:support@brale.xyz) to confirm FedNow is enabled on your account.
+
+### 400 `invalid_transfer_type` on transfer creation
+
+- Response `detail`: `Invalid transfer type`.
+- Common cause: `destination.transfer_type` on `POST /accounts/{account_id}/transfers` is `rtp_credit`.
+- Fix: confirm the destination bank Address lists `fednow_credit` in `transfer_types`, then set `destination.transfer_type` to `fednow_credit`. Brale did not create a Transfer for the rejected request. See [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
+
 ### 404 `compatible_address_not_found`
 
 - Causes:
