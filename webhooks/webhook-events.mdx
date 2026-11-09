@@ -540,7 +540,7 @@ Ignore unknown fields in `data`. Retrieve the address with the Addresses API whe
 
 ## `account.verification.documents_required`
 
-Emitted when Brale's KYB review determines one or more documents must be uploaded.
+Emitted when Brale's KYB or KYC review determines one or more documents must be uploaded.
 
 Use this event to prompt the account holder to submit the requested documents. For each document with `status: "pending_upload"`, [stage the file](/api-reference/brale/stage-verification-document) (use `document_kind` and `person_label` from the payload), then [link staged submissions](/api-reference/brale/link-verification-documents). You can also [poll required documents](/api-reference/brale/list-verification-documents) instead of using this webhook.
 
@@ -609,27 +609,54 @@ Notes:
 
 ## `account.verification.rejected`
 
-Emitted when account verification is declined. This is the terminal outcome for a review: the account will not become `complete` on its own, and no further verification events follow.
+Emitted when account verification is declined. The account will not become `complete` on its own. Contact Brale to reopen a rejected account. A reopened account returns to `pending` and may then receive `account.verification.documents_required`, followed by `account.verification.completed` or a new `account.verification.rejected` event with a new `id`.
 
 Example:
 
 ```json
 {
-  "id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
+  "id": "3EvtRejectedExampleId000001",
   "type": "account.verification.rejected",
   "created": "2026-06-09T16:00:00Z",
   "data": {
     "account_id": "3Ar9BnQCKIrB3SYjKGBzCtFs6XL",
     "status": "rejected",
-    "updated_at": "2026-06-09T16:00:00Z"
+    "updated_at": "2026-06-09T16:00:00Z",
+    "reasons": [
+      {
+        "code": "business_registration_inactive",
+        "description": "The business registration is not active with the state registry.",
+        "person_label": null
+      },
+      {
+        "code": "identity_number_unverified",
+        "description": "The identity number provided could not be verified.",
+        "person_label": "Jane Doe"
+      }
+    ]
   }
 }
 ```
+
+Each entry in `data.reasons` has these fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | string | Stable, machine-readable reason code. Branch on this value. See [Rejection reason codes](#rejection-reason-codes). |
+| `description` | string | Plain sentence describing the reason. Safe to show to the end user. |
+| `person_label` | string or null | The officer, owner or individual the reason applies to. `null` when the reason is about the business. |
+
+`data.reasons` is never empty and contains no duplicates.
 
 Notes:
 
 - Treat `data.account_id` as the account ID.
 - Treat `data.status` as the declined verification state (`rejected`).
+- The event fires once, when the account moves to `rejected`. Brale's automated review and Brale compliance both send the same payload.
+- A manual rejection with no automated finding carries one reason: `compliance_review_declined`.
+- Brale may add reason codes. Treat an unknown `code` as a generic decline and show its `description`.
+- Reasons are only available in this webhook. `GET /accounts/{account_id}` returns `status: "rejected"` without reasons, so store them when you receive the event.
+- The event `id` is unique per rejection, and retries of the same delivery share it. It is not the account ID.
 - The account's `status` from `GET /accounts/{account_id}` becomes `rejected` at the same time, so polling and webhooks agree.
 - Uploading more documents does not reopen a declined account. Contact Brale if you believe a decline is incorrect.
 - Your integration should ignore unknown fields.
@@ -637,6 +664,32 @@ Notes:
 <Note>
 Subscriptions to the `account.verification.*` wildcard receive this event automatically. If you subscribed to `account.verification.completed` by name, add `account.verification.rejected` to your subscription to be told about declines.
 </Note>
+
+### Rejection reason codes
+
+| Code | Description |
+| --- | --- |
+| `business_not_found` | The business could not be found in registry records. |
+| `business_name_mismatch` | The business name does not match registry records. |
+| `business_registration_inactive` | The business registration is not active with the state registry. |
+| `business_registration_unverified` | The business registration could not be verified. |
+| `business_registry_lookup_failed` | The business could not be confirmed against registry records. |
+| `business_information_unverified` | The business information provided could not be verified. |
+| `business_website_unverified` | The business website could not be verified. |
+| `tax_id_unverified` | The EIN could not be verified against tax records. |
+| `address_mismatch` | The address provided does not match the records on file. |
+| `identity_verification_failed` | Identity verification could not be completed. |
+| `identity_number_unverified` | The identity number provided could not be verified. |
+| `identity_name_mismatch` | The name provided could not be verified against identity records. |
+| `identity_document_not_accepted` | The identity document provided is not accepted for this country. |
+| `identity_document_incomplete` | The identity document was submitted without every side required to read it. |
+| `aml_screening_declined` | Anti-money laundering screening could not be cleared. |
+| `fraud_screening_declined` | Fraud screening could not be cleared. |
+| `risk_screening_declined` | Risk screening could not be cleared. |
+| `business_event_screening_declined` | A reported business event could not be cleared in review. |
+| `related_company_screening_declined` | Screening of a company related to this business could not be cleared. |
+| `compliance_review_declined` | The application was declined in verification review. |
+| `verification_check_declined` | A verification check could not be cleared. |
 
 ## Handling future event types
 
