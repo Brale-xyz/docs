@@ -81,3 +81,7 @@ Availability depends on customer type, account type, and jurisdiction. See [Acco
 ### Do I need to build separate wallet infrastructure?
 
 Not for approved custodial account flows. Brale provisions internal wallet addresses on supported chains. You still build the customer experience and integrate through the API.
+
+### Do managed accounts carry over from testnet to mainnet?
+
+No. Managed accounts you create with testnet credentials exist only on testnet, and Brale cannot migrate them. When you go live, create each managed account again with mainnet credentials. See [Create managed accounts on testnet](/overview/sandbox-and-testnet#create-managed-accounts-on-testnet).

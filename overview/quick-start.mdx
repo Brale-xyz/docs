@@ -89,6 +89,7 @@ Before you start: you need a Brale account ([sign up](https://app.brale.xyz/sign
 ## Common errors
 
 - `403 network_not_supported`: Using a testnet client/token on mainnet (or vice versa). Create a client for the target environment.
+- `400 mainnet_not_enabled`: The account isn't enabled for mainnet. Managed accounts created with testnet credentials don't exist on mainnet. Create them again with mainnet credentials. See [Create managed accounts on testnet](/overview/sandbox-and-testnet#create-managed-accounts-on-testnet).
 - `404 compatible_address_not_found`: Address doesn't support the `transfer_type`, typo in `address_id`, or wrong `account_id` in the path.
 - `400 missing Idempotency-Key`: All POST creates must include `Idempotency-Key`.
 
