@@ -25,7 +25,7 @@ FedNow uses different identifiers depending on context. Use the value that match
 | Bank Address capability | `transfer_types`, `additional_transfer_types` | `fednow_credit` |
 | Automation configuration | `source.value_type` | `USD`. Do not set a deposit rail. |
 | Testnet deposit simulator input | `transfer_type` on the simulate request | `fednow` |
-| Transfer list filter | `transfer_type` query parameter | `fednow_credit` |
+| Transfer list filter | `automation_id` (inbound) or `address_id` (outbound) query parameter | Then check `source.transfer_type` or `destination.transfer_type` for `fednow_credit`. The `transfer_type` query parameter accepts blockchains only and does not accept `fednow_credit`. |
 
 ## Guides
 
@@ -82,3 +82,5 @@ For timeouts, `429`, and `5xx` responses, retry with the same `Idempotency-Key` 
 
 - **Inbound:** On testnet, [simulate a FedNow deposit](/guides/fednow-inbound#test-on-testnet) into an Automation with `transfer_type: "fednow"`. Simulated funding does not move real money.
 - **Outbound:** Testnet does not send real FedNow payouts. See [Test outbound payouts](/guides/fednow-outbound#test-outbound-payouts).
+
+See [What you can test on testnet](/overview/testnet-testing-matrix) for the flows you can and can't exercise on testnet.

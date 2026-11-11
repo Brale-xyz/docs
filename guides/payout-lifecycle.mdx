@@ -1,0 +1,129 @@
+---
+title: "Track payouts, returns, and refunds"
+description: "Follow a stablecoin-to-fiat payout through its statuses, bank returns by rail, refunds, payment identifiers, and webhook events."
+---
+
+A payout is a [Transfer](/key-concepts/transfers) from a stablecoin source to a fiat destination, such as `wire`, `ach_credit`, `same_day_ach_credit`, or `fednow_credit`. This page explains how to track a payout after you create it: its statuses, how each rail reports a return, how refunds work, when payment identifiers appear, and which webhook events to expect.
+
+## Transfer statuses
+
+| Status | What it means |
+| --- | --- |
+| `pending` | The transfer has been submitted but is not yet in progress. |
+| `processing` | The transfer is in progress. |
+| `compliance review` | Brale's risk or compliance review is holding the transfer before it is sent to the rail. This status is not final. Keep tracking the transfer and don't resubmit it. |
+| `complete` | Brale has finished processing the transfer and sent funds to the destination. Outbound wires and outbound ACH payouts can still be returned later. |
+| `canceled` | The transfer was canceled. |
+| `failed` | The transfer did not succeed, or the payout was returned. |
+| `refunding` | Brale has started refunding the payout. The refund is not complete yet. |
+| `refunded` | The refund has completed. |
+
+See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for the full lifecycle diagram.
+
+## Returns by rail
+
+The receiving bank can return a payout. Brale does not use a separate `returned` status. When Brale recognizes a return, it moves the original transfer to `failed` and emits [`transfer.failed`](/webhooks/webhook-events#transfer-failed).
+
+| Rail | When a return can happen | What you see |
+| --- | --- | --- |
+| Outbound wire (`wire`) | While the transfer is `processing` or after it is `complete` | `status: "failed"`, `failure.type: "wire_return"`, and `failure.wire_return.code` |
+| Outbound ACH (`ach_credit`, `same_day_ach_credit`) | After the transfer is `complete` | `status: "failed"`, `failure.type: "ach_return"`, and `failure.ach_return.code`, `reason`, and `category` |
+| FedNow (`fednow_credit`) | Rarely, after settlement | `status: "failed"` and `transfer.failed` |
+
+### Outbound wires
+
+`failure.wire_return.code` is the provider's return code, such as `AC04`. When the provider supplies no code, Brale sets it to `WIRE_RETURN`.
+
+### Outbound ACH
+
+`failure.ach_return` carries the ACH return `code`, `reason`, and `category`. See [the transfer `failure` field](/api-reference/brale/get-transfer#failure) for the full schema.
+
+### FedNow
+
+FedNow payouts are final once they settle. Returns are rare. A return arrives as a separate return payment from the receiving bank. Brale then moves the original transfer to `failed` and emits `transfer.failed`.
+
+### Read the `failure` object safely
+
+Always null-check `failure` before you read it. Only read the object for the transfer's rail.
+
+```ts
+const failure = transfer.failure;
+
+if (failure?.type === "wire_return") {
+  const code = failure.wire_return?.code; // For example, "AC04" or "WIRE_RETURN"
+} else if (failure?.type === "ach_return") {
+  const { code, reason, category } = failure.ach_return ?? {};
+}
+```
+
+## Refunds
+
+Refunds are not automatic, and Brale does not refund every failed payout. Do not wait for a refund after every `transfer.failed`.
+
+When Brale refunds a payout, the events arrive in this order, all on the same transfer ID:
+
+`transfer.failed` (or `transfer.canceled`) → `transfer.refunding` → `transfer.refunded`
+
+After the refund starts, Brale does not send `transfer.completed`, `transfer.failed`, or `transfer.canceled` for that transfer. See [Refund events](/webhooks/webhook-events#refund-events).
+
+## When payment identifiers appear
+
+Payment identifiers appear on `destination.payment_details` after the transfer is created. The object can be absent until then.
+
+| Rail | Field | When it appears |
+| --- | --- | --- |
+| Outbound wire | `destination.payment_details.imad` | After the wire is submitted |
+| Outbound ACH | `destination.payment_details.trace_number` and `sent_at` | When the payout posts |
+| FedNow | None | FedNow payouts have no IMAD or trace number |
+
+See [`destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the field reference.
+
+## Webhook sequences
+
+### Payout
+
+`transfer.created` → `transfer.completed`
+
+For an outbound wire or outbound ACH payout, a `transfer.failed` event can arrive later for the same transfer if the bank returns the payout. If Brale refunds the payout, `transfer.refunding` and `transfer.refunded` follow.
+
+### Automation deposit
+
+`payment.completed` and `transfer.created` → `transfer.completed`
+
+`payment.completed` carries a payment ID in `data.id`, not a Transfer ID. It confirms that Brale received the fiat payment, not that the stablecoins were minted. Use `transfer.completed` for the mint.
+
+### Handle deliveries
+
+Deliveries are at-least-once and unordered.
+
+- Deduplicate on the event `id`. For refund events, follow the deduplication guidance in [Handle refund events](/webhooks/webhook-events#handle-refund-events).
+- Don't rely on delivery order. Retrieve the transfer with [Get a transfer](/api-reference/brale/get-transfer) for its current state.
+
+## Match a payment to its Transfer
+
+To match a `payment.completed` event to the Transfer for an Automation deposit, list the Automation's Transfers:
+
+```bash
+curl --request GET \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?automation_id=${AUTOMATION_ID}" \
+  --header "Authorization: Bearer ${AUTH_TOKEN}"
+```
+
+Then match on:
+
+- `data.account_id` from the event
+- `automation_id` on the Transfer
+- The amount
+- `source.payment_details.received_at` on the Transfer
+
+The `transfer_type` query parameter accepts blockchains only. To find Transfers on a fiat rail, filter by `automation_id` (inbound) or `address_id` (outbound), then check `source.transfer_type` or `destination.transfer_type` on each Transfer.
+
+Simulated testnet deposits don't include `source.payment_details`. See [What you can test on testnet](/overview/testnet-testing-matrix).
+
+## Related
+
+- [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp)
+- [Send FedNow payouts](/guides/fednow-outbound)
+- [Transfers](/key-concepts/transfers)
+- [Webhook events](/webhooks/webhook-events)
+- [Idempotency](/key-concepts/idempotency)

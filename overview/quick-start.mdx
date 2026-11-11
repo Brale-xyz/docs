@@ -77,7 +77,7 @@ Before you start: you need a Brale account ([sign up](https://app.brale.xyz/sign
       }'
     ```
 
-    > **Testnet?** Use testnet transfer_types instead: `base_sepolia`, `solana_devnet`, `sepolia`, etc. 
+    > **Testnet?** Use testnet transfer_types instead: `base_sepolia`, `solana_devnet`, `sepolia`, etc. See [What you can test on testnet](/overview/testnet-testing-matrix).
   </Step>
   <Step title="Track transfer status">
     Transfers may complete asynchronously. For real-time production updates, subscribe to [`transfer.completed`](/webhooks/webhook-events#transfer-completed) and [`transfer.failed`](/webhooks/webhook-events#transfer-failed) [webhooks](/webhooks/overview) so Brale can send your application a signed event when the transfer reaches `complete` or `failed`.

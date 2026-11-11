@@ -164,16 +164,22 @@ stateDiagram-v2
     processing --> complete
     processing --> canceled
     processing --> failed
-    complete --> failed: outbound wire returned
+    complete --> failed: outbound wire or ACH payout returned
+    failed --> refunding
+    canceled --> refunding
+    refunding --> refunded
     complete --> [*]
     canceled --> [*]
     failed --> [*]
+    refunded --> [*]
 ```
 
-A successful transfer progresses from `pending` → `processing` → `complete`. Outbound domestic wires can also be returned by the receiving bank. When Brale recognizes the return, it updates the original transfer to `failed`:
+A successful transfer progresses from `pending` → `processing` → `complete`. Outbound domestic wires and outbound ACH payouts (`ach_credit`, `same_day_ach_credit`) can also be returned by the receiving bank. When Brale recognizes the return, it updates the original transfer to `failed`:
 
 - **Return received before completion:** `processing` → `failed`
 - **Return received after completion:** `complete` → `failed`
+
+When Brale refunds a failed or canceled payout, the same transfer moves `failed` (or `canceled`) → `refunding` → `refunded`. Refunds are not automatic and not guaranteed after every failure. See [Track payouts, returns, and refunds](/guides/payout-lifecycle).
 
 Brale does not use a separate `returned` status for returned wires. The transfer has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`.
 
@@ -181,12 +187,15 @@ Brale does not use a separate `returned` status for returned wires. The transfer
 | ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pending`    | No       | The transfer has been submitted but is not yet in progress. For fiat transfers, this typically means the system is waiting for funds, confirmation from a correspondent, or the transfer is under review.                                                                                                              |
 | `processing` | No       | The transfer is actively being processed. For onchain transfers, this includes signing, broadcasting, and awaiting network confirmation. If an onchain transaction encounters a transient error (such as a signing timeout or network congestion), Brale will automatically retry it while it remains in `processing`. |
-| `complete`   | Usually  | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires, a later bank return can still move the transfer to `failed`. |
-| `canceled`   | Yes      | The transfer has been permanently canceled and will not be retried. |
-| `failed`     | Yes      | The transfer did not succeed, or the payout was returned. This includes outbound domestic wires returned after the transfer was `complete`. Check the [`failure`](/api-reference/brale/get-transfer#failure) object for details when it is present. |
+| `compliance review` | No | Brale's risk or compliance review is holding the transfer before it is sent to the rail. This status is not final. Keep tracking the transfer and don't resubmit it. |
+| `complete`   | Usually  | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires and outbound ACH payouts, a later bank return can still move the transfer to `failed`. |
+| `canceled`   | Usually  | The transfer has been permanently canceled and will not be retried. If Brale refunds a canceled payout, the transfer moves to `refunding`. |
+| `failed`     | Usually  | The transfer did not succeed, or the payout was returned. This includes outbound domestic wires and outbound ACH payouts returned after the transfer was `complete`. Check the [`failure`](/api-reference/brale/get-transfer#failure) object for details when it is present. If Brale refunds the payout, the transfer moves to `refunding`. |
+| `refunding`  | No       | A refund for the payout has started. The refund is not complete yet. |
+| `refunded`   | Yes      | The refund for the payout has completed. |
 
 <Note>
-  `complete`, `canceled`, and `failed` are terminal statuses for routine polling. If a transfer is in `pending` or `processing`, it is still in progress and may still complete. Do not treat a non-terminal status as a final outcome. For outbound domestic wires, `complete` does not guarantee that a later bank return cannot occur. Keep accepting `transfer.failed` events for transfers you recorded as `complete`.
+  `complete`, `canceled`, and `failed` are terminal statuses for routine polling. If a transfer is in `pending` or `processing`, it is still in progress and may still complete. Do not treat a non-terminal status as a final outcome. For outbound domestic wires and outbound ACH payouts, `complete` does not guarantee that a later bank return cannot occur. Keep accepting `transfer.failed` events for transfers you recorded as `complete`, and `transfer.refunding` and `transfer.refunded` events for payouts you recorded as `failed` or `canceled`.
 </Note>
 
 ### When Transfers Are Canceled

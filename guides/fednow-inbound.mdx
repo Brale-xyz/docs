@@ -194,7 +194,7 @@ curl --request POST \
 - Brale emits the normal `payment.completed` and `transfer.*` events.
 - Fetch the Transfer with `GET /accounts/{account_id}/transfers/{transfer_id}`. When `status` is `complete`, look up `destination.transaction_id` on the testnet explorer to verify the mint.
 
-Simulation creates simulated fiat funding only. It does not test the payer's bank or the FedNow network.
+Simulation creates simulated fiat funding only. It does not test the payer's bank or the FedNow network. Simulated deposits don't include `source.payment_details`. See [What you can test on testnet](/overview/testnet-testing-matrix) for the flows you can and can't exercise on testnet.
 
 ## Errors
 

@@ -1,0 +1,31 @@
+---
+title: "What you can test on testnet"
+description: "See which Brale flows and webhook events you can exercise on testnet, and how to test the rest on mainnet."
+---
+
+Testnet runs the Brale API without moving real fiat. Some flows run end to end on testnet. Others, such as bank returns and refunds, can only be tested on mainnet. Use this page to plan your test coverage. See [Environments: testnet and mainnet](/overview/sandbox-and-testnet) to set up testnet credentials.
+
+## Testing matrix
+
+| Flow | On testnet | Webhooks | How to test for real |
+| --- | --- | --- | --- |
+| Fiat-funded mint (`POST /transfers` with a `wire` or ACH source) | Brale skips the fiat leg and mints on testnet immediately. | See [Webhook events](/webhooks/webhook-events). | Use mainnet credentials and real fiat. |
+| Automation deposit | Simulate the deposit with [`POST .../simulations/deposits`](/api-reference/brale/simulate-automation-deposit) and `transfer_type` set to `ach`, `wire`, or `fednow`. Simulated deposits don't include `source.payment_details`. | `payment.completed` and `transfer.*` | Send a real deposit to a mainnet Automation. |
+| Redemption or payout (ACH, wire, FedNow) | Brale burns the testnet token and sends no fiat. You can test status tracking and idempotency. You can't test returns, refunds, or bank rejections. | See [Webhook events](/webhooks/webhook-events). | Send a small mainnet payout. See [Test returns on mainnet](#test-returns-on-mainnet). |
+| `transfer.failed`, `transfer.refunding`, `transfer.refunded` | Can't be triggered on testnet. | Not delivered on testnet. | See [Test returns on mainnet](#test-returns-on-mainnet). |
+| FedNow recipient registration | There's no testnet routing number that returns `fednow_routing_number_not_supported`. | Not applicable. The error is returned on the request. | On mainnet, this `422` comes back right away on address create or `PATCH`. |
+
+## Test returns on mainnet
+
+To test a return, send a small ACH payout (for example, $1) to an account number the receiving bank will reject. Expect `transfer.failed` with an `ach_return` code, typically within 1–2 banking days.
+
+If you also want to test the refund events, contact [support@brale.xyz](mailto:support@brale.xyz).
+
+See [Track payouts, returns, and refunds](/guides/payout-lifecycle) for how returns and refunds appear on a transfer.
+
+## Missing webhook events on testnet
+
+If an expected `transfer.*` event doesn't arrive on testnet:
+
+1. Check your webhook subscription. Brale delivers each event to one active subscription per account. See [Use one subscription per account](/webhooks/overview#use-one-subscription-per-account).
+2. Contact [support@brale.xyz](mailto:support@brale.xyz) with the transfer ID.

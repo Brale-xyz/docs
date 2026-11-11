@@ -215,6 +215,8 @@ A recognized wire return has a [`failure`](/api-reference/brale/get-transfer#fai
 
 If Brale refunds the payout, it reports the refund separately with `transfer.refunding` (the refund has started) and `transfer.refunded` (the refund has completed). See [Refund events](/webhooks/webhook-events#refund-events).
 
+For statuses, returns on every rail, refunds, and webhook sequences, see [Track payouts, returns, and refunds](/guides/payout-lifecycle).
+
 ## Self-custody redemption
 
 If your customer holds stablecoins in a self-custody or external wallet (for example, Crossmint), the redemption is a two-step process:
