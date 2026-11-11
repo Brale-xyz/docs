@@ -1,18 +1,20 @@
 ---
 title: "Idempotency"
-description: "Use idempotency keys on POST requests to guarantee each operation executes exactly once and prevent duplicate transfers."
+description: "Use idempotency keys on POST requests to retry safely without creating duplicate transfers or other resources."
 ---
 
 ## What is an Idempotency Key?
 
-When you POST a request (create a transfer, etc.) you include a unique `Idempotency-Key` header. Brale stores that key along with the request signature so if you retry—because the network dropped or timed out—Brale recognizes the duplicate and returns the original response instead of performing the operation twice.
+When you POST a request (create a transfer, etc.) you include an `Idempotency-Key` header that identifies one logical operation. Brale stores that key along with the request signature. If you retry the same request with the same key, for example because the network dropped or timed out, Brale recognizes the duplicate and returns the original response instead of performing the operation twice.
 
 The primary goal is to prevent double spends. Without idempotency keys, a retry after a network failure could result in two transfers being created and two debits hitting your customer's account.
 
-Keys are required on all `POST` requests and should be reused when retrying the exact same operation. Transient failures — like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved — can all be retried with the same key. Generate a new key only when the request itself is intentionally changing (e.g. fixing a validation error or initiating a second distinct transfer).
+Keys are required on all `POST` requests. Use one key per logical operation, and reuse it only to retry that operation with the same URI and payload. Transient failures, like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved, can be retried with the same key. Use a new key for a new operation or when the request changes (for example, after fixing a validation error or to initiate a second distinct transfer).
+
+An idempotency key protects retries of the same request. It doesn't deduplicate requests sent with different keys. If you can't confirm whether an earlier request succeeded, retry it with the same key, or check for the resulting transfer with [List transfers](/api-reference/brale/list-transfers) before you create a new operation with a new key.
 
 ```shell
-Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
+Idempotency-Key: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
 ```
 
 ## When is it required?
@@ -54,7 +56,7 @@ curl --request POST \
 | ---------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
 | First successful call                    | `201`: `Created`              | Normal JSON response                                                          |
 | Retry with _same_ body                   | `201`: `Created`              | Same JSON as first call                                                       |
-| Retry with same key but _different_ body | `422`: `Unprocessable Entity` | `{ "This Idempotency-Key can't be reused with a different payload or URI"" }` |
+| Retry with same key but _different_ body or URI | `422`: `Unprocessable Entity` | Error message: `This Idempotency-Key can't be reused with a different payload or URI` |
 
 ## When to reuse the same key vs. generate a new one
 
