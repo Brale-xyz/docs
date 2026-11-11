@@ -1,0 +1,19 @@
+---
+title: 'Create an update link token for a bank address'
+description: 'Returns a Plaid Link token in update mode so the user can relink a Plaid-linked bank address whose link has expired.'
+openapi: 'POST /accounts/{account_id}/addresses/{address_id}/update-link-token'
+---
+
+Use this endpoint when a Plaid-linked bank address returns `needs_update: true`, or when an `ach_debit` transfer fails with `bank_account_relink_required`.
+
+This endpoint requires the `addresses:read` scope.
+
+1. Call this endpoint with the bank address's `address_id`.
+2. Open Plaid Link with the returned `link_token`. Plaid asks the user to re-authenticate only.
+3. After the user completes Plaid Link, retry the ACH debit. The address keeps the same `address_id`.
+
+If the bank address does not need an update, Brale returns `400` with `type: validation_error` and `code: no_update_needed`.
+
+For the full relink flow, see [Handling re-authentication](/key-concepts/addresses#handling-re-authentication).
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.
