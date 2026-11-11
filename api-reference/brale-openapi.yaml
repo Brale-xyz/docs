@@ -2139,8 +2139,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -2540,8 +2541,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -2767,8 +2769,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -2970,8 +2973,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -3394,8 +3398,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -3471,8 +3476,9 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Use one
+            key per logical operation, and reuse it only to retry the same request with
+            the same URI and body. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:

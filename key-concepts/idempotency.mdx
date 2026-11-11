@@ -1,6 +1,6 @@
 ---
 title: "Idempotency"
-description: "Use idempotency keys on POST requests to guarantee each operation executes exactly once and prevent duplicate transfers."
+description: "Use idempotency keys on POST requests to prevent duplicate transfers on retries, and learn how long Brale retains each key."
 ---
 
 ## What is an Idempotency Key?
@@ -9,11 +9,28 @@ When you POST a request (create a transfer, etc.) you include a unique `Idempote
 
 The primary goal is to prevent double spends. Without idempotency keys, a retry after a network failure could result in two transfers being created and two debits hitting your customer's account.
 
-Keys are required on all `POST` requests and should be reused when retrying the exact same operation. Transient failures — like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved — can all be retried with the same key. Generate a new key only when the request itself is intentionally changing (e.g. fixing a validation error or initiating a second distinct transfer).
+Keys are required on all `POST` requests. Use one key per logical operation, and reuse it only when retrying that operation with the same URI and body. Transient failures — like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved — can all be retried with the same key. Generate a new key only when the request itself is intentionally changing (e.g. fixing a validation error or initiating a second distinct transfer).
 
 ```shell
 Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
 ```
+
+## Key retention
+
+Brale retains each idempotency key for 24 hours from the first request that used it.
+
+- **Within 24 hours:** a retry with the same key, URI, and body returns the original response. Brale does not perform the operation again.
+- **After 24 hours:** the key expires. Brale may process a request that uses the expired key as a new operation. For a transfer, that can create a second transfer.
+
+Because keys expire, don't rely on an idempotency key as a long-term record of whether an operation happened. Save the resource ID that Brale returns, such as the transfer `id`, and use it for reconciliation.
+
+### Retrying after a timeout
+
+If a request times out and you don't receive a response, you don't know whether Brale created the transfer.
+
+1. Within 24 hours of the first attempt, retry with the same key, URI, and body. Brale returns the original transfer if it already exists.
+2. If more than 24 hours have passed, don't retry blindly. Check for the transfer first with [List transfers](/api-reference/brale/list-transfers) or, if you saved the transfer `id`, [Get a transfer](/api-reference/brale/get-transfer).
+3. Submit the request again only after you confirm the original transfer doesn't exist.
 
 ## When is it required?
 
@@ -62,7 +79,7 @@ curl --request POST \
 
 | Scenario                                                             | Action                             |
 | -------------------------------------------------------------------- | ---------------------------------- |
-| Network timeout — no response received                               | Retry with same key                |
+| Network timeout — no response received                               | Retry with same key within 24 hours |
 | `5xx` server error                                                   | Retry with same key (with backoff) |
 | `429` rate limited                                                   | Retry with same key (with backoff) |
 | `422 insufficient_balance` — customer has since funded their account | Retry with same key                |
@@ -99,5 +116,7 @@ For [Simulate an Automation deposit](/api-reference/brale/simulate-automation-de
 ## Best Practices
 
 - Generate a UUID per logical action. Store it with your job record so retries use the same value.
+- Save the transfer `id` from a successful response. Before you retry a request that timed out, check the transfer status instead of assuming it failed.
+- Keys expire 24 hours after the first request. Retry with the same key inside that window. After it, confirm the operation's status before you submit it again.
 - Do not share keys across different endpoints. Keep one key scoped to one operation.
 - On `insufficient_balance`, do not generate a new key — store the original key and reuse it after the account is funded.
