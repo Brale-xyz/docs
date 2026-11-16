@@ -29,7 +29,7 @@ Each source and destination includes:
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
 | `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
 | `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
-| `Idempotency-Key` | Header                      | string | UUID v4 that identifies one logical transfer. Reuse it only to retry the same request. See [Idempotency](/key-concepts/idempotency). |
+| `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
 
 ## Optional Fields
 
