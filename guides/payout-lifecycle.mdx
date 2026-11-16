@@ -118,7 +118,7 @@ Then match on:
 
 The `transfer_type` query parameter accepts blockchains only. To find Transfers on a fiat rail, filter by `automation_id` (inbound) or `address_id` (outbound), then check `source.transfer_type` or `destination.transfer_type` on each Transfer.
 
-Simulated testnet deposits don't include `source.payment_details`. See [What you can test on testnet](/overview/testnet-testing-matrix).
+Simulated testnet deposits don't include `source.payment_details`, so you can't match on `received_at` on testnet. See [Testnet limitations](/overview/sandbox-and-testnet#simulated-deposits-do-not-include-payment_details).
 
 ## Related
 

@@ -474,7 +474,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 
 [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. A `fednow` simulation produces `source.transfer_type: "fednow_credit"`.
 
-Simulated deposits don't include sender bank details. `source.payment_details` is not populated on the `202` response, on `GET`, or in webhooks. Treat `payment_details` as optional and nullable.
+Simulated deposits don't include `source.payment_details`. See [Testnet limitations](/overview/sandbox-and-testnet#simulated-deposits-do-not-include-payment_details).
 
 `funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
 

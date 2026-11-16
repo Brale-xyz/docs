@@ -146,6 +146,29 @@ curl --request GET \
 
 When `status` is `complete`, `destination.transaction_id` holds the testnet mint transaction. See [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) for validation errors and idempotency behavior.
 
+## Testnet limitations
+
+Testnet behaves like mainnet for most flows. The differences below are expected and do not indicate a problem with your integration.
+
+### USDC transfers are capped at $0.01
+
+Brale caps testnet transfers that involve USDC at $0.01 per transfer because of testnet faucet limits. The cap applies to any testnet transfer where USDC is the source or destination `value_type`, including SBC↔USDC swaps.
+
+- Brale rejects larger amounts with `400` and `redemption_limit_exceeded`.
+- The cap applies per transfer, not to a running total. You can send repeated $0.01 transfers.
+- Open testnet USDC transfers created before the cap took effect may show `status: "canceled"`.
+- Testnet transfers that do not involve USDC, such as SBC mints, burns, and payouts, are not affected.
+
+The cap applies only to testnet. Mainnet limits depend on your plan. See [Transfer limits](/key-concepts/transfers#transfer-limits) and [Brale pricing](https://brale.xyz/pricing).
+
+### Simulated deposits do not include `payment_details`
+
+[Simulated Automation deposits](#4-simulate-a-deposit-into-a-testnet-automation) carry no sender or bank data. Brale does not populate `source.payment_details` on the resulting Transfer for `ach`, `wire`, or `fednow` simulations, whatever the destination token or chain. Fields such as `sender_name`, `imad`, and `trace_number` are absent.
+
+Brale does not add these fields later. They do not appear in [Get a transfer](/api-reference/brale/get-transfer) responses or in webhook events for the simulated Transfer. On mainnet, Brale fills them in from the real bank payment when that data is available.
+
+Treat `payment_details` as optional and possibly null in your integration and reconciliation logic.
+
 ## Follow the Quick Start Guide
 
 Follow [Quick Start - Your First Stablecoin Transfer](/overview/quick-start) for next steps to get deeper with the Brale API.
