@@ -136,6 +136,10 @@ Returns the standard [Transfer](/key-concepts/transfers) representation. There i
 }
 ```
 
+<Note>
+  Simulated deposits do not include `source.payment_details`. The simulator accepts only `amount` and `transfer_type`, so there is no sender or bank data such as `sender_name`, `imad`, or `trace_number`. This applies to `ach`, `wire`, and `fednow` simulations, whatever the destination token. Brale does not add these fields later in [Get a transfer](/api-reference/brale/get-transfer) responses or webhooks. Treat `payment_details` as optional and possibly null.
+</Note>
+
 Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to follow it to `complete` and read `destination.transaction_id` for the testnet mint.
 
 ## Errors
