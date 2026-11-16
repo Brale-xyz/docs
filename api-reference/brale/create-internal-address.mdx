@@ -7,7 +7,7 @@ openapi: 'POST /accounts/{account_id}/addresses/internal'
 Use this endpoint to provision an **additional** custodial (internal) address on an account beyond the wallets Brale creates automatically at onboarding. This is useful when you want to segment funds within a single account (per end-user, per-purpose, or per-business-unit) and distinguish wallets by `name`.
 
 <Note>
-Requires the `addresses:write` scope and a unique `Idempotency-Key` header on every request.
+Requires the `addresses:write` scope and an `Idempotency-Key` header. Use one key per new Address, and reuse it only to retry the same request. See [Idempotency](/key-concepts/idempotency).
 </Note>
 
 All values in `transfer_types` must resolve to the **same chain environment** (for example `["ethereum", "polygon"]` for EVM, or `["stellar"]` for Stellar).

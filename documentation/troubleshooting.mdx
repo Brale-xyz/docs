@@ -23,7 +23,8 @@ Use this checklist when integrating and operating at volume.
 - Required on POST create endpoints (e.g., transfers). Missing key → 400.
 - Never reuse an Idempotency-Key with a different payload or URI (422).
 - Do not send Idempotency-Key on GETs.
-- Best practice: generate one UUID per logical action and persist it so retries reuse the same key.
+- Best practice: generate one UUID per logical action and persist it before the first request so retries reuse the same key.
+- After a timeout or an ambiguous response, retry with the same key, URI, and body. Don't switch to a new key until you know the outcome. See [Transfer retries and reconciliation](/key-concepts/idempotency#transfer-retries-and-reconciliation).
 
 ## IDs (account_id vs address_id)
 
