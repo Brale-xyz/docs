@@ -2543,9 +2543,8 @@ paths:
           schema:
             type: string
           example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Use a new
-            key for each new operation. Reuse the same key and body when retrying the
-            same operation. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
+          description: 'A unique string used to prevent duplicate operations. Each POST
+            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
 
             '
       requestBody:
@@ -2645,16 +2644,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorV2'
-        '409':
-          description: >-
-            `A request with the same Idempotency-Key is currently being
-            processed`. The original request is still in progress. Retry with
-            the same `Idempotency-Key` and body, with backoff. Do not switch to a
-            new key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorV2'
         '422':
           description: >
             The request is valid but cannot be processed. Known cases include
@@ -2703,8 +2692,7 @@ paths:
             `brand_identity_unavailable`: Brale can't process branded transfers
             right now. Retry the same request with the same `Idempotency-Key`
             after a few minutes, and contact support if the error continues. Brale
-            does not store this response for the key. The transfer was not
-            created.
+            does not store this response for the key.
           content:
             application/json:
               schema:
