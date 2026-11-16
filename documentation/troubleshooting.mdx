@@ -82,6 +82,17 @@ Use this checklist when integrating and operating at volume.
 - Cause: the source account is a transactional account. Transactional accounts cannot originate on-chain transfers — their external addresses are destination-only, and they hold no internal (custodial) addresses. Checking the address balance first does not predict this; the constraint is about the address role, not funds.
 - Fix: route outbound value through a custodial account. See [Individual accounts](/guides/individual-accounts) and [Account types](/key-concepts/account-types) for what a transactional account can and cannot do.
 
+### 400 `redemption_limit_exceeded` on testnet USDC transfers
+
+- Cause: Brale caps testnet transfers that involve USDC, including SBC↔USDC swaps, at $0.01 per transfer because of testnet faucet limits.
+- Open testnet USDC transfers created before the cap took effect may show `status: "canceled"`.
+- Fix: keep testnet USDC transfers at $0.01 or less. The cap does not apply on mainnet, where limits depend on your plan. See [Testnet limitations](/overview/sandbox-and-testnet#testnet-limitations) and [Transfer limits](/key-concepts/transfers#transfer-limits).
+
+### Simulated deposit has no `source.payment_details`
+
+- Cause: [simulated Automation deposits](/api-reference/brale/simulate-automation-deposit) carry no sender or bank data, so Brale does not populate `source.payment_details`. Brale does not add it later in `GET` responses or webhooks.
+- Fix: treat `payment_details` as optional and possibly null. See [Testnet limitations](/overview/sandbox-and-testnet#simulated-deposits-do-not-include-payment_details).
+
 ### 422 `insufficient_balance` when the address shows enough funds
 
 - Cause: Brale checks the source address's available balance, not its onchain total. Brale subtracts transfers from that address that are still `pending` or `processing`. A block explorer, or [Get an address balance](/api-reference/brale/get-address-balance), can show more than you can spend while those transfers are in flight.
