@@ -318,6 +318,14 @@
   "openapi": "https://api.brale.xyz/openapi",
   "redirects": [
     {
+      "source": "/docs/idempotency",
+      "destination": "/key-concepts/idempotency"
+    },
+    {
+      "source": "/reference/idempotency-keys",
+      "destination": "/key-concepts/idempotency"
+    },
+    {
       "source": "/docs/:slug*",
       "destination": "/documentation/:slug*"
     },

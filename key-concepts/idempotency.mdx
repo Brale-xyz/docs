@@ -26,13 +26,23 @@ If the header is missing on a POST request, Brale returns `400 Bad Request`.
 
 ## Example
 
-Generate the key once and save it with your record of the operation before you send the first request. Every retry of that operation reads the saved key instead of generating a new one.
+Generate the key once and write it to durable storage, such as the database record for the operation, before you send the first request. A retry reads the saved key, including a retry after your process crashes or restarts. Don't keep the key only in memory or in a shell variable.
+
+This example uses a file named after your own reference for the operation (`ORDER_ID`) as the durable store:
 
 ```shell
-# Generate the key once, before the first attempt, and persist it with your job record.
-IDEMPOTENCY_KEY="$(uuidgen)"
+# Create the key once and save it before the first attempt.
+# In production, store it with the operation's record in your database.
+KEY_FILE="./idempotency-keys/${ORDER_ID}"
+mkdir -p ./idempotency-keys
+if [ ! -s "$KEY_FILE" ]; then
+  uuidgen > "$KEY_FILE"
+fi
 
-# Send the request. On a retry of the same transfer, reuse the saved IDEMPOTENCY_KEY and the same body.
+# Every attempt, including retries after a restart, reads the saved key.
+IDEMPOTENCY_KEY="$(cat "$KEY_FILE")"
+
+# On a retry of the same transfer, send the same URI and body.
 curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Authorization: Bearer ${AUTH_TOKEN}" \
@@ -103,12 +113,14 @@ This section covers retries of [Create a transfer](/api-reference/brale/create-t
 2. **Retry an unresolved request with the same key.** After a timeout, a dropped connection, or another response that doesn't tell you whether Brale created the transfer, retry with the same URI, body, and key. Don't switch to a new key while the outcome is unresolved. Brale treats a new key as a new operation, which can create a second transfer.
 3. **Save the transfer `id`.** When you receive a `201`, store the transfer `id` with the key and track the transfer's `status` from there.
 
-### Response cache and transfer deduplication
+### Response cache and transfer-level protection
 
 Brale protects transfer creation in two separate ways:
 
-- **HTTP response cache.** Brale stores the response for a key. A retry with the same key, URI, and body that Brale answers from this cache returns the original response.
-- **Transfer deduplication.** Brale also guards the transfer order itself, so a retry with the same key doesn't create a second transfer after the cached response is no longer available. Don't rely on such a retry returning the original status code or body.
+- **HTTP response cache.** Brale stores the response for a key for a limited time. A retry with the same key, URI, and body that Brale answers from this cache returns the original response.
+- **Transfer-level protection.** For transfers, Brale also checks for duplicates beyond the HTTP response cache. Don't treat a same-key retry as safe indefinitely, and don't rely on it returning the original status code or body after the cached response is gone.
+
+Reuse the original key while the outcome is unresolved. If you can't resolve it, contact support before you submit a new operation. See [Unresolved outcomes](#unresolved-outcomes).
 
 ### Error responses
 
