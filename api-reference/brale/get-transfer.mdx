@@ -203,8 +203,13 @@ Every transfer response includes a `failure` field.
 | `wire_return` | object \| null | Wire-only return details. Present when `type` is `wire_return`; `null` or not set for other failures. |
 | `wire_return.code` | string | The provider's wire return reason code when available (e.g. `AC04`). When the provider supplies no code, Brale sets `WIRE_RETURN`. `WIRE_RETURN` is a Brale fallback marker, not an ISO 20022 bank reason code. |
 | `wire_return.reason` | string \| null | Human-readable return reason, when available. Can be `null`. |
+| `fednow_return` | object \| null | FedNow-only return details. Present when `type` is `fednow_return` for a returned outbound FedNow payout; `null` or not set for other failures. |
+| `fednow_return.code` | string | ISO 20022 return reason code (e.g. `AC01`). |
+| `fednow_return.reason` | string | Human-readable return reason. |
 
-`wire_return` has no `category` field. The `administrative` / `unauthorized` / `general` taxonomy applies to ACH returns only.
+`wire_return` and `fednow_return` have no `category` field. The `administrative` / `unauthorized` / `general` taxonomy applies to ACH returns only.
+
+A retriable ACH return (`retriable: true`, currently only `R01`, insufficient funds) sets `failure` but leaves the transfer `processing`. Wire and FedNow returns are never retriable and always move the transfer to `failed`.
 
 ### Example: failed ACH transfer
 
@@ -217,8 +222,8 @@ Every transfer response includes a `failure` field.
     "occurred_at": "2026-04-07T00:05:12.102000Z",
     "retriable": false,
     "ach_return": {
-      "code": "R01",
-      "reason": "Insufficient Funds",
+      "code": "R03",
+      "reason": "No Account/Unable to Locate Account",
       "category": "administrative"
     }
   }

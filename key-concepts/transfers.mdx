@@ -26,9 +26,10 @@ Each source and destination includes:
 | `account_id`      | Path                        | string | Account whose funds are being moved                      |
 | `amount`          | Body                        | object | `{ "value": "10", "currency": "USD" }`                   |
 | `source`          | Body                        | object | Origin of funds (fiat rail or on-chain address)          |
+| `destination`     | Body                        | object | Where funds are sent (fiat rail or on-chain address)     |
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
 | `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
-| `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
+| `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value. Required on every leg except a wire-funded `source` (`source.transfer_type: "wire"`), where the customer sends the wire to the returned `wire_instructions`. |
 | `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
 
 ## Optional Fields
@@ -36,6 +37,7 @@ Each source and destination includes:
 | Field   | Where | Type   | Description                                                                                                                                                                              |
 | :------ | :---- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). For FedNow payouts (`destination.transfer_type: "fednow_credit"`), it selects the sender the receiving bank sees. Not supported for `rtp_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
+| `note` | Body | string | Free-form note stored on the transfer and returned as `note` on transfer responses. Maximum 255 characters. To set what the recipient sees, use `wire_memo` or `ach_description` instead. |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 | `ach_description` | In `destination` (payouts) or `source` (`ach_debit`) | string | **ACH only.** Short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, and `source.ach_description` for `ach_debit`. Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the first 10 characters are used. See [What recipients see on ACH](#what-recipients-see-on-ach). |
 
@@ -76,6 +78,20 @@ The object is optional and may be absent immediately after a transfer is created
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
 </Note>
+
+### Rail fallback fields
+
+Some older RTP payouts (`rtp_credit`) were sent on another rail, such as `same_day_ach_credit`, after the RTP attempt failed. On those transfers, `destination.transfer_type` is the rail Brale actually used, and the response adds fields that record the fallback.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `destination.requested_transfer_type` | string \| null | The rail requested when the transfer was created (for example, `rtp_credit`) |
+| `destination.payment_details.original_transfer_type` | string \| null | The rail Brale tried first |
+| `destination.payment_details.fallback_reason_code` | string \| null | Reason code from the failed first attempt, when available |
+| `destination.payment_details.fallback_reason` | string \| null | Human-readable reason for the fallback, when available |
+| `destination.payment_details.fallback_at` | string (date-time) \| null | When Brale switched rails |
+
+These fields are absent on transfers that were sent on the requested rail. Compare `destination.transfer_type` with `destination.requested_transfer_type` to detect a fallback.
 
 ### `created_by`
 
@@ -686,6 +702,7 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires and outbound ACH payouts, a later bank return can still move the transfer to `failed`. |
 | `canceled`   | The transfer has been canceled. Brale can cancel a transfer only before it is submitted to the payment rail. A `pending` status does not guarantee that cancellation is still possible. |
 | `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires and outbound ACH payouts returned after the transfer was `complete`. Manual intervention may be required. |
+| `compliance review` | Brale is holding the payout for compliance review before sending it, for example because the amount is above a payment partner's transaction limit. The transfer does not move forward on its own. After the review, Brale moves it back to `pending` or on to `processing`, or cancels it. The value contains a space, not an underscore. |
 | `refunding`  | A refund for the transfer has started. The refund is not complete yet. |
 | `refunded`   | The refund for the transfer has completed. |
 
@@ -700,7 +717,9 @@ Outbound domestic wires can be returned by the receiving bank. When Brale recogn
 
 Brale does not use a separate `returned` status. A returned wire has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`. Keep accepting [`transfer.failed`](/webhooks/webhook-events#transfer-failed) events for transfers you already recorded as `complete`. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for details.
 
-Outbound ACH payouts (`ach_credit` and `same_day_ach_credit`) follow the same pattern. The receiving bank can return an ACH payout after the transfer reached `complete`. Brale then updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "ach_return"` and the return code in `failure.ach_return`.
+Outbound ACH payouts (`ach_credit` and `same_day_ach_credit`) follow the same pattern. The receiving bank can return an ACH payout after the transfer reached `complete`. Brale then updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "ach_return"` and the return code in `failure.ach_return`. The exception is a retriable return (`failure.retriable: true`, currently only `R01`, insufficient funds): the transfer stays `processing` with the `failure` object set, and Brale does not emit `transfer.failed`.
+
+Outbound FedNow payouts (`fednow_credit`) can also be returned by the receiving bank. Brale updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "fednow_return"` and `failure.fednow_return` containing the ISO 20022 reason `code` (for example, `AC01`) and `reason`. FedNow returns are never retriable.
 
 A `failed` status means the payout failed or was returned. It does not mean a refund has started or completed, and not every failed or returned payout is refunded. When Brale refunds a transfer, `refunding` means the refund has started and `refunded` means it has completed. Brale emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) for these stages.
 
