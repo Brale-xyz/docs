@@ -88,10 +88,10 @@ Use this checklist when integrating and operating at volume.
 - Open testnet USDC transfers created before the cap took effect may show `status: "canceled"`.
 - Fix: keep testnet USDC transfers at $0.01 or less. The cap does not apply on mainnet, where limits depend on your plan. See [Testnet limitations](/overview/sandbox-and-testnet#testnet-limitations) and [Transfer limits](/key-concepts/transfers#transfer-limits).
 
-### Simulated deposit has no `source.payment_details`
+### Simulated deposit shows `Simulated Sender` in `source.payment_details`
 
-- Cause: [simulated Automation deposits](/api-reference/brale/simulate-automation-deposit) carry no sender or bank data, so Brale does not populate `source.payment_details`. Brale does not add it later in `GET` responses or webhooks.
-- Fix: treat `payment_details` as optional and possibly null. See [Testnet limitations](/overview/sandbox-and-testnet#simulated-deposits-do-not-include-payment_details).
+- Cause: [simulated Automation deposits](/api-reference/brale/simulate-automation-deposit) return synthetic `source.payment_details`, such as `sender_name: "Simulated Sender"` and `sender_bank_routing_number: "110000000"`. These Transfers also return `funding_simulated: true`.
+- Fix: this is expected on testnet. Use `funding_simulated` to tell simulated deposits apart. See [Testnet limitations](/overview/sandbox-and-testnet#simulated-deposits-use-synthetic-payment_details).
 
 ### 422 `insufficient_balance` when the address shows enough funds
 

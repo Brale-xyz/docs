@@ -488,7 +488,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
 
 [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) returns the normal Transfer representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. A `fednow` simulation produces `source.transfer_type: "fednow_credit"`.
 
-`funding_simulated` is an optional response field. When present and `true`, it indicates that the source funding was simulated. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
+Transfers from simulated deposits return `funding_simulated: true` and synthetic `source.payment_details`, such as `sender_name: "Simulated Sender"`. See [Synthetic payment details](/api-reference/brale/simulate-automation-deposit#synthetic-payment-details). `funding_simulated` is not present on production-funded transfers. Do not infer `false` when the field is absent. `automation_id` identifies the Automation that created the Transfer, but does not by itself indicate whether the deposit was simulated.
 
 ```json title="Response"
 {
@@ -501,7 +501,16 @@ For inbound wire-funded transfers, the response includes `source.payment_details
   },
   "source": {
     "value_type": "USD",
-    "transfer_type": "wire"
+    "transfer_type": "wire",
+    "payment_details": {
+      "received_at": "2026-09-29T17:00:00.000000Z",
+      "sender_name": "Simulated Sender",
+      "sender_bank_name": "Brale Simulated Bank",
+      "sender_bank_routing_number": "110000000",
+      "payment_reference": "Simulated wire 48291337",
+      "imad": "20260929SIMBRALE482913",
+      "trace_number": null
+    }
   },
   "destination": {
     "address_id": "3ARaM0I93ObWOIFDIztsTx4TAsp",
@@ -511,6 +520,7 @@ For inbound wire-funded transfers, the response includes `source.payment_details
   },
   "note": null,
   "automation_id": "3AjRnDClEzwuCKlRioG3OXMS4pH",
+  "funding_simulated": true,
   "created_by": {
     "type": "automation",
     "id": "3AjRnDClEzwuCKlRioG3OXMS4pH"

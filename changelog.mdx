@@ -3,6 +3,12 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-11-16" description="Week of November 16" tags={["Update"]}>
+  ## Payment details on simulated deposits
+
+  Testnet [simulated Automation deposits](/api-reference/brale/simulate-automation-deposit) now return `funding_simulated: true` and synthetic `source.payment_details` for `ach`, `wire`, and `fednow`, so you can test reconciliation. Wire simulations include an `imad` and `payment_reference`, ACH simulations include a `trace_number`, and FedNow simulations include a `payment_reference`. See [Synthetic payment details](/api-reference/brale/simulate-automation-deposit#synthetic-payment-details).
+</Update>
+
 <Update label="2026-11-09" description="Week of November 9" tags={["New"]}>
   ## USTX and Verona USD
 
