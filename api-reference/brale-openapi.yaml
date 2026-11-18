@@ -351,9 +351,15 @@ components:
           $ref: '#/components/schemas/Ksuid'
         status:
           type: string
-          description: Lifecycle stage of the transfer
+          description: >-
+            Lifecycle stage of the transfer. `compliance review` means Brale holds the
+            transfer for compliance review before sending it, for example when the
+            amount is above a payment partner's transaction limit. From there it moves
+            back to `pending` or on to `processing`, or is canceled. The value contains
+            a space, not an underscore.
           enum:
             - pending
+            - compliance review
             - processing
             - complete
             - canceled
@@ -479,6 +485,13 @@ components:
         transfer_type:
           type: string
           example: wire
+        requested_transfer_type:
+          type: string
+          description: >-
+            The rail the client requested. Response-only. Appears when an RTP payout
+            falls back to another rail, in which case `transfer_type` is the rail
+            Brale used.
+          example: rtp_credit
         address_id:
           $ref: '#/components/schemas/Ksuid'
         financial_institution_id:
@@ -569,22 +582,53 @@ components:
             When the outbound payment was sent, when available. Appears on
             `destination.payment_details` for outbound wire and ACH transfers.
           example: '2026-04-07T00:04:58.000000Z'
+        original_transfer_type:
+          type: string
+          nullable: true
+          description: >-
+            The rail originally requested for the payout. Appears when an RTP payout
+            falls back to another rail.
+          example: rtp_credit
+        fallback_reason_code:
+          type: string
+          nullable: true
+          description: >-
+            Code for why the payout fell back to another rail. Appears when an RTP
+            payout falls back to another rail.
+        fallback_reason:
+          type: string
+          nullable: true
+          description: >-
+            Human-readable reason the payout fell back to another rail. Appears when
+            an RTP payout falls back to another rail.
+        fallback_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            When the payout fell back to another rail. Appears when an RTP payout
+            falls back to another rail.
     TransferFailure:
       title: TransferFailure
       type: object
       description: >-
         Structured failure details for a failed transfer. Populated by Brale when
         `status` is `failed` and the underlying rail/provider has supplied structured
-        failure details. Field availability varies by rail — for example,
-        `ach_return` is only present for ACH returns and `wire_return` is only
-        present for outbound wire returns. Do not require rail-specific fields for
-        other failure types.
+        failure details. Field availability varies by rail. For example,
+        `ach_return` is only present for ACH returns, `wire_return` is only
+        present for outbound wire returns, and `fednow_return` is only present for
+        FedNow returns. Do not require rail-specific fields for other failure types.
+        A retriable ACH return (`retriable: true`, currently only `R01`, insufficient
+        funds) sets `failure` but leaves the transfer `processing`, and Brale sends
+        no `transfer.failed` webhook. A FedNow return (`type: fednow_return`) carries
+        an ISO 20022 return code, is never retriable, and moves the transfer to
+        `failed`.
       properties:
         type:
           type: string
           description: >-
-            Error classification for the failure, for example `ach_return` or
-            `wire_return`.
+            Error classification for the failure, for example `ach_return`,
+            `wire_return`, or `fednow_return`.
           example: ach_return
         occurred_at:
           type: string
@@ -647,6 +691,23 @@ components:
               nullable: true
               description: Human-readable return reason, when available.
               example: Account closed
+        fednow_return:
+          type: object
+          nullable: true
+          description: >-
+            FedNow-only return details. Present when `type` is `fednow_return`;
+            `null` or not set for other failures. Has no `category` field; the ACH
+            return taxonomy does not apply.
+          properties:
+            code:
+              type: string
+              description: ISO 20022 return reason code (for example, `AC01`).
+              example: AC01
+            reason:
+              type: string
+              nullable: true
+              description: Human-readable return reason, when available.
+              example: Incorrect account number
     TransfersList:
       title: TransfersList
       description: List of transfers plus pagination cursors
@@ -1845,6 +1906,7 @@ components:
             transfers. Only applies when transfer_type is wire.
         ach_description:
           type: string
+          maxLength: 255
           description: >-
             Optional short description shown after the sender name on the
             recipient's ACH bank statement. Set it on the ACH leg:
@@ -1878,6 +1940,11 @@ components:
           $ref: '#/components/schemas/BrandData'
         note:
           type: string
+          maxLength: 255
+          description: >-
+            Free-form note stored on the transfer and returned as `note`. Maximum
+            255 characters. To set what the recipient sees, use `wire_memo` or
+            `ach_description` instead.
       title: CreateTransfer
     CreateLinkTokenRequest:
       type: object
