@@ -1,15 +1,15 @@
 ---
 title: "Idempotency"
-description: "Use idempotency keys on POST requests to guarantee each operation executes exactly once and prevent duplicate transfers."
+description: "Use idempotency keys on POST requests to retry safely without creating duplicate transfers or other resources."
 ---
 
 ## What is an Idempotency Key?
 
-When you POST a request (create a transfer, etc.) you include a unique `Idempotency-Key` header. Brale stores that key along with the request signature so if you retry—because the network dropped or timed out—Brale recognizes the duplicate and returns the original response instead of performing the operation twice.
+When you POST a request (create a transfer, etc.) you include an `Idempotency-Key` header that identifies one logical operation. Brale stores that key along with the request signature. If you retry the same request with the same key, for example because the network dropped or timed out, Brale recognizes the duplicate instead of performing the operation twice.
 
 The primary goal is to prevent double spends. Without idempotency keys, a retry after a network failure could result in two transfers being created and two debits hitting your customer's account.
 
-Keys are required on all `POST` requests and should be reused when retrying the exact same operation. Transient failures — like a server error, a timeout, or an `insufficient_balance` that the customer has since resolved — can all be retried with the same key. Generate a new key only when the request itself is intentionally changing (e.g. fixing a validation error or initiating a second distinct transfer).
+Keys are required on all `POST` requests. Generate and persist a unique key for each logical operation. Reuse the same key, URI, and body when retrying that operation. Use a new key for a different operation, including a request you changed (for example, after fixing a validation error) or a second distinct transfer.
 
 ```shell
 Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
@@ -26,12 +26,28 @@ If the header is missing on a POST request, Brale returns `400 Bad Request`.
 
 ## Example
 
+Generate the key once and write it to durable storage, such as the database record for the operation, before you send the first request. A retry reads the saved key, including a retry after your process crashes or restarts. Don't keep the key only in memory or in a shell variable.
+
+This example uses a file named after your own reference for the operation (`ORDER_ID`) as the durable store:
+
 ```shell
+# Create the key once and save it before the first attempt.
+# In production, store it with the operation's record in your database.
+KEY_FILE="./idempotency-keys/${ORDER_ID}"
+mkdir -p ./idempotency-keys
+if [ ! -s "$KEY_FILE" ]; then
+  uuidgen > "$KEY_FILE"
+fi
+
+# Every attempt, including retries after a restart, reads the saved key.
+IDEMPOTENCY_KEY="$(cat "$KEY_FILE")"
+
+# On a retry of the same transfer, send the same URI and body.
 curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Authorization: Bearer ${AUTH_TOKEN}" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: $(uuidgen)" \
+  --header "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
   --data '{
     "amount": {"value": "10", "currency": "USD"},
     "source": {"value_type": "usd", "transfer_type": "wire"},
@@ -44,8 +60,8 @@ curl --request POST \
 ```
 
 <Tip>
-  Most HTTP clients let you generate a UUID at call time or set a default
-  header.
+  Don't generate the key inside your retry loop. A new key on each attempt
+  turns every retry into a new operation.
 </Tip>
 
 ## Request Responses
@@ -53,7 +69,7 @@ curl --request POST \
 | Scenario                                 | Status                        | Body                                                                          |
 | ---------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
 | First successful call                    | `201`: `Created`              | Normal JSON response                                                          |
-| Retry with _same_ body                   | `201`: `Created`              | Same JSON as first call                                                       |
+| Retry with _same_ key, URI, and body while Brale still holds the cached response | `201`: `Created` | Same JSON as first call |
 | Retry with same key but _different_ body | `422`: `Unprocessable Entity` | `{ "This Idempotency-Key can't be reused with a different payload or URI"" }` |
 
 ## When to reuse the same key vs. generate a new one
@@ -89,15 +105,52 @@ This is different from permanent validation failures (e.g. `invalid_account_numb
 
 For [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit), each new key creates a new simulated deposit. Retrying with the same key and body returns the original `202` response without creating another payment, Transfer, or mint. Reusing the key with a different body or URI returns `422`.
 
+## Transfer retries and reconciliation
+
+This section covers retries of [Create a transfer](/api-reference/brale/create-transfer) (`POST /accounts/{account_id}/transfers`).
+
+1. **Persist the key first.** Save the `Idempotency-Key` with your record of the transfer before you send the first request.
+2. **Retry an unresolved request with the same key.** After a timeout, a dropped connection, or another response that doesn't tell you whether Brale created the transfer, retry with the same URI, body, and key. Don't switch to a new key while the outcome is unresolved. Brale treats a new key as a new operation, which can create a second transfer.
+3. **Save the transfer `id`.** When you receive a `201`, store the transfer `id` with the key and track the transfer's `status` from there.
+
+### Response cache and transfer-level protection
+
+Brale protects transfer creation in two separate ways:
+
+- **HTTP response cache.** Brale stores the response for a key for a limited time. A retry with the same key, URI, and body that Brale answers from this cache returns the original response.
+- **Transfer-level protection.** For transfers, Brale also checks for duplicates beyond the HTTP response cache. Don't treat a same-key retry as safe indefinitely, and don't rely on it returning the original status code or body after the cached response is gone.
+
+Reuse the original key while the outcome is unresolved. If you can't resolve it, contact support before you submit a new operation. See [Unresolved outcomes](#unresolved-outcomes).
+
+### Error responses
+
+Brale doesn't handle every error the same way for a key. Retry an error with the same key only when its documentation says so. For example, after the source Address is funded, retry `422 insufficient_balance` with the same key and body (see [Insufficient balance](#insufficient-balance)). Errors that require a change to the request need a new key.
+
+If a retry with the same key returns `409`, keep the same key and retry with backoff. If `409` persists, contact [support@brale.xyz](mailto:support@brale.xyz) before you submit a new operation.
+
+### Failed requests and failed transfers
+
+A failed create request and a failed transfer are different outcomes:
+
+- **The create request failed.** Brale returned an error and you have no transfer `id`. Follow the guidance for that error to decide between a same-key retry and a corrected request with a new key.
+- **The transfer was created and later failed or was canceled.** Retrying the create request with the same key doesn't restart that transfer. Retrieve the transfer and review its `status` and [`failure`](/api-reference/brale/get-transfer#failure) before you decide whether to submit a new transfer with a new key. Don't resubmit failed transfers automatically. Brale can refund a failed or canceled payout on the same transfer. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle).
+
+### Unresolved outcomes
+
+The API doesn't offer a transfer lookup by idempotency key. Use a same-key retry to resolve an ambiguous create request, and use [List transfers](/key-concepts/transfers#listing-transfers) to review recent transfers on the account. `transaction_id` on a transfer's `source` or `destination` is populated by Brale once the leg is submitted. It isn't a field you send when you create a transfer.
+
+If you still can't confirm whether Brale created the transfer, contact [support@brale.xyz](mailto:support@brale.xyz) before you submit a new operation with a new key.
+
 ## Troubleshooting
 
 | Error                            | Likely cause                            | Fix                                        |
 | -------------------------------- | --------------------------------------- | ------------------------------------------ |
 | `400`: `Missing Idempotency-Key` | Header omitted on POST                  | Add a unique key (UUID).                   |
 | `422`: `Unprocessable Entity`    | Re-used key with different request body | Generate a fresh key per _logical_ action. |
+| `409`: `Conflict`                | Retry conflicts with the same key       | Retry with the same key and backoff. Contact support if it persists. |
 
 ## Best Practices
 
-- Generate a UUID per logical action. Store it with your job record so retries use the same value.
+- Generate a UUID per logical action. Store it with your job record before the first request so retries use the same value.
 - Do not share keys across different endpoints. Keep one key scoped to one operation.
 - On `insufficient_balance`, do not generate a new key — store the original key and reuse it after the account is funded.

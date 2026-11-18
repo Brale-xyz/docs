@@ -29,7 +29,7 @@ Each source and destination includes:
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
 | `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
 | `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
-| `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
+| `Idempotency-Key` | Header                      | string | UUID that identifies one logical transfer. Reuse it only to retry the same request. See [Idempotency](/key-concepts/idempotency). |
 
 ## Optional Fields
 
@@ -126,12 +126,19 @@ Accept a USD deposit to mint stablecoins.
 **POST** `https://api.brale.xyz/accounts/account_id/transfers`
 
 ```shell
-# Generate a fresh Idempotency-Key per logical transfer. Reuse it on retries of the same transfer.
+# Create one Idempotency-Key per logical transfer and save it to durable storage
+# (for example, your database) before the first attempt. Retries, including retries
+# after a restart, read the saved key.
+KEY_FILE="./idempotency-keys/${ORDER_ID}"
+mkdir -p ./idempotency-keys
+[ -s "$KEY_FILE" ] || uuidgen > "$KEY_FILE"
+IDEMPOTENCY_KEY="$(cat "$KEY_FILE")"
+
 curl --request POST \
   --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers" \
   --header "Content-Type: application/json" \
   --header "Authorization: Bearer ${AUTH_TOKEN}" \
-  --header "Idempotency-Key: $(uuidgen)" \
+  --header "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
   --data '{
     "amount":    { "value": "10", "currency": "USD" },
     "source":    { "value_type": "USD", "transfer_type": "wire" },

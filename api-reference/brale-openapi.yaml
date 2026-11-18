@@ -2138,11 +2138,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
@@ -2539,11 +2541,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
@@ -2766,11 +2770,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
@@ -2969,11 +2975,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
@@ -3393,11 +3401,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
@@ -3470,11 +3480,13 @@ paths:
           required: true
           schema:
             type: string
-          example: idemp-123e4567-e89b-12d3-a456-426614174000
-          description: 'A unique string used to prevent duplicate operations. Each POST
-            request must use a new idempotency key. Use a UUIDv4 string. Example: `idemp-123e4567-e89b-12d3-a456-426614174000`
-
-            '
+          example: 5f0c8a2e-3b7d-4c1a-9e6f-2d8b4a7c1e93
+          description: >
+            A unique string used to prevent duplicate operations. Generate and
+            persist a unique key for each logical operation. Reuse the same key,
+            URI, and body when retrying that operation. Use a new key for a
+            different operation. Use a UUIDv4 string. See
+            [Idempotency](/key-concepts/idempotency).
       requestBody:
         required: true
         content:
