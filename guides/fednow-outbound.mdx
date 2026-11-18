@@ -39,7 +39,7 @@ FedNow recipients use the `fednow_credit` transfer type on an external bank Addr
 
 ### Option A: Create a new FedNow recipient
 
-`bank_address` and `beneficiary_address` are not required for a FedNow-only recipient. They are required only when `transfer_types` includes `wire`.
+`bank_address` and `beneficiary_address` are not required for a FedNow-only recipient. `beneficiary_address` is required only when `transfer_types` includes `wire`.
 
 ```bash
 curl --request POST \
@@ -57,7 +57,7 @@ curl --request POST \
   }'
 ```
 
-Send `account_number` and `routing_number` as strings so leading zeros are preserved. You can request other rails in the same call, for example `["ach_credit", "fednow_credit"]`. If you include `wire`, also send `bank_address` and `beneficiary_address`.
+Send `account_number` and `routing_number` as strings so leading zeros are preserved. You can request other rails in the same call, for example `["ach_credit", "fednow_credit"]`. If you include `wire`, also send `beneficiary_address`.
 
 ```json Response (201)
 {

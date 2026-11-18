@@ -136,7 +136,7 @@ Use the [Create a new external address](/api-reference/brale/create-address) end
 **POST** `/accounts/{account_id}/addresses/external`
 
 <Note>
-For Direct bank entry, `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. They are optional for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. Omit these fields for addresses without `wire` unless you have accurate values. Do not use placeholder or generic bank addresses.
+For Direct bank entry, `beneficiary_address` is required only when `transfer_types` includes `wire`. It is optional for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. `bank_address` is optional for every transfer type. If you send `bank_address`, it must be complete. Omit these fields unless you have accurate values. Do not use placeholder or generic addresses.
 </Note>
 
 | Field                 | ACH Credit | Same Day ACH Credit | FedNow Credit (`fednow_credit`) | Wire     |
@@ -146,7 +146,7 @@ For Direct bank entry, `bank_address` and `beneficiary_address` are required onl
 | `routing_number`      | Required   | Required            | Required                        | Required |
 | `account_type`        | Required   | Required            | Required                        | Required |
 | `transfer_types`      | Required   | Required            | Required                        | Required |
-| `bank_address`        | Optional   | Optional            | Optional                        | Required |
+| `bank_address`        | Optional   | Optional            | Optional                        | Optional |
 | `beneficiary_address` | Optional   | Optional            | Optional                        | Required |
 
 Send `account_number` and `routing_number` as strings so leading zeros are preserved.

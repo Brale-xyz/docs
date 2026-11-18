@@ -36,8 +36,8 @@ info:
       automatically with `source.transfer_type: fednow_credit`.
     - Simulate a testnet FedNow deposit with `transfer_type: fednow` on
       `POST /accounts/{account_id}/automations/{automation_id}/simulations/deposits`.
-    - `bank_address` and `beneficiary_address` are required only when an external
-      bank Address requests `wire`.
+    - `beneficiary_address` is required only when an external bank Address
+      requests `wire`. `bank_address` is optional for every transfer type.
     - FedNow availability depends on account enablement.
 tags:
   - name: Accounts
@@ -2064,12 +2064,15 @@ components:
       additionalProperties: false
       title: CreateExternalFinancialInstitutionRequest
       description: >
-        Address fields are conditional. `bank_address` and `beneficiary_address`
-        are required when `transfer_types` includes `wire`. They are optional
-        for `ach_credit`, `same_day_ach_credit`, `rtp_credit`, and
-        `fednow_credit`. For addresses without `wire`, do not provide
-        placeholder or generic bank addresses. Omit these fields unless you have
-        accurate values. Requesting `fednow_credit` requires a routing number
+        Address fields are conditional. `beneficiary_address` is required when
+        `transfer_types` includes `wire`, and optional for `ach_credit`,
+        `same_day_ach_credit`, `rtp_credit`, and `fednow_credit`.
+        `bank_address` is optional for every transfer type, including `wire`.
+        If you send `bank_address`, it must be complete. Do not provide
+        placeholder or generic addresses. Omit these fields unless you have
+        accurate values. If `transfer_types` includes `wire` and
+        `beneficiary_address` is missing, Brale returns `400`
+        `missing_wire_addresses`. Requesting `fednow_credit` requires a routing number
         that participates in FedNow; otherwise Brale returns `422`
         `fednow_routing_number_not_supported`.
       required:
@@ -2122,9 +2125,9 @@ components:
           example: '1990-01-31'
         bank_address:
           description: >
-            Bank physical address. Required when `transfer_types` includes
-            `wire`. Optional for `ach_credit`, `same_day_ach_credit`,
-            `rtp_credit`, and `fednow_credit`.
+            Bank physical address. Optional for every transfer type, including
+            `wire`. If you send it, include `street_line_1`, `city`, `state`,
+            and `zip`.
           allOf:
             - $ref: '#/components/schemas/USStreetAddress'
         beneficiary_address:
@@ -2139,9 +2142,10 @@ components:
           minItems: 1
           description: >
             Rails to enable for this bank endpoint. If this array includes
-            `wire`, the request must include `bank_address` and
-            `beneficiary_address`. For addresses without `wire` (for example,
-            ACH, RTP, or FedNow only), those address fields are optional.
+            `wire`, the request must include `beneficiary_address`. For
+            addresses without `wire` (for example, ACH, RTP, or FedNow only),
+            `beneficiary_address` is optional. `bank_address` is always
+            optional.
           items:
             type: string
             example: ach_credit
@@ -2899,7 +2903,7 @@ paths:
                   account_type: checking
                   name: Example Bank
               offchain_wire:
-                summary: Off-chain (Wire — requires bank_address and beneficiary_address)
+                summary: Off-chain (Wire — requires beneficiary_address)
                 value:
                   owner: Jane Doe
                   transfer_types:
@@ -3167,8 +3171,8 @@ paths:
                     type: string
                     example: solana
                 bank_address:
-                  description: For bank addresses only. Supply before adding `wire`
-                    to `additional_transfer_types`.
+                  description: For bank addresses only. Optional, including
+                    for `wire`. If you send it, it must be complete.
                   nullable: true
                   allOf:
                     - $ref: '#/components/schemas/USStreetAddress'
