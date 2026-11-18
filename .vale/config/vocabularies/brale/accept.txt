@@ -87,6 +87,7 @@ value_types
 # Blockchain networks
 (?i)Algorand
 (?i)Arbitrum
+(?i)Cardano
 (?i)Celo
 (?i)Coreum
 (?i)Ethereum
