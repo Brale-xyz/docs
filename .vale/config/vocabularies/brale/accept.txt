@@ -13,8 +13,8 @@ Soakmont
 # Domain terms
 (?i)ach
 (?i)appchain
-blockchain
-blockchains
+(?i)blockchain
+(?i)blockchains
 custodied
 (?i)devnet
 Enablement
@@ -53,6 +53,7 @@ additional_transfer_types
 automation_id
 (?i)automations
 backoff
+boolean
 camelCase
 client_credentials
 contractId
@@ -66,12 +67,16 @@ enums
 financial_institution_id
 interfaceId
 (?i)idempotency
+(?i)deduplicate
+(?i)deduplication
 idempotently
 link_token
 mgmt
+namespace
 OAuth
 Param
 public_token
+(?i)retriable
 same_day_ach_credit
 sdf
 signup
@@ -129,4 +134,3 @@ MSAs
 SLAs
 FedNow
 fednow_credit
-fednow
