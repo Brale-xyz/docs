@@ -15,7 +15,7 @@ This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [
 </Note>
 
 <Warning>
-Address fields are conditional. `bank_address` and `beneficiary_address` are **required when `transfer_types` includes `wire`**. They are **optional** for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. For addresses without `wire`, do not provide placeholder or generic bank addresses. Omit these fields unless you have accurate values.
+Address fields are conditional. `beneficiary_address` is **required when `transfer_types` includes `wire`** and **optional** for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. `bank_address` is **optional** for every transfer type, including `wire`. If you send `bank_address`, it must be complete. Do not provide placeholder or generic addresses. Omit these fields unless you have accurate values.
 </Warning>
 
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
@@ -31,10 +31,10 @@ For Direct bank entry, required fields depend on the transfer types you request.
 | `routing_number`      | Required   | Required            | Required      | Required |
 | `account_type`        | Required   | Required            | Required      | Required |
 | `transfer_types`      | Required   | Required            | Required      | Required |
-| `bank_address`        | Optional   | Optional            | Optional      | Required |
+| `bank_address`        | Optional   | Optional            | Optional      | Optional |
 | `beneficiary_address` | Optional   | Optional            | Optional      | Required |
 
-If `transfer_types` includes `wire`, wire requirements apply. For addresses without `wire`, omit `bank_address` and `beneficiary_address` unless you have accurate values. Send `account_number` and `routing_number` as strings so leading zeros are preserved.
+If `transfer_types` includes `wire`, wire requirements apply. Omit `bank_address`, and `beneficiary_address` for addresses without `wire`, unless you have accurate values. Send `account_number` and `routing_number` as strings so leading zeros are preserved.
 
 ### Direct bank entry examples
 
@@ -94,7 +94,7 @@ If the bank account matches an external address that Brale disabled after a retu
 
 #### Wire (`wire`)
 
-Wire-capable addresses require both `bank_address` and `beneficiary_address`.
+Wire-capable addresses require `beneficiary_address`. `bank_address` is optional. If you include it, send `street_line_1`, `city`, `state`, and `zip`.
 
 ```json Request
 {
@@ -122,7 +122,7 @@ Wire-capable addresses require both `bank_address` and `beneficiary_address`.
 ```
 
 <Note>
-If you include `wire` in `transfer_types`, both `bank_address` and `beneficiary_address` are required, even if the same address also includes ACH or FedNow rails.
+If you include `wire` in `transfer_types`, `beneficiary_address` is required, even if the same address also includes ACH or FedNow rails. Otherwise, Brale returns `400` `missing_wire_addresses`.
 </Note>
 
 Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

@@ -20,9 +20,9 @@ PATCH https://api.brale.xyz/accounts/{account_id}/addresses/{address_id}
 | --- | --- | --- |
 | `name` | string | Rename the address. |
 | `status` | string | `"archived"` to archive, `"active"` to unarchive (external addresses only — custodial addresses cannot be unarchived). |
-| `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"fednow_credit"`, `"solana"`). For bank addresses, supply `bank_address` and `beneficiary_address` before adding `wire`. |
-| `bank_address` | object | Street address of the bank. Required for bank addresses before enabling wire. |
-| `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before enabling wire. |
+| `additional_transfer_types` | array of strings | Add new rails to the address (e.g. `"wire"`, `"fednow_credit"`, `"solana"`). For bank addresses, supply `beneficiary_address` before adding `wire`. |
+| `bank_address` | object | Street address of the bank. Optional, including for wire. If you send it, it must be complete. |
+| `beneficiary_address` | object | Street address of the beneficiary. Required for bank addresses before you enable wire. |
 | `account_holder_type` | string | Bank addresses only. `"individual"` or `"business"`. Can be set only while it is not set yet. Sending the value that is already stored succeeds with no change; a different value returns `400` `account_holder_type_already_set`. |
 | `date_of_birth` | string | Bank addresses only. Individual recipient's date of birth in `YYYY-MM-DD` format. Can be set only while no date of birth is stored. Sending the stored value succeeds with no change. A different value returns `400` `date_of_birth_already_set`. |
 

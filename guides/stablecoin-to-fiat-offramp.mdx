@@ -40,7 +40,7 @@ Here is an example of adding an ACH offchain address via Direct bank entry using
 **POST** `https://api.brale.xyz/accounts/account_id/addresses/external`
 
 <Note>
-For Direct bank entry addresses without `wire` (ACH or FedNow only), `bank_address` and `beneficiary_address` are optional. They are **required** when creating a wire-capable address (when `transfer_types` includes `wire`). Do not enter placeholder or generic bank addresses—omit these fields unless you have accurate values.
+For Direct bank entry addresses without `wire` (ACH or FedNow only), `bank_address` and `beneficiary_address` are optional. `beneficiary_address` is **required** when creating a wire-capable address (when `transfer_types` includes `wire`). `bank_address` is optional for wire too. If you send it, it must be complete. Do not enter placeholder or generic addresses. Omit these fields unless you have accurate values.
 </Note>
 
 ```json title="Request (ACH Credit)"
@@ -54,7 +54,7 @@ For Direct bank entry addresses without `wire` (ACH or FedNow only), `bank_addre
 }
 ```
 
-For a wire-capable address, include `bank_address` and `beneficiary_address`:
+For a wire-capable address, include `beneficiary_address`. This example also includes the optional `bank_address`:
 
 ```json title="Request (Wire)"
 {
