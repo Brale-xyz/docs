@@ -159,13 +159,11 @@ Brale caps testnet transfers that involve USDC at $0.01 per transfer because of 
 
 The cap applies only to testnet. Mainnet limits depend on your plan. See [Transfer limits](/key-concepts/transfers#transfer-limits) and [Brale pricing](https://brale.xyz/pricing).
 
-### Simulated deposits do not include `payment_details`
+### Simulated deposits use synthetic `payment_details`
 
-[Simulated Automation deposits](#4-simulate-a-deposit-into-a-testnet-automation) carry no sender or bank data. Brale does not populate `source.payment_details` on the resulting Transfer for `ach`, `wire`, or `fednow` simulations, whatever the destination token or chain. Fields such as `sender_name`, `imad`, and `trace_number` are absent.
+[Simulated Automation deposits](#4-simulate-a-deposit-into-a-testnet-automation) return `funding_simulated: true` and synthetic `source.payment_details` for `ach`, `wire`, and `fednow`. The values use production formats but are not real. For example, `sender_name` is `Simulated Sender` and `sender_bank_routing_number` is `110000000`. See [Synthetic payment details](/api-reference/brale/simulate-automation-deposit#synthetic-payment-details) for the fields on each rail.
 
-Brale does not add these fields later. They do not appear in [Get a transfer](/api-reference/brale/get-transfer) responses or in webhook events for the simulated Transfer. On mainnet, Brale fills them in from the real bank payment when that data is available.
-
-Treat `payment_details` as optional and possibly null in your integration and reconciliation logic.
+Use these values to test reconciliation. Do not match on specific identifiers such as `imad` or `trace_number`, because they contain random digits. On mainnet, Brale fills in `payment_details` from the real bank payment when that data is available, so keep treating the field as optional.
 
 ## Follow the Quick Start Guide
 

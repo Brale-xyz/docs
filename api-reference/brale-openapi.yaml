@@ -429,9 +429,9 @@ components:
           type: boolean
           description: >-
             Optional. When returned with a value of `true`, the source funding for this
-            transfer was simulated in testnet rather than coming from a real payment.
-            Not every simulated transfer is guaranteed to include this field. Not
-            present for production-funded transfers.
+            transfer was simulated in testnet and no real money moved. Set on testnet
+            ACH debit mints and on simulated Automation deposits (ACH, wire, and
+            FedNow). Not present for production-funded transfers.
         created_at:
           type: string
           format: date-time
@@ -3641,6 +3641,16 @@ paths:
         real fiat moves.
 
 
+        The resulting Transfer has `funding_simulated: true` and synthetic
+        `source.payment_details` so you can test reconciliation. All rails use
+        `sender_name: Simulated Sender` and `sender_bank_routing_number: 110000000`.
+        ACH adds a random `trace_number`. Wire adds `sender_bank_name`, an `imad`
+        that contains `SIMBRALE`, and a `payment_reference` such as
+        `Simulated wire 48291337`. FedNow adds `sender_bank_name` and a
+        `payment_reference` such as `Simulated FedNow 48291337`. Brale stores these
+        values, so `GET` responses return the same details.
+
+
         Retrying with the same `Idempotency-Key` and body returns the original
         `202` response without creating another payment, Transfer, or mint.
       parameters:
@@ -3700,8 +3710,10 @@ paths:
             Accepted. Returns the Transfer created by the Automation. The Transfer
             includes `automation_id`, and `source.transfer_type` identifies the
             simulated rail. For `fednow`, `source.transfer_type` is
-            `fednow_credit`. `202` means the simulated deposit was accepted. It
-            does not mean the mint is complete.
+            `fednow_credit`. The Transfer includes `funding_simulated: true` and
+            synthetic `source.payment_details` for the simulated rail. `202` means
+            the simulated deposit was accepted. It does not mean the mint is
+            complete.
           content:
             application/json:
               schema:
