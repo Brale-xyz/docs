@@ -7,6 +7,15 @@ Financial Institutions represent your customer's financial accounts (bank accoun
 
 <Warning>
   **Legacy / Deprecated:** The Financial Institutions resource is superseded by Addresses. New integrations should create offchain accounts (ACH, wire) as Addresses and pass their `address_id` to Transfers. Plaid endpoints are now under `/plaid/*`. Existing FI integrations continue to work during a deprecation window.
+
+  | Deprecated endpoint | Replacement |
+  | --- | --- |
+  | `GET /accounts/{account_id}/financial-institutions` | `GET /accounts/{account_id}/addresses` |
+  | `GET /accounts/{account_id}/financial-institutions/{id}` | `GET /accounts/{account_id}/addresses/{address_id}` |
+  | `POST /accounts/{account_id}/financial-institutions/external` | `POST /accounts/{account_id}/addresses/external` |
+  | `POST /accounts/{account_id}/financial-institutions/register-account` | `POST /accounts/{account_id}/plaid/register-account` |
+  | `POST /accounts/{account_id}/financial-institutions/{fi_id}/update-link-token` | `POST /accounts/{account_id}/addresses/{address_id}/update-link-token` |
+  | `GET /accounts/{account_id}/financial-institutions/{fi_id}/status` | None |
 </Warning>
 
 You can add external accounts through:
@@ -127,6 +136,10 @@ For production apps, it's recommended you send the public_token to your own back
 
 Send us the public_token you received from Plaid Link. Brale securely exchanges it for a Plaid access_token server-side and creates/updates a Financial Institution on the specified Account.
 
+<Warning>
+  Deprecated. Use `POST /accounts/{account_id}/plaid/register-account` instead. It returns an `address_id`.
+</Warning>
+
 **POST** `https://api.brale.xyz/accounts/{account_id}/financial-institutions/register-account`
 
 ```json Request
@@ -193,6 +206,10 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
 
 ### Check status
 
+<Warning>
+  Deprecated.
+</Warning>
+
 **GET** `https://api.brale.xyz/accounts/{account_id}/financial-institutions/{fi_id}/status`
 
 ```json Response
@@ -205,6 +222,10 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
 ```
 
 ### Request an updated link token
+
+<Warning>
+  Deprecated. Use `POST /accounts/{account_id}/addresses/{address_id}/update-link-token` instead.
+</Warning>
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/financial-institutions/{fi_id}/update-link-token`
 
