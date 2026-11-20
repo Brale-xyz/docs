@@ -89,6 +89,7 @@ Pass the optional `client_name` field in the link token request body to set the 
 
 - `client_name` is a string with a maximum length of 30 characters.
 - If you omit `client_name`, Plaid Link displays `Brale`.
+- `client_name` applies only to `POST /plaid/link_token`. The relink endpoint, `update-link-token`, takes no request body, so Plaid Link currently displays `Brale` when a user relinks.
 - Values longer than 30 characters return a validation error.
 
 ```json

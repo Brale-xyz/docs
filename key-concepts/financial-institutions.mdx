@@ -208,6 +208,8 @@ Brale will `POST` a JSON payload when re-auth is required to the `customer_webho
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/financial-institutions/{fi_id}/update-link-token`
 
+This endpoint takes no request body. `client_name` is accepted only on `POST /plaid/link_token`. Plaid doesn't keep the name from the original link. The Link UI shows the name from the link token you open it with. On a relink, the Plaid Link UI currently shows `Brale` instead of your original `client_name`.
+
 ```json Response
 {
   "link_token": "link_token_XYZ"
