@@ -37,7 +37,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
       "sender_name": "Originator Name",
       "sender_bank_name": "JPMorgan Chase Bank",
       "sender_bank_routing_number": "000000123",
-      "payment_reference": "Simulated Wire",
+      "payment_reference": "INV-1048",
       "imad": "20260406XOIZJDPP953495"
     }
   },
@@ -90,7 +90,7 @@ The object is optional and may be absent immediately after a transfer is created
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
 | `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
-| `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
+| `sent_at` | string (date-time) \| null | Outbound only. When the outbound wire or ACH payout was sent, when available. Not set on `source.payment_details`. |
 
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.

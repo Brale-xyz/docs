@@ -98,6 +98,10 @@ To identify which account an event concerns, read `data.account_id` from the pay
 
 For testnet and mainnet, create webhook subscriptions in the account/environment you want to receive events from. If you have separate testnet and mainnet accounts, create separate subscriptions for those accounts.
 
+### Use one subscription per account
+
+Brale delivers each event to one active subscription per account. Use a single subscription per account (wildcards like `transfer.*` cover every event in a family) and fan out internally if multiple systems need the event. See [Wildcard subscriptions](#wildcard-subscriptions).
+
 ## Supported events
 
 Use the event type discovery endpoint to see currently available events:

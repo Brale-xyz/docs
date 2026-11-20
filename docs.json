@@ -107,6 +107,7 @@
             "pages": [
               "overview/introduction",
               "overview/sandbox-and-testnet",
+              "overview/testnet-testing-matrix",
               "overview/quick-start",
               "overview/developer-tools"
             ]
@@ -157,6 +158,7 @@
               "guides/ach-on-ramp",
               "guides/fiat-to-stablecoin-onramp",
               "guides/stablecoin-to-fiat-offramp",
+              "guides/payout-lifecycle",
               {
                 "group": "FedNow",
                 "pages": [

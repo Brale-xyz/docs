@@ -188,7 +188,7 @@ Track the Transfer until it reaches `complete`, `canceled`, or `failed`:
 - Or poll `GET /accounts/{account_id}/transfers/36JqTB7hN3pQe5ZuWv0XkLr2sGc` with exponential backoff.
 - To list payouts to a recipient, call `GET /accounts/{account_id}/transfers?address_id=<recipient_bank_address_id>` and check `destination.transfer_type`. The `transfer_type` query parameter filters by blockchain only and does not accept `fednow_credit`.
 
-Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope `id`, and retrieve the Transfer when you need its current state.
+Webhook deliveries are at-least-once and unordered. Deduplicate on the envelope `id`, and retrieve the Transfer when you need its current state. See [Track payouts, returns, and refunds](/guides/payout-lifecycle) for statuses, returns, and refunds.
 
 ### Handle a pending payout safely
 
@@ -244,10 +244,13 @@ If a testnet request with `destination.transfer_type: "fednow_credit"` is reject
 
 Confirm end-to-end FedNow payouts on mainnet with a small amount, such as `1.00` USD, to a recipient you control.
 
+See [What you can test on testnet](/overview/testnet-testing-matrix) for the flows you can and can't exercise on testnet.
+
 ## Related
 
 - [FedNow overview](/guides/fednow)
 - [Receive FedNow deposits](/guides/fednow-inbound)
+- [Track payouts, returns, and refunds](/guides/payout-lifecycle)
 - [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp)
 - [Update an Address](/api-reference/brale/update-address)
 - [Idempotency](/key-concepts/idempotency)
