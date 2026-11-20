@@ -364,6 +364,7 @@ components:
             - complete
             - canceled
             - failed
+            - compliance review
             - refunding
             - refunded
           example: pending
@@ -1243,7 +1244,10 @@ components:
       properties:
         account_id:
           type: string
-          description: Account whose name should appear on bank statement line items
+          description: >-
+            ID of the verified Account whose identity is presented to the
+            counterparty. For ACH, this is the name on bank statement line items.
+            For outbound wires, it is the wire sender (originator).
     DateTime:
       type: string
       format: date-time
@@ -2686,9 +2690,11 @@ paths:
         '201':
           description: >-
             Transfer successfully created. Creation is not settlement. Track
-            `status` until it reaches `complete`, `canceled`, or `failed`.
+            `status` until it reaches `complete`, `canceled`, or `failed`. A
+            `failed` or `canceled` transfer can later move to `refunding` and then
+            `refunded` if Brale refunds it.
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Transfer'
         '400':
