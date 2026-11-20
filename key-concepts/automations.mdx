@@ -26,7 +26,7 @@ Automations on a transactional account (`account_type: transactional`) may only 
 
 ## Onramp Automation with Virtual Accounts
 
-Automations provide a unique account number and routing number for wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled). When funds are received, stablecoins are automatically minted to a pre-defined wallet address. Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in a customer's wallet.
+Automations provide a unique account number and routing number for wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled). When funds are received, stablecoins are automatically minted to the Automation's [currently configured destination](#update-an-automations-destination). Businesses can use automations to direct unique pre-funding coordinates to their customers, which mint stablecoins in a customer's wallet.
 
 Here’s what happens end-to-end when you use an onramp automation:
 
@@ -37,7 +37,7 @@ Here’s what happens end-to-end when you use an onramp automation:
 3. **Customer sends funds**\
    You share those bank details with your customer. They send a wire, ACH, or FedNow payment to the virtual account. No additional API call is required. See [Receive FedNow deposits](/guides/fednow-inbound).
 4. **Stablecoins are minted automatically**\
-   When funds arrive, Brale automatically creates a `Transfer` (USD → stablecoin), mints the stablecoin, and sends it to the `destination.address_id` configured on the automation.
+   When funds arrive, Brale automatically creates a `Transfer` (USD → stablecoin), mints the stablecoin, and sends it to the `destination.address_id` currently configured on the automation. To change it later, see [Update an Automation's destination](#update-an-automations-destination).
 5. **Track activity via Transfers**\
     You can reconcile and monitor all onramp activity by querying Transfers for the account:\
    `GET /accounts/{account_id}/transfers`.\
@@ -321,6 +321,44 @@ Retrieve a specific Automation.
   "created_at": "2025-11-20T15:56:03.531196Z"
 }
 ```
+
+## Update an Automation's destination
+
+Change the address an Automation mints to without creating a new Automation or virtual account. Use this to rotate a destination wallet instead of creating a replacement Automation.
+
+**PATCH** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}/destination`
+
+Required scope: `automations:write`
+
+```json Request
+{
+  "address_id": "3F2kQ9vXbT7mLpR4sN8wYcHdJ1a"
+}
+```
+
+Brale returns the complete updated Automation with the new `destination.address_id`. See [Update an Automation's destination](/api-reference/brale/update-automation-destination) in the API reference for the full response and errors.
+
+### Effect on deposits and funding instructions
+
+- Deposits Brale receives after the update mint to the new address.
+- Transfers the Automation already created keep their original destination.
+- The virtual account and `source.funding_instructions` do not change. Your customer keeps sending funds to the same bank details.
+- The Automation's `status` does not change.
+
+### Fields you can and cannot change
+
+- You can change only `destination.address_id`. The request body accepts only `address_id`. Any other field, including `value_type` or `transfer_type`, returns `400`.
+- `destination.value_type` and `destination.transfer_type` cannot change. To mint a different stablecoin or mint on a different chain, create a new Automation.
+
+### Address validation
+
+- The address must belong to the account in the path. If the address does not exist or belongs to another account, Brale returns `400`.
+- The address must be compatible with the Automation's blockchain environment. Brale checks the environment, not the exact chain. For example, an EVM address created for Ethereum can be accepted for an Automation on another EVM chain. An incompatible address returns `422`.
+- Automations on a transactional account can only target external destinations. A Brale-custodied address returns `422`.
+
+### Archived Automations
+
+You can update the destination of a `pending`, `active`, or `disabled` Automation. An archived Automation cannot be updated, and Brale returns `409 Conflict`.
 
 ## Archive an Automation
 

@@ -7,7 +7,7 @@ Brale makes it easy for you to fund stablecoins in custodial wallets via offchai
 
 - Submit a [Transfer](/key-concepts/transfers) request with a source `transfer_type` of `wire`
 - Submit a [Transfer](/key-concepts/transfers) request with a source `transfer_type` of `ach_debit`
-- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to a pre-configured destination wallet when funds are received via ACH, wire, or FedNow.
+- Create an [Automation](/key-concepts/automations), which automatically mints stablecoins to its [currently configured destination wallet](/key-concepts/automations#update-an-automations-destination) when funds are received via ACH, wire, or FedNow.
 
 <Tip>
   To receive FedNow deposits, use an Automation. You do not create a Transfer for each FedNow deposit. See [Receive FedNow deposits](/guides/fednow-inbound) and the [FedNow overview](/guides/fednow).
@@ -175,7 +175,7 @@ Illustrative Transfer response excerpt:
 ## Fiat to Stablecoin Automation (Automatic Onramp)
 
 <div className="mt-8">
-  Automations provide a unique account number and routing number that accepts wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled), and automatically reconciles funds received and mints them to a bound wallet address. See [Receive FedNow deposits](/guides/fednow-inbound). 
+  Automations provide a unique account number and routing number that accepts wire transfers, ACH deposits, and FedNow credits (on accounts with FedNow enabled), and automatically reconciles funds received and mints them to the Automation's [currently configured destination address](/key-concepts/automations#update-an-automations-destination). See [Receive FedNow deposits](/guides/fednow-inbound). 
 </div>
 
 Here is an example of onramping to your own stablecoin (SBC) via wire transfer by creating a fiat-to-stablecoin automation.
