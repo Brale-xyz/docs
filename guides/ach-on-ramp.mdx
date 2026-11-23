@@ -169,7 +169,7 @@ curl --request GET \
 - The balance is a point-in-time snapshot and may be cached for up to 30 seconds. It does not guarantee that the ACH debit will settle.
 - Brale still validates the balance when you submit the transfer. If the balance is insufficient, `POST /transfers` returns HTTP `422` with `type: insufficient_balance`. See [Idempotency](/key-concepts/idempotency) for how to retry.
 - If the balance request returns `503` with `type: service_unavailable`, balance data is temporarily unavailable. This does not mean the balance is zero or insufficient.
-- If it returns `400` with `type: plaid_error` and `code: plaid_item_login_required`, have the user relink the bank account through Plaid.
+- If it returns `400` with `type: plaid_error` and `code: plaid_item_login_required`, have the user relink the bank account through Plaid. Call [`POST /accounts/{account_id}/addresses/{address_id}/update-link-token`](/api-reference/brale/create-address-update-link-token) to get a Plaid Link token for the relink.
 
 <Tip>
   If ACH debits fail for one linked bank account while the user's other accounts work, the Plaid connection for that account may have expired. Call the balance endpoint for that `address_id`. If it returns `plaid_item_login_required`, have the user relink the bank account through Plaid, then use the `address_id` returned by registration for new debits.
@@ -182,7 +182,7 @@ When you submit an `ach_debit` transfer, Brale can reject it with HTTP `422` if 
 | `type` | Cause | Fix |
 | --- | --- | --- |
 | `bank_account_not_linked` | The bank account is not linked through Plaid. | Link the bank account through Plaid before using it for an ACH debit. |
-| `bank_account_relink_required` | The bank account's Plaid link has expired. | Have the user relink the bank account through Plaid, then retry. |
+| `bank_account_relink_required` | The bank account's Plaid link has expired. | Have the user relink the bank account through Plaid using an [update link token](/api-reference/brale/create-address-update-link-token), then retry. |
 | `bank_balance_unavailable` | Brale could not verify the bank account's balance. | Retry. If the error continues, have the user relink the bank account. |
 | `insufficient_balance` | The transfer amount exceeds the bank account's available balance. | Have the user fund the bank account, then retry. |
 
