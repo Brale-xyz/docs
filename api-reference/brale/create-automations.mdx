@@ -29,7 +29,7 @@ Both custodial and transactional business or individual accounts can be used as 
 The automation is still created under the account in the request path (`/accounts/{account_id}/automations`). `brand.account_id` does not change which account owns the automation — it only selects the identity shown on the funding instructions.
 
 <Note>
-  **Testnet branding.** With testnet credentials, you can create branded Automations using a business or individual account you have access to, without completing mainnet KYB/KYC or enabling that account for mainnet. Testnet funding instructions contain placeholder banking details and cannot receive real deposits. To fund a testnet Automation, use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Mainnet verification requirements are unchanged.
+  **Testnet branding.** With testnet credentials, you can create branded Automations using a business or individual account you have access to, without completing mainnet KYB/KYC or enabling that account for mainnet. Testnet funding instructions contain placeholder banking details and cannot receive real deposits. The placeholder `account_number` may not be in a real bank account number format. To fund a testnet Automation, use [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit). Mainnet verification requirements are unchanged.
 </Note>
 
 ### Example: branded automation request (business account)

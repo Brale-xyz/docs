@@ -14,7 +14,9 @@ Use this checklist when integrating and operating at volume.
 
 ## Environments & identifiers
 
-- Single account context: your `account_id` is the same on testnet and mainnet.
+- Your own managing `account_id` is the same on testnet and mainnet.
+- Managed accounts are environment-specific. A managed account you create with testnet credentials exists only on testnet. Brale cannot migrate it to mainnet. Before going live, create each managed account again with mainnet credentials.
+- `400 mainnet_not_enabled`: The account in the request is not enabled for mainnet. This happens when you use a managed account created with testnet credentials in a mainnet request. Create the account with mainnet credentials and wait for verification to complete.
 - Environment-scoped clients: an API client is either testnet or mainnet, never both.
 - Use the correct client when minting the access token; a testnet client used on mainnet (or vice versa) will fail.
 
