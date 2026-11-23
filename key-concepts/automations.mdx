@@ -124,6 +124,23 @@ The swap is not part of the Automation. You create one swap Transfer for each am
   Funding instructions belong to the Automation, not to a token. Find them in `source.funding_instructions` from [Retrieve an Automation](#retrieve-an-automation), or on the Automation in the Brale Dashboard Automations tab. The USDC token view in the Dashboard does not show Automations or funding instructions.
 </Note>
 
+## International (SWIFT) wires
+
+An Automation's virtual account can receive inbound international wires sent over SWIFT. Brale does not support outbound SWIFT wires.
+
+To fund an Automation with an international wire, the sender uses the same `source.funding_instructions` as a domestic wire:
+
+- **Account number and routing number:** Use `account_number` and `routing_number` exactly as shown in `source.funding_instructions`.
+- **SWIFT/BIC:** Add the SWIFT/BIC code of the receiving bank named in `bank_name`. No separate intermediary bank instructions are required.
+- **Beneficiary:** Use `beneficiary_name` and `beneficiary_address` from `source.funding_instructions`.
+- **Memo or reference:** Optional. The account number is unique to the Automation, so Brale matches the deposit without a memo.
+
+<Warning>
+  Use only the `routing_number` from `source.funding_instructions`. Do not substitute another routing number for the same bank, even if the sending or correspondent bank suggests one. Funds sent with a different routing number may not reach the Automation's virtual account.
+</Warning>
+
+Settlement time and coverage for international wires depend on the correspondent banks that route the payment. Send a small test wire first and confirm that the Automation mints to its destination before sending larger amounts.
+
 ## Branded Automations
 
 Branded Automations let you select the verified identity (business or individual) shown as the beneficiary on funding instructions for a virtual account.
