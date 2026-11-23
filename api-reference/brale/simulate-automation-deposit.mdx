@@ -84,7 +84,7 @@ curl --request POST \
 
 ### 202 Accepted
 
-Returns the standard [Transfer](/key-concepts/transfers) representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. For a `fednow` simulation, `source.transfer_type` is `fednow_credit`. `202 Accepted` means Brale accepted the simulated deposit. It does not mean the mint is complete.
+Returns the standard [Transfer](/key-concepts/transfers) representation. There is no separate simulation resource. The Transfer includes `automation_id`, and `source.transfer_type` records the simulated rail. For a `fednow` simulation, `source.transfer_type` is `fednow_credit`. `202 Accepted` means Brale accepted the simulated deposit. The returned Transfer is `pending` or `processing`. Neither status means the mint is complete.
 
 ```json Response
 {
@@ -140,7 +140,7 @@ Returns the standard [Transfer](/key-concepts/transfers) representation. There i
   Simulated deposits do not include `source.payment_details`. The simulator accepts only `amount` and `transfer_type`, so there is no sender or bank data such as `sender_name`, `imad`, or `trace_number`. This applies to `ach`, `wire`, and `fednow` simulations, whatever the destination token. Brale does not add these fields later in [Get a transfer](/api-reference/brale/get-transfer) responses or webhooks. Treat `payment_details` as optional and possibly null.
 </Note>
 
-Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to follow it to `complete` and read `destination.transaction_id` for the testnet mint.
+Fetch the Transfer with [Get a transfer](/api-reference/brale/get-transfer) to follow it to `complete` and read `destination.transaction_id` for the testnet mint. See [What you can test on testnet](/overview/testnet-testing-matrix) for the flows you can and can't exercise on testnet.
 
 ## Errors
 

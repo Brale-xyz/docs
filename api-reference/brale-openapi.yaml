@@ -522,7 +522,9 @@ components:
         Underlying payment metadata for a transfer leg. Response-only. Appears on
         `source.payment_details` for inbound fiat-funded transfers (wire, ACH, and
         FedNow) and on `destination.payment_details` for outbound wire and ACH
-        transfers.
+        transfers. `sent_at` applies only to `destination.payment_details`
+        (outbound). Simulated testnet deposits do not populate
+        `source.payment_details`.
         Optional and may be absent depending on the rail and on whether the
         underlying bank metadata is available yet. Fields are rail-specific. For
         example, `imad` applies only to wires and `trace_number` only to ACH. Do not
@@ -559,7 +561,7 @@ components:
             is used only when no existing memo, Originator-to-Beneficiary Information
             (OBI), or remittance reference is available. Existing reference precedence
             is preserved.
-          example: Simulated Wire
+          example: INV-1048
         imad:
           type: string
           nullable: true
@@ -579,8 +581,9 @@ components:
           format: date-time
           nullable: true
           description: >-
-            When the outbound payment was sent, when available. Appears on
-            `destination.payment_details` for outbound wire and ACH transfers.
+            Outbound only. When the outbound payment was sent, when available.
+            Appears only on `destination.payment_details` for outbound transfers.
+            Not set on `source.payment_details`.
           example: '2026-04-07T00:04:58.000000Z'
         original_transfer_type:
           type: string
@@ -3700,8 +3703,12 @@ paths:
             Accepted. Returns the Transfer created by the Automation. The Transfer
             includes `automation_id`, and `source.transfer_type` identifies the
             simulated rail. For `fednow`, `source.transfer_type` is
-            `fednow_credit`. `202` means the simulated deposit was accepted. It
-            does not mean the mint is complete.
+            `fednow_credit`. `202` means the simulated deposit was accepted. The
+            returned Transfer is `pending` or `processing`. Neither status means
+            the mint is complete. Simulated deposits don't include sender bank
+            details. `source.payment_details` is not populated on the `202`
+            response, on `GET`, or in webhooks. Treat `payment_details` as
+            optional and nullable.
           content:
             application/json:
               schema:
