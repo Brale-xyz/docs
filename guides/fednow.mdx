@@ -12,7 +12,7 @@ FedNow is the Federal Reserve's instant payment service. Brale supports FedNow i
 | Outbound (offramp) | Brale pays out USD over FedNow from stablecoins held in a Brale internal Address. Payouts can be [branded](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts) with your business or your customer's business as the sender. | [Transfer](/key-concepts/transfers) | `POST /accounts/{account_id}/transfers` for each payout. |
 
 <Note>
-  FedNow is available on Brale accounts where it has been enabled. If a request that uses FedNow is rejected on your account, contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement. Limits and fees follow your Brale agreement.
+  FedNow is on for every Brale account, on mainnet and testnet. You don't need to request enablement. Existing USD Automations already accept FedNow deposits, and any bank Address whose bank participates in FedNow can add `fednow_credit` for payouts. Limits and fees follow your Brale agreement.
 </Note>
 
 ## Identifiers
@@ -25,7 +25,7 @@ FedNow uses different identifiers depending on context. Use the value that match
 | Bank Address capability | `transfer_types`, `additional_transfer_types` | `fednow_credit` |
 | Automation configuration | `source.value_type` | `USD`. Do not set a deposit rail. |
 | Testnet deposit simulator input | `transfer_type` on the simulate request | `fednow` |
-| Transfer list filter | `transfer_type` query parameter | `fednow_credit` |
+| Finding FedNow Transfers in a list | `source.transfer_type` or `destination.transfer_type` on each returned Transfer | `fednow_credit`. The `transfer_type` query parameter filters by blockchain only. |
 
 ## Guides
 
@@ -66,7 +66,7 @@ Brale returns FedNow validation errors with the standard error envelope (`type`,
 | Status | `type` | Meaning | What to do |
 | --- | --- | --- | --- |
 | `422` | `fednow_routing_number_not_supported` | The recipient's routing number does not participate in FedNow. | Do not retry the same request. Use another rail or another FedNow-participating account. |
-| `422` | `fednow_provider_registration_failed` | Brale could not register the recipient for FedNow. This can be temporary. | Retry the same request with the same `Idempotency-Key` and body after a backoff. If it keeps failing, contact support. |
+| `422` | `fednow_provider_registration_failed` | Brale could not register the recipient for FedNow. This can be temporary. | Retry the same request with the same `Idempotency-Key` and body after a backoff. If the request keeps failing, the recipient's bank may not be able to receive FedNow payments. Pay that recipient with `same_day_ach_credit` or `wire` instead. |
 
 ```json Response (422)
 {

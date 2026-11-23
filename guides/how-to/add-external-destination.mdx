@@ -73,7 +73,7 @@ Each blockchain has its own address format. EVM-compatible chains share addresse
 
 ## Offchain bank account (Direct bank entry)
 
-Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit` (on accounts with FedNow enabled). RTP payouts (`rtp_credit`) ended on October 30, 2026. `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. Omit those fields for ACH-only addresses unless you have accurate values—do not enter placeholder or generic bank addresses.
+Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. RTP payouts (`rtp_credit`) ended on October 30, 2026. `bank_address` and `beneficiary_address` are required only when `transfer_types` includes `wire`. Omit those fields for ACH-only addresses unless you have accurate values—do not enter placeholder or generic bank addresses.
 
 <Note>
 Need `ach_debit`? Use the [Plaid-linked bank account flow](/key-concepts/addresses#create-via-plaid-linked-bank-account). Direct bank entry supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit`, but **not** `ach_debit`.
