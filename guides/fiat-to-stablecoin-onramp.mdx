@@ -204,7 +204,7 @@ Omit `source.transfer_type`. A USD Automation accepts the inbound rails enabled 
 
 Automations are created in a `pending` state and transition to `active` when the virtual account is ready.
 
-When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation.
+When an automation becomes active, the source.funding_instructions object is populated with the virtual account’s bank details (routing number, account number, beneficiary name, etc.). These are the coordinates you share with your customer to fund the automation. Senders outside the US can use the same instructions plus the receiving bank's SWIFT/BIC to send an international wire. See [International (SWIFT) wires](/key-concepts/automations#international-swift-wires).
 
 **GET** `https://api.brale.xyz/accounts/{account_id}/automations/{automation_id}`
 
