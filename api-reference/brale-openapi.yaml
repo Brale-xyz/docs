@@ -3413,7 +3413,7 @@ paths:
 
 
 
-        Deprecated. Use Addresses. Create an off-chain Address (ACH/Wire/RTP) and
+        Deprecated. Use `GET /accounts/{account_id}/addresses` instead. Create an off-chain Address (ACH/Wire/RTP) and
         pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.'
       parameters:
         - name: account_id
@@ -3441,7 +3441,7 @@ paths:
 
 
 
-        Deprecated. Use Addresses. Create an off-chain Address (ACH/Wire/RTP) and
+        Deprecated. Use `POST /accounts/{account_id}/addresses/external` instead. Create an off-chain Address (ACH/Wire/RTP) and
         pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.
 
 
@@ -3493,7 +3493,7 @@ paths:
 
 
 
-        Deprecated. Use Addresses. Create an off-chain Address (ACH/Wire/RTP) and
+        Deprecated. Use `GET /accounts/{account_id}/addresses/{address_id}` instead. Create an off-chain Address (ACH/Wire/RTP) and
         pass its `address_id` to Transfers. Plaid endpoints have moved to `/accounts/{account_id}/plaid/*`.'
       parameters:
         - name: account_id
