@@ -3,6 +3,25 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-11-16" description="Week of November 16" tags={["New", "Update"]}>
+  ## Update an Automation's destination
+
+  You can now change the address an Automation mints to without creating a new Automation. Send `PATCH /accounts/{account_id}/automations/{automation_id}/destination` with a new `address_id`. New deposits mint to the new address. The virtual account and funding instructions stay the same, so your customer keeps using the same bank details. See [Update an Automation's destination](/key-concepts/automations#update-an-automations-destination).
+
+  ## BNB Smart Chain, Arc, and Cardano
+
+  Brale now supports the `bnb`, `arc`, and `cardano` transfer types, plus `arc_testnet` and `cardano_testnet`. See [Transfer types](/coverage/transfer-types).
+
+  ## Identity document issuing country
+
+  [Stage a Verification Document](/api-reference/brale/stage-verification-document) (`POST /documents`) now accepts an optional `identity_document_country` for `government_photo_id` uploads. Pass the ISO 3166-1 alpha-2 code of the country that issued the ID, such as `GB`. Brale verifies the document against that country instead of the person's address country. An unrecognized code returns `422` `invalid_identity_document_country`. Sending the field with any other `document_kind` returns `422` `unexpected_identity_document_country`.
+
+  ## Updates
+
+  - **FedNow returns:** Returned FedNow payouts now set `failure.type: "fednow_return"` with an ISO 20022 return code in `failure.fednow_return`. FedNow returns are not retriable, and the transfer moves to `failed`. See [Get a transfer](/api-reference/brale/get-transfer).
+  - **Testnet USDC cap:** Testnet transfers involving USDC, including SBC↔USDC swaps, are capped at $0.01 per transfer. Larger amounts return `400` `redemption_limit_exceeded`. Mainnet is not affected. See [Testnet limitations](/overview/sandbox-and-testnet#testnet-limitations).
+</Update>
+
 <Update label="2026-11-09" description="Week of November 9" tags={["New"]}>
   ## USTX and Verona USD
 

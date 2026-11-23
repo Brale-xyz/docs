@@ -19,6 +19,7 @@ Uploads a verification document file and returns a `doc_submission_id`. Staged s
 | `file` | file | Yes | Document file. Accepted formats: PDF, PNG, JPG, JPEG. Maximum size: 25 MB. |
 | `document_kind` | string | Yes | Document type code. See supported values below. Display names (for example, `IRS SS-4 / 147-C EIN letter`) are also accepted. |
 | `person_label` | string | Conditional | Required for individual documents (`government_photo_id`). Must match a person on the account when linking — use `available_person_labels` from [List Verification Documents](/api-reference/brale/list-verification-documents) or the `person_label` in an `account.verification.documents_required` webhook. |
+| `identity_document_country` | string | No | Country that issued the identity document, as an ISO 3166-1 alpha-2 code (for example, `GB`). Brale normalizes the value to uppercase. Brale verifies the document against this country. If you omit it, Brale verifies the document against the person's address country. Send it whenever the ID was issued by a different country than the person's address country, such as a UK passport held by someone living in Indonesia. Accepted only with `government_photo_id`. |
 
 ### Supported `document_kind` values
 
@@ -56,6 +57,18 @@ curl -X POST https://api.brale.xyz/documents \
   -F "person_label=Jane Doe"
 ```
 
+For an ID issued outside the person's address country, include `identity_document_country`:
+
+```bash
+curl -X POST https://api.brale.xyz/documents \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Idempotency-Key: {uuid}" \
+  -F "file=@passport.pdf" \
+  -F "document_kind=government_photo_id" \
+  -F "person_label=Jane Doe" \
+  -F "identity_document_country=GB"
+```
+
 ## Example response (201)
 
 ```json
@@ -74,6 +87,8 @@ Pass the returned `doc_submission_id` to `PATCH /accounts/{account_id}` or inclu
 | `401` | Missing or invalid access token. |
 | `403` | Client lacks `accounts:write` scope. |
 | `422` | `person_label` is required for individual documents, file type is unsupported, or file exceeds the size limit. |
+| `422` | `invalid_identity_document_country`: `identity_document_country` is not a recognized ISO 3166-1 alpha-2 country code. |
+| `422` | `unexpected_identity_document_country`: `identity_document_country` was sent with a `document_kind` other than `government_photo_id`. |
 
 ## Required scope
 

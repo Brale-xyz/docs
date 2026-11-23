@@ -219,6 +219,7 @@
               "api-reference/brale/list-addresses",
               "api-reference/brale/get-address",
               "api-reference/brale/create-address",
+              "api-reference/brale/create-offchain-address",
               "api-reference/brale/create-internal-address",
               "api-reference/brale/update-address",
               "api-reference/brale/get-address-balance"
@@ -230,6 +231,7 @@
               "api-reference/brale/list-automations",
               "api-reference/brale/create-automations",
               "api-reference/brale/get-automations",
+              "api-reference/brale/update-automation-destination",
               "api-reference/brale/archive-automation",
               "api-reference/brale/simulate-automation-deposit"
             ]

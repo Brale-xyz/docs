@@ -7,7 +7,7 @@ Use the playground below to try this endpoint directly, or review the OpenAPI de
 
 ## Source configuration
 
-Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automation is not tied to a single deposit rail. Its virtual account accepts the inbound rails enabled for it, such as wire, ACH, and FedNow (on accounts with FedNow enabled). Responses may return `source.transfer_type: null`.
+Set `source.value_type` to `USD` and omit `source.transfer_type`. A USD Automation is not tied to a single deposit rail. Its virtual account accepts the inbound rails enabled for it, such as wire, ACH, and FedNow. Responses may return `source.transfer_type: null`.
 
 The rail used for each deposit appears on the resulting Transfer in `source.transfer_type`, for example `fednow_credit`. This is a Transfer response value, not an Automation setting. See [Receive FedNow deposits](/guides/fednow-inbound).
 

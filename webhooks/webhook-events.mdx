@@ -158,8 +158,8 @@ Example:
       "occurred_at": "2026-04-29T23:29:55.000000Z",
       "retriable": false,
       "ach_return": {
-        "code": "R01",
-        "reason": "Insufficient Funds",
+        "code": "R03",
+        "reason": "No Account/Unable to Locate Account",
         "category": "administrative"
       }
     }
@@ -400,7 +400,7 @@ Notes:
 - `data.id` is a payment ID. It is not a Transfer ID. Brale creates a separate Transfer for Automation deposits.
 - `payment.completed` means Brale received the fiat payment. It does not mean the stablecoin mint was delivered. Use [`transfer.completed`](#transfer-completed) or the Transfer's `status` for that.
 - `data.type` identifies the payment rail. The example shows a wire. For FedNow deposits, do not hard-code an expected `data.type` value. Correlate with the Transfer instead.
-- To find the Transfer for an Automation deposit, list Transfers with `automation_id` and `transfer_type` (for example, `transfer_type=fednow_credit`), then match `data.account_id`, the amount, and `source.payment_details.received_at`. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
+- To find the Transfer for an Automation deposit, list Transfers by `automation_id`, then check `source.transfer_type` on each Transfer (for example, `fednow_credit`). Match `data.account_id`, the amount, and `source.payment_details.received_at`. The `transfer_type` query parameter filters by blockchain only. See [Receive FedNow deposits](/guides/fednow-inbound#find-the-transfer).
 - Brale also emits `payment.completed` for inbound payments created by [Simulate an Automation deposit](/api-reference/brale/simulate-automation-deposit) on testnet. There is no simulation-specific webhook type, so the same handler covers simulated and real deposits.
 
 ## `transfer.canceled`

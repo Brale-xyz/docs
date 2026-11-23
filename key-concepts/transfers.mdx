@@ -26,9 +26,10 @@ Each source and destination includes:
 | `account_id`      | Path                        | string | Account whose funds are being moved                      |
 | `amount`          | Body                        | object | `{ "value": "10", "currency": "USD" }`                   |
 | `source`          | Body                        | object | Origin of funds (fiat rail or on-chain address)          |
+| `destination`     | Body                        | object | Where funds are sent (fiat rail or on-chain address)     |
 | `value_type`      | In `source` / `destination` | string | Currency/token (e.g., USD, USDC, SBC)                    |
 | `transfer_type`   | In `source` / `destination` | string | Payment rail / chain (wire, ach_credit, fednow_credit, polygon, solana) |
-| `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value        |
+| `address_id`      | In `source` / `destination` | string | Wallet or fiat account sending or receiving value. Required on every leg except a wire-funded source (`source.transfer_type: "wire"`). |
 | `Idempotency-Key` | Header                      | string | UUID that guarantees exactly-once execution              |
 
 ## Optional Fields
@@ -38,6 +39,7 @@ Each source and destination includes:
 | `brand` | Body  | object | `{ "account_id": "<ACCOUNT_ID>" }` to select whose verified identity the counterparty sees. For ACH (`ach_debit`, `ach_credit`, `same_day_ach_credit`), it controls the name on bank statement line items. For outbound wires (`destination.transfer_type: "wire"`), it selects the wire sender (originator). For FedNow payouts (`destination.transfer_type: "fednow_credit"`), it selects the sender the receiving bank sees. Not supported for `rtp_credit`. See [Branded Transfers](/guides/2nd-and-3rd-party-transfers). |
 | `wire_memo` | In `destination` | string | **Wire only.** Memo or payment reference text sent with outbound wire transfers. Only applies when `destination.transfer_type` is `wire`. |
 | `ach_description` | In `destination` (payouts) or `source` (`ach_debit`) | string | **ACH only.** Short description shown after the sender name on the recipient's bank statement. Use `destination.ach_description` for `ach_credit` and `same_day_ach_credit` payouts, and `source.ach_description` for `ach_debit`. Does not apply to `wire`, `rtp_credit`, or `fednow_credit`. Only the first 10 characters are used. See [What recipients see on ACH](#what-recipients-see-on-ach). |
+| `note` | Body | string | Free-form note stored on the transfer and returned as `note`. Maximum 255 characters. To set what the recipient sees, use `wire_memo` or `ach_description` instead. |
 
 ## Response-only fields
 
@@ -76,6 +78,18 @@ The object is optional and may be absent immediately after a transfer is created
 <Note>
   `destination.payment_details` is a response-only field. It is not accepted as input when creating a transfer. Do not confuse it with `destination.wire_memo`, which remains a request field for outbound wire transfers.
 </Note>
+
+### Rail fallback fields
+
+These fields appear on the payout leg when an RTP payout falls back to another rail.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `requested_transfer_type` | string | The rail the client requested |
+| `payment_details.original_transfer_type` | string | The rail originally requested before the fallback |
+| `payment_details.fallback_reason_code` | string | Code for why the payout fell back to another rail |
+| `payment_details.fallback_reason` | string | Human-readable reason the payout fell back to another rail |
+| `payment_details.fallback_at` | string (date-time) | When the payout fell back to another rail |
 
 ### `created_by`
 
@@ -682,11 +696,11 @@ curl "https://api.brale.xyz/accounts/${ACCOUNT_ID}/transfers?page[size]=50&page[
 | Value        | Description                                                                                                                                                           |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pending`    | The transfer has been submitted but is not yet in progress. This may be due to Brale waiting for funds (e.g., fiat-to-stablecoin wire transfer) or an ongoing review. |
+| `compliance review` | Brale holds the transfer for compliance review before sending it, for example when the amount is above a payment partner's transaction limit. From there it moves back to `pending` or on to `processing`, or is canceled. The value contains a space, not an underscore. |
 | `processing` | The transfer is in progress.                                                                                                                                          |
 | `complete`   | Brale has finished processing the transfer and sent funds to the destination. For outbound domestic wires and outbound ACH payouts, a later bank return can still move the transfer to `failed`. |
 | `canceled`   | The transfer has been canceled. Brale can cancel a transfer only before it is submitted to the payment rail. A `pending` status does not guarantee that cancellation is still possible. |
 | `failed`     | An issue prevented the transfer from succeeding, or the payout was returned. This includes outbound domestic wires and outbound ACH payouts returned after the transfer was `complete`. Manual intervention may be required. |
-| `compliance review` | Brale is reviewing the transfer. The transfer is not complete. |
 | `refunding`  | A refund for the transfer has started. The refund is not complete yet. |
 | `refunded`   | The refund for the transfer has completed. |
 
@@ -702,6 +716,10 @@ Outbound domestic wires can be returned by the receiving bank. When Brale recogn
 Brale does not use a separate `returned` status. A returned wire has `status: "failed"` and a [`failure`](/api-reference/brale/get-transfer#failure) object with `type: "wire_return"`. Keep accepting [`transfer.failed`](/webhooks/webhook-events#transfer-failed) events for transfers you already recorded as `complete`. See [Transfer status lifecycle](/documentation/platform/transfer-timing#transfer-status-lifecycle) for details.
 
 Outbound ACH payouts (`ach_credit` and `same_day_ach_credit`) follow the same pattern. The receiving bank can return an ACH payout after the transfer reached `complete`. Brale then updates the original transfer to `failed`, emits `transfer.failed`, and sets a `failure` object with `type: "ach_return"` and the return code in `failure.ach_return`.
+
+A retriable ACH return (`retriable: true`, currently only `R01`, insufficient funds) sets `failure` but leaves the transfer `processing`. Brale does not send a `transfer.failed` webhook for a retriable return.
+
+FedNow payouts can also be returned. A FedNow return sets a `failure` object with `failure.type: "fednow_return"` and an ISO 20022 return code (for example, `AC01`) in `failure.fednow_return`. FedNow returns are never retriable, and the transfer moves to `failed`.
 
 A `failed` status means the payout failed or was returned. It does not mean a refund has started or completed, and not every failed or returned payout is refunded. When Brale refunds a transfer, `refunding` means the refund has started and `refunded` means it has completed. Brale emits [`transfer.refunding`](/webhooks/webhook-events#transfer-refunding) and [`transfer.refunded`](/webhooks/webhook-events#transfer-refunded) for these stages.
 

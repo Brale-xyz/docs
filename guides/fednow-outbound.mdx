@@ -7,13 +7,13 @@ keywords: ["FedNow", "fednow_credit", "offramp", "payout", "bank address", "addi
 Outbound FedNow uses a [Transfer](/key-concepts/transfers). Brale redeems stablecoins from a funded Brale internal Address and sends USD to a recipient bank Address over FedNow. You create one Transfer for each payout.
 
 <Note>
-  FedNow payouts are available on Brale accounts where FedNow has been enabled. Contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement.
+  FedNow is on for every Brale account, on mainnet and testnet. You don't need to request enablement. Existing USD Automations already accept FedNow deposits, and any bank Address whose bank participates in FedNow can add `fednow_credit` for payouts.
 </Note>
 
 ## Prerequisites
 
 - A Brale [Account](/key-concepts/accounts) with `status: complete`.
-- API credentials with the `addresses:write`, `addresses:read`, `transfers:write`, and `transfers:read` scopes.
+- API credentials with the `addresses:write`, `addresses:read`, `transfers:write`, and `transfers:read` scopes. To register bank accounts without granting `addresses:write`, use `financial-institutions:write` and [`POST /accounts/{account_id}/addresses/offchain`](/api-reference/brale/create-offchain-address) instead. See [Least-privilege payout key](/key-concepts/authentication#least-privilege-payout-key).
 - A Brale internal (custodial) Address that holds the stablecoin you will redeem.
 - The recipient's bank details: owner name, account number, routing number, and account type. The recipient's bank must participate in FedNow.
 
@@ -29,7 +29,7 @@ Note the Address's `id`, the stablecoin `value_type` it holds (for example, `USD
 
 ## Step 2: Register or upgrade the recipient bank Address
 
-FedNow recipients use the `fednow_credit` transfer type on an external bank Address. Register recipients with Direct bank entry or Plaid. `fednow_credit` is available only on accounts it has been enabled for.
+FedNow recipients use the `fednow_credit` transfer type on an external bank Address. Register recipients with Direct bank entry or Plaid.
 
 | Path | `fednow_credit` support |
 | --- | --- |
@@ -99,7 +99,7 @@ curl --request PATCH \
 | Status | `type` | What to do |
 | --- | --- | --- |
 | `422` | `fednow_routing_number_not_supported` | The routing number does not participate in FedNow. Do not retry the same request. Use another rail for this recipient. |
-| `422` | `fednow_provider_registration_failed` | Registration with Brale's banking provider failed. This can be temporary. Retry the same request after a backoff. For `POST`, reuse the same `Idempotency-Key` and body. |
+| `422` | `fednow_provider_registration_failed` | Registration with Brale's banking provider failed. This can be temporary. Retry the same request after a backoff. For `POST`, reuse the same `Idempotency-Key` and body. If the request keeps failing, the recipient's bank may not be able to receive FedNow payments. Pay that recipient with `same_day_ach_credit` or `wire` instead. |
 
 ```json Response (422)
 {
@@ -239,8 +239,6 @@ Testnet does not send real FedNow payments. When you submit a redemption on test
 - Fund internal Addresses on testnet networks with testnet mints.
 - Exercise redemption Transfers, idempotency handling, and status tracking without moving real USD.
 - Validate your FedNow request construction against the examples on this page.
-
-If a testnet request with `destination.transfer_type: "fednow_credit"` is rejected on your account, contact support to confirm testnet FedNow enablement.
 
 Confirm end-to-end FedNow payouts on mainnet with a small amount, such as `1.00` USD, to a recipient you control.
 

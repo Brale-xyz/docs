@@ -1,0 +1,58 @@
+---
+title: 'Create an offchain (bank) address'
+description: 'Register an external bank account as an address using the financial-institutions:write scope, without granting permission to add onchain addresses.'
+openapi: 'POST /accounts/{account_id}/addresses/offchain'
+---
+
+This endpoint registers an external bank account (offchain address) only. It cannot create onchain (crypto) addresses.
+
+Use it instead of [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address) when you want an API key that can register payout bank accounts but cannot add new external crypto addresses.
+
+| Endpoint | Creates | Required scope |
+| --- | --- | --- |
+| `POST /accounts/{account_id}/addresses/offchain` | Bank accounts only | `financial-institutions:write` |
+| `POST /accounts/{account_id}/addresses/external` | Bank accounts and onchain addresses | `addresses:write` |
+
+See [Authentication](/key-concepts/authentication#scopes) for a least-privilege payout key example.
+
+### Request body
+
+The request body is the same as the Direct bank entry body for [`POST /accounts/{account_id}/addresses/external`](/api-reference/brale/create-address). Field requirements depend on `transfer_types`:
+
+- `owner`, `account_number`, `routing_number`, `account_type`, and `transfer_types` are required.
+- `bank_address` and `beneficiary_address` are required when `transfer_types` includes `wire`. Omit them for ACH-only or FedNow-only addresses unless you have accurate values.
+- Send `account_number` and `routing_number` as strings so leading zeros are preserved.
+
+### Example request
+
+```bash
+curl --request POST \
+  --url "https://api.brale.xyz/accounts/${ACCOUNT_ID}/addresses/offchain" \
+  --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
+  --data '{
+    "owner": "Jane Doe",
+    "transfer_types": ["ach_credit", "same_day_ach_credit"],
+    "account_number": "1234567890",
+    "routing_number": "063108680",
+    "account_type": "checking",
+    "name": "Example Bank"
+  }'
+```
+
+### Use the address in a transfer
+
+Brale returns `201` with the new bank address. Pass its `id` as the `address_id` on the destination of [`POST /accounts/{account_id}/transfers`](/api-reference/brale/create-transfer), the same way you use an address created through `/addresses/external`.
+
+### Related offchain endpoints
+
+These endpoints also use the Financial Institutions scopes and only return or modify bank accounts:
+
+| Endpoint | Purpose | Required scope |
+| --- | --- | --- |
+| `GET /accounts/{account_id}/addresses/offchain` | List bank addresses | `financial-institutions:read` |
+| `GET /accounts/{account_id}/addresses/offchain/{address_id}` | Retrieve a bank address | `financial-institutions:read` |
+| `PATCH /accounts/{account_id}/addresses/offchain/{address_id}` | Update a bank address | `financial-institutions:write` |
+
+Use the playground below to try this endpoint directly, or review the OpenAPI details in the right panel.

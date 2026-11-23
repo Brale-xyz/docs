@@ -131,7 +131,7 @@ The blockchains the address supports. See [Supported Chains](/coverage/transfer-
 
 ### Create via Direct bank entry
 
-Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit` (on accounts with FedNow enabled). `rtp_credit` is no longer available. It does **not** support `ach_debit`.
+Use the [Create a new external address](/api-reference/brale/create-address) endpoint to register a bank account when you already have the bank details. This path supports `wire`, `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. `rtp_credit` is no longer available. It does **not** support `ach_debit`.
 
 **POST** `/accounts/{account_id}/addresses/external`
 

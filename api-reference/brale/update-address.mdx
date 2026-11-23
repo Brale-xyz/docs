@@ -85,7 +85,7 @@ For individual bank recipients created without a date of birth, set it once:
 - `400` `date_of_birth_not_supported` — `date_of_birth` was sent for a business recipient, or `account_holder_type: business` was sent for an address with a stored date of birth.
 - `404` — address not found or not owned by the account.
 - `422` `fednow_routing_number_not_supported` — the address's routing number does not participate in FedNow. Do not retry.
-- `422` `fednow_provider_registration_failed` — FedNow registration failed. This can be temporary. Retry the same request after a backoff.
+- `422` `fednow_provider_registration_failed` — FedNow registration failed. This can be temporary. Retry the same request after a backoff. If the request keeps failing, the recipient's bank may not be able to receive FedNow payments. Pay that recipient with `same_day_ach_credit` or `wire` instead.
 - `422` `recipient_update_failed` — Brale could not update the recipient with the new date of birth. The change is not saved.
 - `503` — the recipient update is temporarily unavailable. The change is not saved. Retry after a backoff.
 
