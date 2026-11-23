@@ -9,7 +9,7 @@ Inbound FedNow uses an [Automation](/key-concepts/automations). The Automation p
 You do not call `POST /transfers` for each deposit. Brale does not pull or debit the payer's bank, and the payer does not need a Plaid-linked account to send funds.
 
 <Note>
-  FedNow deposits are available on Brale accounts where FedNow has been enabled. Contact [support@brale.xyz](mailto:support@brale.xyz) to confirm enablement.
+  FedNow is on for every Brale account, on mainnet and testnet. You don't need to request enablement. Existing USD Automations already accept FedNow deposits, and any bank Address can add `fednow_credit` for payouts.
 </Note>
 
 ## Prerequisites
@@ -34,7 +34,7 @@ You do not call `POST /transfers` for each deposit. Brale does not pull or debit
 
 ## Step 1: Create an Automation or reuse an existing one
 
-If you already have an `active` USD Automation for this destination, reuse it. Existing eligible virtual accounts are expected to accept FedNow without recreation, and you do not need a separate FedNow Automation.
+If you already have an `active` USD Automation for this destination, reuse it. Existing USD Automations already accept FedNow. You don't need to recreate them or create a separate FedNow Automation.
 
 To create one, send `POST /accounts/{account_id}/automations`:
 

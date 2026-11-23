@@ -6,7 +6,7 @@ openapi: 'POST /accounts/{account_id}/addresses/external'
 
 import RtpUnavailable from '/snippets/rtp-unavailable.mdx';
 
-This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, or `fednow_credit` (on accounts with FedNow enabled).
+This endpoint is the **Direct bank entry** path for creating external off-chain bank addresses. Use it when you already have the bank account details (account number, routing number) and need `wire`, `ach_credit`, `same_day_ach_credit`, or `fednow_credit`.
 
 <RtpUnavailable />
 
@@ -81,7 +81,7 @@ Brale returns these errors with the standard error envelope:
 | Status | `type` | Meaning | Retry |
 | --- | --- | --- | --- |
 | `422` | `fednow_routing_number_not_supported` | The routing number does not participate in FedNow. | No. Use another rail. |
-| `422` | `fednow_provider_registration_failed` | FedNow registration failed. This can be temporary. | Yes. Retry with the same `Idempotency-Key` and body after a backoff. |
+| `422` | `fednow_provider_registration_failed` | FedNow registration failed. This can be temporary. | Yes. Retry with the same `Idempotency-Key` and body after a backoff. If the request keeps failing, the recipient's bank may not be able to receive FedNow payments. Pay that recipient with `same_day_ach_credit` or `wire` instead. |
 | `400` | `invalid_transfer_types` | `transfer_types` includes a value the address cannot use, most often `rtp_credit`. The `detail` reads `Invalid transfer types; Address transfer types must be compatible chains`. | No. Replace `rtp_credit` with `fednow_credit`. See [Migrate from `rtp_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit). |
 
 ```json Response (422)

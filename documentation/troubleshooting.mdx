@@ -61,7 +61,7 @@ Use this checklist when integrating and operating at volume.
 - Response `detail`: `Invalid transfer types; Address transfer types must be compatible chains`.
 - Common cause: `transfer_types` on `POST /accounts/{account_id}/addresses/external` includes `rtp_credit`. RTP ended on October 30, 2026. The error mentions chains, but the rejected value is `rtp_credit`.
 - Fix: replace `rtp_credit` with `fednow_credit`. See [Migrate from `rtp_credit` to `fednow_credit`](/guides/fednow-outbound#migrate-from-rtp_credit-to-fednow_credit).
-- If the request does not include `rtp_credit` and `fednow_credit` is rejected, contact [support@brale.xyz](mailto:support@brale.xyz) to confirm FedNow is enabled on your account.
+- If `fednow_credit` is rejected, check that the recipient bank Address lists `fednow_credit` in `transfer_types` and that the recipient's bank participates in FedNow.
 
 ### 400 `invalid_transfer_type` on transfer creation
 

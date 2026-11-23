@@ -38,7 +38,8 @@ info:
       `POST /accounts/{account_id}/automations/{automation_id}/simulations/deposits`.
     - `bank_address` and `beneficiary_address` are required only when an external
       bank Address requests `wire`.
-    - FedNow availability depends on account enablement.
+    - FedNow is on for every Brale account, on mainnet and testnet. No enablement
+      request is needed.
 tags:
   - name: Accounts
     description: Endpoints related to managing customer accounts (KYB, details, etc.)
@@ -1039,7 +1040,7 @@ components:
         The funding source for the automation. Set `value_type: USD` to accept fiat
         deposits. You do not need to select a deposit rail: a USD Automation's
         virtual account accepts the inbound rails enabled for your account (wire,
-        ACH, and FedNow where enabled). When the automation becomes active,
+        ACH, and FedNow). When the automation becomes active,
         `funding_instructions` is populated with the virtual account details to share
         with the payer. This is Automation configuration. The rail of each deposit
         is reported on the resulting Transfer's `source.transfer_type` (for example,
@@ -2997,6 +2998,9 @@ paths:
             - `fednow_provider_registration_failed`: Brale could not register the
               recipient for FedNow with its banking provider. This can be temporary.
               Retry the same request with the same `Idempotency-Key` after a backoff.
+              If the request keeps failing, the recipient's bank may not be able to
+              receive FedNow payments. Pay that recipient with `same_day_ach_credit`
+              or `wire` instead.
           content:
             application/json:
               schema:
@@ -3096,9 +3100,7 @@ paths:
       summary: Retrieve an address
       description: 'Retrieves a single address by address_id. Use this endpoint to
         fetch the latest status, address value, and enabled transfer_types for an
-        internal or external address. For RTP-enabled bank addresses, inspect transfer_types
-        to confirm whether rtp_credit has been added after asynchronous eligibility
-        checks complete. Before sending a FedNow payout, confirm the address is active
+        internal or external address. Before sending a FedNow payout, confirm the address is active
         and transfer_types includes fednow_credit.'
       parameters:
         - name: account_id
@@ -3254,7 +3256,10 @@ paths:
               does not participate in FedNow. Do not retry.
 
             - `fednow_provider_registration_failed`: FedNow registration failed.
-              This can be temporary. Retry after a backoff.
+              This can be temporary. Retry after a backoff. If the request keeps
+              failing, the recipient's bank may not be able to receive FedNow
+              payments. Pay that recipient with `same_day_ach_credit` or `wire`
+              instead.
           content:
             application/json:
               schema:

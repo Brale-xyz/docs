@@ -210,8 +210,6 @@ See [Stablecoin to fiat offramp](/guides/stablecoin-to-fiat-offramp) to create t
 
 You can brand a FedNow payout with the same top-level `brand` object. `brand.account_id` selects the verified Account identity the receiving bank sees as the sender. As with wires, the Account in the URL funds the payout from `source.address_id`, and `destination.address_id` is the recipient's bank Address with `fednow_credit` enabled.
 
-`brand` applies to 2nd- and 3rd-party transfers. It is independent of the FedNow enablement requirement: your Account must have FedNow enabled whether or not you send `brand`. See [FedNow overview](/guides/fednow).
-
 ### Example of a branded FedNow payout (Company 2 = your customer)
 
 **POST** `https://api.brale.xyz/accounts/{account_id}/transfers`
