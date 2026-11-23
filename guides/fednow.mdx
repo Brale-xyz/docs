@@ -12,7 +12,7 @@ FedNow is the Federal Reserve's instant payment service. Brale supports FedNow i
 | Outbound (offramp) | Brale pays out USD over FedNow from stablecoins held in a Brale internal Address. Payouts can be [branded](/guides/2nd-and-3rd-party-transfers#branded-fednow-payouts) with your business or your customer's business as the sender. | [Transfer](/key-concepts/transfers) | `POST /accounts/{account_id}/transfers` for each payout. |
 
 <Note>
-  FedNow is on for every Brale account, on mainnet and testnet. You don't need to request enablement. Existing USD Automations already accept FedNow deposits, and any bank Address can add `fednow_credit` for payouts. Limits and fees follow your Brale agreement.
+  FedNow is on for every Brale account, on mainnet and testnet. You don't need to request enablement. Existing USD Automations already accept FedNow deposits, and any bank Address whose bank participates in FedNow can add `fednow_credit` for payouts. Limits and fees follow your Brale agreement.
 </Note>
 
 ## Identifiers
