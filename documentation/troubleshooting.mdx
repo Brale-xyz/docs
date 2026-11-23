@@ -75,7 +75,12 @@ Use this checklist when integrating and operating at volume.
   - address is not compatible with the requested `transfer_type` in that environment
   - typo in `address_id`
   - `address_id` does not belong to the specified `account_id` on an account-scoped route
-- Fix: verify the `address_id` belongs to the `account_id`, ensure the address supports the `transfer_type`, and double-check casing.
+  - the source leg has no matching address record, for example the funding bank Address is not registered for `ach_debit` on that account
+  - the bank partner has not yet confirmed the rail for that bank Address
+- Address creation and transfer creation run different checks:
+  - At address creation, Brale checks that each `transfer_type` you send is available on your account and that the combination is valid. For `fednow_credit`, Brale also checks the routing number against the FedNow participant directory. Passing this check does not guarantee the rail works at send time. Brale's banking partner confirms eligibility for some rails after the Address exists.
+  - At transfer creation, Brale resolves the source and destination legs separately. Each leg must match an address record with that `address_id` and the exact `transfer_type`. The error can come from either leg, and often comes from the source.
+- Fix: check both `source` and `destination` in the request. For each leg, verify the `address_id` belongs to the `account_id`, confirm the Address lists that exact `transfer_type` in `transfer_types`, and double-check casing. If both legs look correct, contact Brale support with the failing request body and the `address_id` values.
 
 ### 422 `compatible_address_not_found` (transactional accounts)
 
