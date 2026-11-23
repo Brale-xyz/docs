@@ -9,6 +9,42 @@ The Brale API uses Bearer Authentication and API keys to authenticate your reque
 
 Your ability to authenticate to the API is granted through an API Key associated with an Application. Applications are specific to testnet or mainnet access, and have a specific set of permissions. You can create multiple API applications within the dashboard, each assigned specific API scopes. See [Environments](/overview/sandbox-and-testnet) for how testnet and mainnet differ.
 
+## Scopes
+
+Each permission you enable on an application grants one or more OAuth scopes. Every endpoint requires a specific scope. Requests made with a token that lacks the scope return `403 Forbidden`.
+
+| Scope | Endpoints |
+| --- | --- |
+| `accounts:read` | `GET /accounts`, `GET /accounts/{account_id}`, `GET /accounts/{account_id}/verification/documents` |
+| `accounts:write` | `POST /accounts`, `PATCH /accounts/{account_id}`, `POST /documents` |
+| `addresses:read` | `GET /accounts/{account_id}/addresses`, `GET /accounts/{account_id}/addresses/{address_id}`, `GET /accounts/{account_id}/addresses/{address_id}/balance` |
+| `addresses:write` | `POST /accounts/{account_id}/addresses/external` (bank and onchain), `POST /accounts/{account_id}/addresses/internal`, `PATCH /accounts/{account_id}/addresses/{address_id}` |
+| `financial-institutions:read` | `GET /accounts/{account_id}/addresses/offchain`, `GET /accounts/{account_id}/addresses/offchain/{address_id}`, legacy `GET /accounts/{account_id}/financial-institutions` endpoints, `POST /accounts/{account_id}/financial-institutions/{fi_id}/update-link-token` |
+| `financial-institutions:write` | `POST /accounts/{account_id}/addresses/offchain` (bank only), `PATCH /accounts/{account_id}/addresses/offchain/{address_id}`, `POST /accounts/{account_id}/plaid/*`, legacy `POST /accounts/{account_id}/financial-institutions/external`, `/register-account`, and `/plaid/link_token` |
+| `transfers:read` | `GET /accounts/{account_id}/transfers`, `GET /accounts/{account_id}/transfers/{transfer_id}` |
+| `transfers:write` | `POST /accounts/{account_id}/transfers` |
+| `automations:read` | `GET /accounts/{account_id}/automations`, `GET /accounts/{account_id}/automations/{automation_id}`, `GET /accounts/{account_id}/wire-instructions` |
+| `automations:write` | `POST /accounts/{account_id}/automations`, `PATCH /accounts/{account_id}/automations/{automation_id}`, `PATCH /accounts/{account_id}/automations/{automation_id}/destination` |
+| `webhooks:read` | `GET /accounts/{account_id}/webhooks`, `GET /accounts/{account_id}/webhooks/{subscription_id}`, `GET /accounts/{account_id}/webhooks/event_types`, `GET /accounts/{account_id}/webhooks/deliveries` |
+| `webhooks:write` | `POST /accounts/{account_id}/webhooks`, `PATCH` and `DELETE /accounts/{account_id}/webhooks/subscriptions/{subscription_id}` |
+
+The OpenAPI details on each [API reference](/api-reference/brale-introduction) page list the exact scope that endpoint requires.
+
+### Least-privilege payout key
+
+`addresses:write` lets a key create both bank accounts and onchain addresses through `POST /accounts/{account_id}/addresses/external`. If a key only needs to register bank accounts for ACH, wire, or FedNow payouts, register them with [`POST /accounts/{account_id}/addresses/offchain`](/api-reference/brale/create-offchain-address) instead. That endpoint uses `financial-institutions:write` and cannot create onchain addresses.
+
+Enable these permissions on a payout-only application:
+
+| Dashboard permission | Scope | Used for |
+| --- | --- | --- |
+| Financial Institutions (create/update) | `financial-institutions:write` | Register the payout bank account with `POST /accounts/{account_id}/addresses/offchain` |
+| Create/Update Transfers | `transfers:write` | Send the payout with `POST /accounts/{account_id}/transfers` |
+| View Transfers | `transfers:read` | Check payout status with `GET /accounts/{account_id}/transfers/{transfer_id}` |
+| View Addresses | `addresses:read` | Check the source balance with `GET /accounts/{account_id}/addresses/{address_id}/balance` |
+
+Leave **Create/Update Addresses** (`addresses:write`) disabled so the key cannot add external onchain addresses.
+
 ## Create API Credentials
 
 Create an application on the Settings page in the Dashboard. Brale will make your API key available only once. Please save the key in a secure location.

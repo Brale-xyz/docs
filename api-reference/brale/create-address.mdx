@@ -18,6 +18,10 @@ This endpoint does **not** support `ach_debit`. If you need ACH debit, use the [
 Address fields are conditional. `bank_address` and `beneficiary_address` are **required when `transfer_types` includes `wire`**. They are **optional** for `ach_credit`, `same_day_ach_credit`, and `fednow_credit`. For addresses without `wire`, do not provide placeholder or generic bank addresses. Omit these fields unless you have accurate values.
 </Warning>
 
+<Tip>
+This endpoint requires the `addresses:write` scope, which also allows creating onchain addresses. To register bank accounts with a key that cannot add onchain addresses, use [`POST /accounts/{account_id}/addresses/offchain`](/api-reference/brale/create-offchain-address) with the `financial-institutions:write` scope.
+</Tip>
+
 For a full comparison of both external bank address creation paths, see [External bank addresses](/key-concepts/external-bank-addresses).
 
 ### Direct bank entry field requirements

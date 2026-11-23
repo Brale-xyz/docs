@@ -13,7 +13,7 @@ Outbound FedNow uses a [Transfer](/key-concepts/transfers). Brale redeems stable
 ## Prerequisites
 
 - A Brale [Account](/key-concepts/accounts) with `status: complete`.
-- API credentials with the `addresses:write`, `addresses:read`, `transfers:write`, and `transfers:read` scopes.
+- API credentials with the `addresses:write`, `addresses:read`, `transfers:write`, and `transfers:read` scopes. To register bank accounts without granting `addresses:write`, use `financial-institutions:write` and [`POST /accounts/{account_id}/addresses/offchain`](/api-reference/brale/create-offchain-address) instead. See [Least-privilege payout key](/key-concepts/authentication#least-privilege-payout-key).
 - A Brale internal (custodial) Address that holds the stablecoin you will redeem.
 - The recipient's bank details: owner name, account number, routing number, and account type. The recipient's bank must participate in FedNow.
 

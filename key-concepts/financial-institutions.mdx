@@ -9,6 +9,10 @@ Financial Institutions represent your customer's financial accounts (bank accoun
   **Legacy / Deprecated:** The Financial Institutions resource is superseded by Addresses. New integrations should create offchain accounts (ACH, wire) as Addresses and pass their `address_id` to Transfers. Plaid endpoints are now under `/plaid/*`. Existing FI integrations continue to work during a deprecation window.
 </Warning>
 
+<Note>
+  The `/financial-institutions` endpoints are deprecated, but the **Financial Institutions** API key permission (`financial-institutions:read` and `financial-institutions:write` scopes) is not. It authorizes the bank-only [offchain address endpoints](/api-reference/brale/create-offchain-address) under `/accounts/{account_id}/addresses/offchain`. Use it to give a key permission to register bank accounts without granting `addresses:write`. See [Least-privilege payout key](/key-concepts/authentication#least-privilege-payout-key).
+</Note>
+
 You can add external accounts through:
 
 1. Financial Institutions API
