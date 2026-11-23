@@ -232,7 +232,7 @@ For a transactional account, send the same business payload with these changes:
 - `address.country`: the business's ISO 3166-1 alpha-2 country code, for example `GB`
 - `address.state`: optional and free-form (a state, province, or region)
 - `address.zip`: any postal-code format
-- `ein`: required. This is the existing business identifier field, sent the same way as for a US business
+- `ein`: required. For a business outside the US, send the registration number issued by the country's business registry (for example, a Singapore UEN), not a tax ID
 
 ```json Request
 {

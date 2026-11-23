@@ -229,6 +229,11 @@ components:
           example: ABC Company Inc
         ein:
           type: string
+          description: >-
+            The business's government-issued identifier. For a US business,
+            its EIN. For a business outside the US, the registration number
+            issued by its country's business registry (for example, a
+            Singapore UEN), not a tax ID.
           example: 111-11-1111
         address:
           $ref: '#/components/schemas/AccountAddress'
@@ -1535,6 +1540,11 @@ components:
           example: My Customer
         ein:
           type: string
+          description: >-
+            The business's government-issued identifier. For a US business,
+            its EIN. For a business outside the US, the registration number
+            issued by its country's business registry (for example, a
+            Singapore UEN), not a tax ID.
           example: '123456789'
         address:
           $ref: '#/components/schemas/BusinessAddress'
