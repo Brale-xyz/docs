@@ -170,7 +170,7 @@ To send the wire under your business's or your customer's verified identity inst
 
 ### Tracking the outbound wire with `destination.payment_details.imad`
 
-When you retrieve the transfer, the response may include a `destination.payment_details` object containing the wire IMAD for tracing and reconciliation.
+When you retrieve the transfer, the response may include a `destination.payment_details` object containing the wire IMAD and OMAD for tracing and reconciliation. The OMAD is assigned by the Federal Reserve when it delivers the wire. Recipient banks often ask for it to locate an incoming wire.
 
 ```json title="Response"
 {
@@ -188,7 +188,8 @@ When you retrieve the transfer, the response may include a `destination.payment_
     "transfer_type": "wire",
     "wire_memo": "Invoice 1048",
     "payment_details": {
-      "imad": "20260406XOIZJDPP953495"
+      "imad": "20260406XOIZJDPP953495",
+      "omad": "20260406QMGFNP31000001"
     }
   },
   "updated_at": "2026-04-07T00:05:12.102000Z",
@@ -202,7 +203,7 @@ When you retrieve the transfer, the response may include a `destination.payment_
 ```
 
 <Note>
-  `destination.payment_details` is response-only and is not accepted in create requests. The IMAD is assigned by the sending bank and may not be available immediately after the transfer is created — the field may be absent until Brale has the underlying bank metadata, at which point it appears on the transfer. Do not confuse this with `destination.wire_memo`, which remains a request field for outbound wires. See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the full field reference.
+  `destination.payment_details` is response-only and is not accepted in create requests. The IMAD is assigned by the sending bank, and the OMAD is assigned when the Federal Reserve delivers the wire. Neither may be available immediately after the transfer is created. Each field may be absent or `null` until Brale has the underlying bank metadata, at which point it appears on the transfer. Do not confuse this with `destination.wire_memo`, which remains a request field for outbound wires. See [Transfers — `destination.payment_details`](/key-concepts/transfers#destinationpayment_details) for the full field reference.
 </Note>
 
 ### Returned outbound wires

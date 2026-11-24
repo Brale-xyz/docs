@@ -526,7 +526,7 @@ components:
         transfers.
         Optional and may be absent depending on the rail and on whether the
         underlying bank metadata is available yet. Fields are rail-specific. For
-        example, `imad` applies only to wires and `trace_number` only to ACH. Do not
+        example, `imad` and `omad` apply only to wires and `trace_number` only to ACH. Do not
         expect wire or ACH identifiers on `fednow_credit` legs.
       properties:
         received_at:
@@ -566,6 +566,16 @@ components:
           nullable: true
           description: Wire IMAD / tracking identifier, when available.
           example: 20260406XOIZJDPP953495
+        omad:
+          type: string
+          nullable: true
+          description: >-
+            Wire OMAD (Output Message Accountability Data), assigned by the Federal
+            Reserve when it delivers the wire, when available. Appears on
+            `source.payment_details` for inbound wires and on
+            `destination.payment_details` for outbound wires. Recipient banks often
+            ask for the OMAD to locate a wire. `null` for ACH, FedNow, and RTP.
+          example: 20260406QMGFNP31000001
         trace_number:
           type: string
           nullable: true

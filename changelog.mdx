@@ -3,6 +3,12 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-11-23" description="Week of November 23" tags={["New"]}>
+  ## Wire OMAD in transfer responses
+
+  Wire transfers now return `omad` in `payment_details`, next to `imad`. The OMAD is assigned by the Federal Reserve when it delivers the wire. Recipient banks often ask for it to locate a wire. Inbound wires return it in `source.payment_details`, and outbound wires return it in `destination.payment_details`. The field is `null` for ACH, FedNow, and RTP. See [Get a transfer](/api-reference/brale/get-transfer#destination-payment_details).
+</Update>
+
 <Update label="2026-11-16" description="Week of November 16" tags={["New", "Update"]}>
   ## Update an Automation's destination
 
