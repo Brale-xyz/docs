@@ -19,6 +19,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
 | `sender_bank_routing_number` | string \| null | Originating bank routing number, when available |
 | `payment_reference` | string \| null | Sender-provided payment reference or memo, when available. For inbound wires, Brale may also populate this field from "Instruction for Creditor Agent," which some banks label "Message to receiving bank." This fallback is used only when no existing memo, Originator-to-Beneficiary Information (OBI), or remittance reference is available. Existing reference precedence is preserved. |
 | `imad` | string \| null | Wire IMAD / tracking identifier, when available |
+| `omad` | string \| null | Wire OMAD (Output Message Accountability Data), assigned by the Federal Reserve when it delivers the wire, when available. `null` for ACH and FedNow. |
 | `trace_number` | string \| null | ACH trace identifier for the underlying payment, when available. Primarily relevant for inbound ACH-funded transfers. |
 
 ### Example: wire-funded transfer
@@ -38,7 +39,8 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
       "sender_bank_name": "JPMorgan Chase Bank",
       "sender_bank_routing_number": "000000123",
       "payment_reference": "Simulated Wire",
-      "imad": "20260406XOIZJDPP953495"
+      "imad": "20260406XOIZJDPP953495",
+      "omad": "20260406QMGFNP31000001"
     }
   },
   "destination": {
@@ -72,6 +74,7 @@ Wire transfers typically include the fuller set of fields. ACH transfers may inc
       "sender_bank_routing_number": "721160232",
       "payment_reference": null,
       "imad": null,
+      "omad": null,
       "trace_number": "021000029876543"
     }
   }
@@ -84,11 +87,12 @@ See [Transfers — `source.payment_details`](/key-concepts/transfers#sourcepayme
 
 Transfer responses may include an optional `destination.payment_details` object when Brale has underlying payment metadata to expose for the destination leg of a transfer. This is primarily relevant for outbound wire and ACH transfers (stablecoin-to-fiat offramps and payouts).
 
-The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted. For outbound ACH payouts, the trace number is assigned when the payout posts. Brale populates these fields later when the underlying bank metadata arrives.
+The object is optional and may be absent immediately after a transfer is created. For outbound wires, the IMAD is assigned by the sending bank and may not be available until after the wire has been submitted. The OMAD is assigned when the Federal Reserve delivers the wire and may arrive later than the IMAD. For outbound ACH payouts, the trace number is assigned when the payout posts. Brale populates these fields later when the underlying bank metadata arrives.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `imad` | string \| null | Wire IMAD / tracking identifier for the outbound wire, when available |
+| `omad` | string \| null | Wire OMAD (Output Message Accountability Data) for the outbound wire, assigned by the Federal Reserve when it delivers the wire, when available. Recipient banks often ask for the OMAD to locate a wire. |
 | `trace_number` | string \| null | ACH trace number for the outbound ACH payout (`ach_credit` or `same_day_ach_credit`), when available |
 | `sent_at` | string (date-time) \| null | When the outbound wire or ACH payout was sent, when available |
 
@@ -114,7 +118,8 @@ The object is optional and may be absent immediately after a transfer is created
     "transfer_type": "wire",
     "wire_memo": "Invoice 1048",
     "payment_details": {
-      "imad": "20260406XOIZJDPP953495"
+      "imad": "20260406XOIZJDPP953495",
+      "omad": "20260406QMGFNP31000001"
     }
   },
   "updated_at": "2026-04-07T00:05:12.102000Z",
