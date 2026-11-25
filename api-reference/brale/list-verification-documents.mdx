@@ -23,14 +23,21 @@ Returns the documents Brale currently requires for an account's KYB verification
       "document_type": "business_document",
       "display_name": "Certificate of Good Standing",
       "status": "pending_upload",
-      "person_label": null
+      "person_label": null,
+      "rejection_reasons": null
     },
     {
       "document_kind": "government_photo_id",
       "document_type": "individual_document",
       "display_name": "Government-issued photo ID",
-      "status": "uploaded",
-      "person_label": "Jane Doe"
+      "status": "pending_upload",
+      "person_label": "Jane Doe",
+      "rejection_reasons": [
+        {
+          "code": "identity_document_type_mismatch",
+          "message": "The identity document type selected does not match the document uploaded."
+        }
+      ]
     }
   ],
   "other_documents_uploaded_count": 1,
@@ -49,8 +56,29 @@ Returns the documents Brale currently requires for an account's KYB verification
 | `documents[].display_name` | string | Human-readable document name. |
 | `documents[].status` | string | `pending_upload` or `uploaded`. |
 | `documents[].person_label` | string \| null | Person this document applies to (individual documents only). |
+| `documents[].rejection_reasons` | array \| null | Why the previous upload for this requirement was declined. Set when a `government_photo_id` is requested again after a declined upload. `null` when nothing was declined or the decline had no identity reason. See [Rejection reasons](#rejection-reasons). |
+| `documents[].rejection_reasons[].code` | string | Stable code to branch on. |
+| `documents[].rejection_reasons[].message` | string | The same reason in words, safe to show to the end user. |
 | `other_documents_uploaded_count` | integer | Count of miscellaneous (`other`) documents already uploaded. |
 | `available_person_labels` | array | Person labels on the account's verification profile — use when staging individual documents. |
+
+## Rejection reasons
+
+When Brale declines an uploaded photo ID, the requirement returns to `pending_upload` and `rejection_reasons` explains what to fix. Upload a replacement that addresses each reason. Only identity reasons appear here. Screening outcomes, such as anti-money laundering screening, are never included.
+
+| Code | Message |
+| --- | --- |
+| `address_mismatch` | The address provided does not match the records on file. |
+| `identity_document_image_unclear` | The identity document image is too blurry to read. |
+| `identity_document_incomplete` | The identity document was submitted without every side required to read it. |
+| `identity_document_not_accepted` | The identity document provided is not accepted for this country. |
+| `identity_document_screen_capture` | The identity document image is a photo of a screen, not of the document itself. |
+| `identity_document_type_mismatch` | The identity document type selected does not match the document uploaded. |
+| `identity_name_mismatch` | The name provided could not be verified against identity records. |
+| `identity_number_unverified` | The identity number provided could not be verified. |
+| `identity_verification_failed` | Identity verification could not be completed. |
+
+Brale may add codes over time. Handle an unrecognized `code` by showing its `message`.
 
 ## Error responses
 

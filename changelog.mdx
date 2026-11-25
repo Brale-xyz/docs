@@ -3,6 +3,17 @@ title: "Changelog"
 description: "The latest updates and improvements to the Brale platform."
 ---
 
+<Update label="2026-11-23" description="Week of November 23" tags={["New", "Update"]}>
+  ## Why a declined document is requested again
+
+  Each document on [List Verification Documents](/api-reference/brale/list-verification-documents) (`GET /accounts/{account_id}/verification/documents`) now includes a nullable `rejection_reasons` array of `code` and `message` pairs. It is set when a photo ID is requested again after a declined upload, and tells you what to fix, such as `identity_document_image_unclear`, `identity_document_screen_capture`, or `identity_document_type_mismatch`. The `account.verification.documents_required` webhook carries the same field on each document. See [Rejection reasons](/api-reference/brale/list-verification-documents#rejection-reasons).
+
+  ## Updates
+
+  - **SSN length check:** Creating a business account now returns `422` `invalid_ssn` when a US controller or beneficial owner sends an SSN that is not 9 digits, in `ssn` or in `identity` with `type: SSN9`. Dashes and spaces are allowed. See [Business path errors](/key-concepts/accounts#business-path-errors).
+  - **US parties identified by other documents:** A US controller, beneficial owner, or individual sent with an identity type other than `SSN9`, `SSN4`, or `TAX_ID`, such as `PASSPORT`, is now verified from an uploaded `government_photo_id`. See [Identity types](/key-concepts/accounts#identity-types).
+</Update>
+
 <Update label="2026-11-16" description="Week of November 16" tags={["New", "Update"]}>
   ## Update an Automation's destination
 

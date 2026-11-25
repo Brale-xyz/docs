@@ -1401,7 +1401,9 @@ components:
           example: 123-45-6789
           description: >
             US Social Security Number. Required for a US party unless `identity`
-            is supplied, and not accepted for a party outside the US.
+            is supplied, and not accepted for a party outside the US. Must be 9
+            digits. Dashes and spaces are allowed and are removed before the
+            digits are counted. Any other length returns `422 invalid_ssn`.
         identity:
           allOf:
             - $ref: '#/components/schemas/IndividualIdentity'
@@ -2475,6 +2477,11 @@ paths:
             - `invalid_us_state` — `individual.country` is `US` or `USA` and
               `individual.address.state` is missing, blank, or not a
               recognized US state or territory (abbreviation or full name).
+
+            - `invalid_ssn` — a US business controller or beneficial owner
+              sent an SSN that is not 9 digits, either in `ssn` or in
+              `identity` with `type: SSN9`. Dashes and spaces are removed
+              before the digits are counted.
           content:
             application/json:
               schema:
