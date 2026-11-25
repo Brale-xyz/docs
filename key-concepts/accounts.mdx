@@ -149,7 +149,7 @@ A controller or beneficial owner outside the US is created through the same `POS
 | `address.country` | `US`, or omitted | ISO 3166-1 code or country name, e.g. `CO` |
 | `address.state` | Required, must be a US state abbreviation | Optional and free-form; omit it for countries with no state or province |
 | `address.zip` | `#####` or `#####-####` | Any format |
-| `ssn` | Required, `###-##-####` | Not accepted |
+| `ssn` | Required, 9 digits such as `###-##-####`. Dashes and spaces are allowed. | Not accepted |
 | `identity` | Optional, for a document other than an SSN | Required: the number and the document type |
 | `phone_number` | US number | Parsed against `address.country`, so a national-format number is accepted |
 
@@ -429,6 +429,8 @@ One identity is submitted per person. Use `SSN9` for a US taxpayer, or the match
 
 The region column is guidance on which value to send, not a separate validation: any value in this list is accepted. Jurisdiction comes from the country on the person, `individual.country` for an individual account and `address.country` for a controlling party.
 
+For a US person, Brale checks the number against records only when the type is `SSN9`, `SSN4`, or `TAX_ID`. A US person sent with any other type, such as `PASSPORT`, is verified from their uploaded ID instead. Brale requests a `government_photo_id` for that person, the same as for a person outside the US. See [Verification](#verification).
+
 ### Creating a non-US individual account
 
 Non-US individuals in approved countries are supported. See [Account availability](/coverage/account-availability#international-transactional-availability) for the country list. `individual.address.state` is optional and free-form, and the postal code accepts any format, so only the identity type and country change. Omit `state` for countries that have no state or province:
@@ -487,6 +489,7 @@ The supported shape today is inbound: the account receives value on chain and ca
 | --- | --- | --- |
 | `400` | `controlling_party_identity_required` | A controller or beneficial owner sent neither `ssn` nor `identity`. |
 | `400` | `invalid_controlling_party_identity` | Both `ssn` and `identity` were sent, or `ssn` was sent for a party whose `address.country` is not the US. |
+| `422` | `invalid_ssn` | A US controller or beneficial owner sent an SSN that is not 9 digits, either in `ssn` or in `identity` with `type: SSN9`. Dashes and spaces are removed before the digits are counted. |
 | `422` | `invalid_country_code` | An `address.country` that is not a recognized ISO country code or name. |
 | `422` | `invalid_us_state` | `address.country` is the US and `address.state` is missing, blank, or not a recognized state or territory. |
 | `400` | `invalid_phone_number` | A `phone_number` that is not valid in that party's `address.country`. |
@@ -535,7 +538,7 @@ Account verification is asynchronous. After creating an account, Brale reviews t
 
 **Proactive (at onboarding):** [Stage documents](/api-reference/brale/stage-verification-document), then either pass `doc_submission_ids` when creating the account or [link them later](/api-reference/brale/link-verification-documents).
 
-**Reactive (documents requested during review):** When Brale needs additional documents, subscribe to the `account.verification.documents_required` webhook event (see [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required)). The payload lists each required document (`document_kind`, `display_name`, `person_label`, `status`). [Stage the files](/api-reference/brale/stage-verification-document), then [link them](/api-reference/brale/link-verification-documents). Alternatively, [poll required documents](/api-reference/brale/list-verification-documents).
+**Reactive (documents requested during review):** When Brale needs additional documents, subscribe to the `account.verification.documents_required` webhook event (see [Webhook Events](/webhooks/webhook-events#accountverificationdocuments_required)). The payload lists each required document (`document_kind`, `display_name`, `person_label`, `status`, `rejection_reasons`). [Stage the files](/api-reference/brale/stage-verification-document), then [link them](/api-reference/brale/link-verification-documents). Alternatively, [poll required documents](/api-reference/brale/list-verification-documents).
 
 ```
 Create account → Brale reviews → [documents required?]

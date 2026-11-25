@@ -560,14 +560,21 @@ Example:
         "document_type": "business_document",
         "display_name": "Certificate of Good Standing",
         "status": "pending_upload",
-        "person_label": null
+        "person_label": null,
+        "rejection_reasons": null
       },
       {
         "document_kind": "government_photo_id",
         "document_type": "individual_document",
         "display_name": "Government-issued photo ID",
         "status": "pending_upload",
-        "person_label": "Jane Doe"
+        "person_label": "Jane Doe",
+        "rejection_reasons": [
+          {
+            "code": "identity_document_image_unclear",
+            "message": "The identity document image is too blurry to read."
+          }
+        ]
       }
     ]
   }
@@ -579,6 +586,7 @@ Notes:
 - Treat `data.account_id` as the account ID.
 - Each entry in `data.documents` describes a required document. `status` is `pending_upload` until the document is submitted.
 - Include `person_label` when staging individual (KYC) documents.
+- `rejection_reasons` explains why a previous upload for that document was declined, as a list of `code` and `message` pairs. It is set when a photo ID is requested again after a declined upload, and `null` otherwise. The codes match the `rejection_reasons` on [List Verification Documents](/api-reference/brale/list-verification-documents#rejection-reasons).
 - Your integration should ignore unknown fields.
 
 ## `account.verification.completed`
